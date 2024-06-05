@@ -1,19 +1,10 @@
 const ReviewModels = {
   reviews: {
-    basic: {
-      name: 'Basic example'
-    },
     general: {
-      name: 'General standard'
+      name: 'General decepetion analysis'
     },
-    engineering: {
-      name: 'Engineering research'
-    },
-    actionResearch: {
-      name: 'Action research'
-    },
-    caise: {
-      name: 'CAiSE Standard'
+    value: {
+      name: 'Deception analysis on value'
     }
   }
 }

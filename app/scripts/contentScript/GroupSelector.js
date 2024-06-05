@@ -233,16 +233,16 @@ class GroupSelector {
     newGroupButton.addEventListener('click', this.createNewReviewModelEventHandler())
     groupsContainer.appendChild(newGroupButton)
     // Import button
-    let importGroupButton = document.createElement('div')
-    importGroupButton.className = 'groupSelectorButton'
-    importGroupButton.innerText = 'Import review model'
-    importGroupButton.id = 'importReviewModelButton'
-    importGroupButton.addEventListener('click', this.createImportGroupButtonEventHandler())
-    groupsContainer.appendChild(importGroupButton)
+    // let importGroupButton = document.createElement('div')
+    // importGroupButton.className = 'groupSelectorButton'
+    // importGroupButton.innerText = 'Import review model'
+    // importGroupButton.id = 'importReviewModelButton'
+    // importGroupButton.addEventListener('click', this.createImportGroupButtonEventHandler())
+    // groupsContainer.appendChild(importGroupButton)
     // Import button
     let importStandardGroupButton = document.createElement('div')
     importStandardGroupButton.className = 'groupSelectorButton'
-    importStandardGroupButton.innerText = 'Standard review models'
+    importStandardGroupButton.innerText = 'Import Analysis Schema'
     importStandardGroupButton.id = 'importStandardModelButton'
     importStandardGroupButton.addEventListener('click', this.createImportStandardGroupButtonEventHandler())
     groupsContainer.appendChild(importStandardGroupButton)
@@ -525,7 +525,7 @@ class GroupSelector {
           alertType: Alerts.alertType.warning,
           title: 'Give a name to your imported review model',
           text: 'When the configuration is imported a new highlighter is created. You can return to your other review models using the sidebar.',
-          inputPlaceholder: 'Type here the name of your review model...',
+          inputPlaceholder: 'Type here the name of your schema...',
           preConfirm: (groupName) => {
             if (_.isString(groupName)) {
               if (groupName.length <= 0) {
@@ -533,7 +533,7 @@ class GroupSelector {
                 swal.showValidationMessage('Name cannot be empty.')
               } else if (groupName.length > 25) {
                 const swal = require('sweetalert2')
-                swal.showValidationMessage('The review model name cannot be higher than 25 characters.')
+                swal.showValidationMessage('The schema name cannot be higher than 25 characters.')
               } else {
                 return groupName
               }
@@ -547,7 +547,7 @@ class GroupSelector {
                 if (err) {
                   Alerts.errorAlert({text: 'Unable to create a new annotation group. Error: ' + err.message})
                 } else {
-                  let review = ReviewSchema.fromCriterias(jsonObject.criteria)
+                  let review = ReviewSchema.fromDeceptionSchema(jsonObject.criteria)
                   review.storageGroup = newGroup
                   Alerts.loadingAlert({title: 'Configuration in progress', text: 'We are configuring everything to start reviewing.', position: Alerts.position.center})
                   ImportSchema.createConfigurationAnnotationsFromReview({

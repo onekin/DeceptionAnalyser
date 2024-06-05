@@ -36,7 +36,7 @@ class CustomCriteriasManager {
       element: document,
       event: Events.tagsUpdated,
       handler: () => {
-        this.createAddCustomCriteriaButtons()
+        // this.createAddCustomCriteriaButtons()
         this.initContextMenu()
       }
     }
@@ -44,12 +44,12 @@ class CustomCriteriasManager {
   }
 
   createAddCustomCriteriaButtons (callback) {
-    this.createAddCustomThemeButton()
+    // this.createAddCustomThemeButton()
     let groups = _.map(document.querySelectorAll('.tagGroup'), (tagGroupElement) => {
       return tagGroupElement.dataset.groupName
     })
     for (let i = 0; i < groups.length; i++) {
-      this.createAddCustomCriteriaButton(groups[i])
+      // this.createAddCustomCriteriaButton(groups[i])
     }
     if (_.isFunction(callback)) {
       callback()
@@ -393,14 +393,25 @@ class CustomCriteriasManager {
       let criterion = tagGroup.config.name
       let description = tagGroup.config.options.description
       let items = {}
-      // Highlight criterion by LLM
-      items['annotate'] = { name: 'Annotate' }
-      // Assess criterion by LLM
-      items['compile'] = { name: 'Compile' }
-      // Find alternative viewpoints by LLM
-      items['alternative'] = { name: 'Provide viewpoints' }
-      // Find alternative viewpoints by LLM
-      items['recap'] = { name: 'Recap' }
+      if (tagGroup.config.options.group === 'Premises') {
+        // Highlight criterion by LLM
+        items['annotatePremise'] = { name: 'State premise with annotation' }
+        // Assess criterion by LLM
+        items['compile'] = { name: 'Compile' }
+        // Find alternative viewpoints by LLM
+        items['alternative'] = { name: 'Provide viewpoints' }
+        // Find alternative viewpoints by LLM
+        items['recap'] = { name: 'Recap' }
+      } else if (tagGroup.config.options.group === 'Critical questions') {
+        // Highlight criterion by LLM
+        items['annotateCriticalQuestion'] = { name: 'Formulate question' }
+        // Assess criterion by LLM
+        items['compile'] = { name: 'Compile' }
+        // Find alternative viewpoints by LLM
+        items['alternative'] = { name: 'Provide viewpoints' }
+        // Find alternative viewpoints by LLM
+        items['recap'] = { name: 'Recap' }
+      }
       $.contextMenu({
         selector: '[data-mark="' + tagGroup.config.name + '"]',
         build: () => {
@@ -434,6 +445,10 @@ class CustomCriteriasManager {
                 })
               } else if (key === 'recap') {
                 CustomCriteriasManager.recap(currentTagGroup)
+              } else if (key === 'annotatePremise') {
+                console.log('Annotate premise')
+              } else if (key === 'annotateCriticalQuestion') {
+                console.log('Annotate critical question')
               }
             },
             items: items
@@ -507,12 +522,14 @@ class CustomCriteriasManager {
     let formCriteriaDescriptionValue = defaultDescriptionValue || tagGroup.config.options.description
     let custom = tagGroup.config.options.custom || false
     Alerts.threeOptionsAlert({
-      title: 'Modifying name and description for criterion ' + formCriteriaNameValue,
+      title: 'Modifying name and description for criterion ' + formCriteriaNameValue + ' premise',
       html: '<div>' +
-        '<input id="criteriaName" class="swal2-input customizeInput" value="' + formCriteriaNameValue + '"/>' +
+        '<input readonly id="criteriaName" class="swal2-input customizeInput" value="' + formCriteriaNameValue + '"/>' +
         '</div>' +
         '<div>' +
-        '<textarea id="criteriaDescription" class="swal2-input customizeInput" placeholder="Description">' + formCriteriaDescriptionValue + '</textarea>' +
+        '<textarea readonly id="criteriaDescription" class="swal2-input customizeInput" placeholder="Description">' + formCriteriaDescriptionValue + '</textarea>' +
+        '</div>' +
+        '<textarea readonly id="fullQuestion" class="swal2-input customizeInput" placeholder="Formulated question">' + ' ' + '</textarea>' +
         '</div>',
       preConfirm: () => {
         // Retrieve values from inputs

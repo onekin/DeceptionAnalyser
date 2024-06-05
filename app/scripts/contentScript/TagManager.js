@@ -240,12 +240,15 @@ class TagManager {
 
   createTagsButtonsForEvidencing () {
     let groups = _.map(_.uniqBy(_.values(this.currentTags), (criteria) => { return criteria.config.options.group }), 'config.options.group')
-    for (let i = 0; i < groups.length; i++) {
+    /* for (let i = 0; i < groups.length; i++) {
       let group = groups[i]
       this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: group, groupHandler: this.collapseExpandGroupedButtonsHandler}))
-    }
+    } */
+    this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Premises', groupHandler: this.collapseExpandGroupedButtonsHandler}))
+    this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Critical questions', groupHandler: this.collapseExpandGroupedButtonsHandler}))
     // Insert buttons in each of the groups
     let arrayOfTagGroups = _.values(this.currentTags)
+    let conclusionButton, conclusionTagGroup
     for (let i = 0; i < arrayOfTagGroups.length; i++) {
       let tagGroup = arrayOfTagGroups[i]
       let button = TagManager.createButton({
@@ -257,12 +260,18 @@ class TagManager {
           let tags = [
             this.model.namespace + ':' + this.model.config.grouped.relation + ':' + tagGroup.config.name
           ]
-          LanguageUtils.dispatchCustomEvent(Events.annotate, {tags: tags, chosen: event.target.dataset.chosen})
+          LanguageUtils.dispatchCustomEvent(Events.annotate, { tags: tags, chosen: event.target.dataset.chosen })
         }
       })
       // Insert in its corresponding group container
-      this.tagsContainer.evidencing.querySelector('[title="' + tagGroup.config.options.group + '"]').nextElementSibling.append(button)
+      if (tagGroup.config.name !== 'Conclusion') {
+        this.tagsContainer.evidencing.querySelector('[title="' + tagGroup.config.options.group + '"]').nextElementSibling.append(button)
+      } else {
+        conclusionTagGroup = tagGroup
+        conclusionButton = button
+      }
     }
+    this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
   }
 
   static createButton ({name, color = 'grey', description, handler, role, tagGroup}) {

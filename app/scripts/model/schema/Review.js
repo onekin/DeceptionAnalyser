@@ -48,6 +48,15 @@ class Review extends AnnotationGuide {
     return review
   }
 
+  static fromDeceptionSchema (criterias) {
+    let review = new Review({reviewId: ''})
+    for (let i = 0; i < criterias.length; i++) {
+      let criteria = new Criteria({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
+      review.criterias.push(criteria)
+    }
+    return review
+  }
+
   toObject () {
     let object = {
       criteria: [],

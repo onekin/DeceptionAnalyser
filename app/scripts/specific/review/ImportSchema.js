@@ -1,10 +1,7 @@
 import Alerts from '../../utils/Alerts'
 import FileUtils from '../../utils/FileUtils'
 import general from './criteriaTemplate/general.json'
-import engineering from './criteriaTemplate/engineering.json'
-import caise from './criteriaTemplate/caise.json'
-import basic from './criteriaTemplate/basic.json'
-import actionResearch from './criteriaTemplate/actionResearch.json'
+import value from './criteriaTemplate/value.json'
 
 class ImportSchema {
   static createConfigurationAnnotationsFromReview ({review, callback}) {
@@ -90,16 +87,10 @@ class ImportSchema {
         showCancelButton: true,
         callback: (err) => {
           let jsonObject
-          if (reviewFile === 'General standard') {
+          if (reviewFile === 'General decepetion analysis') {
             jsonObject = general
-          } else if (reviewFile === 'Engineering research') {
-            jsonObject = engineering
-          } else if (reviewFile === 'Basic example') {
-            jsonObject = basic
-          } else if (reviewFile === 'Action research') {
-            jsonObject = actionResearch
-          } else if (reviewFile === 'CAiSE Standard') {
-            jsonObject = caise
+          } else if (reviewFile === 'Deception analysis on value') {
+            jsonObject = value
           }
           if (err) {
             callback(new Error('Unable to read json file: ' + err.message))
