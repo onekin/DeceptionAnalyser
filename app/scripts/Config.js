@@ -13,27 +13,16 @@ const Config = {
     }
   },
   prompts: {
-    annotatePrompt: 'Research Paper Context: [The research paper is provided above]\n' +
-      'Criterion for Evaluation: [C_NAME]\n' + 'Criterion Description: [C_DESCRIPTION]\n' +
-      'Based on the above, please analyze the full research paper and generate a JSON response (Do not consider the abstract). The JSON should list THREE text excerpts of the paper, but not from paper\'s abstract,  that are associated with the criterion for evaluation and indicate whether it meets the specified criterion ("Met"), (“Partially Met”) or not ("Not Met"). The excerpts should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+    annotatePremisePrompt: 'Story: [The story is provided above]\n' +
+      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
+      'Premise that I want to analyze: [C_NAME] premise\n' + 'Premise Description I want you to retrieve: [C_DESCRIPTION]\n' +
+      'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state only the [C_NAME] premise based on the description. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that is associated with the statement of the premise. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
-      '"name": "[Criterion Name]",\n' +
-      '"excerpts": [\n' +
-      '{\n' +
-      '"text": "[Text of the first significant paragraph]",\n' +
-      '"sentiment": "[Met/Partially Met/Not met]"\n' +
-      '},\n' +
-      '{\n' +
-      '"text": "[Text of the second significant paragraph]",\n' +
-      '"sentiment": "[Met/Partially met/Not met]"\n' +
-      '},\n' +
-      '{\n' +
-      '"text": "[Text of the third significant paragraph]",\n' +
-      '"sentiment": "[Met/Partially met/Not met]"\n' +
-      '},\n' +
-      ']\n' +
+      '"name": "[Premise Name]",\n' +
+      '"statement": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
+      '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
       '}\n' +
-      'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
+      'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     compilePrompt: 'Research Paper Context: [The research paper is provided above]\n' +
       'Criterion for Evaluation: [C_NAME]\n' +
       'Criterion Description: [C_DESCRIPTION]\n' +

@@ -34,12 +34,12 @@ class ReviewGenerator {
         this.generateCategoryReviewButtonHandler()
       })
       // Set generator image and event
-      let sentimentImageURL = chrome.runtime.getURL('/images/generatorS.png')
-      this.sentimentBasedImage = this.container.querySelector('#sentimentReviewGeneratorButton')
-      this.sentimentBasedImage.src = sentimentImageURL
-      this.sentimentBasedImage.addEventListener('click', () => {
-        this.generateSentimentReviewButtonHandler()
-      })
+      // let sentimentImageURL = chrome.runtime.getURL('/images/generatorS.png')
+      // this.sentimentBasedImage = this.container.querySelector('#sentimentReviewGeneratorButton')
+      // this.sentimentBasedImage.src = sentimentImageURL
+      // this.sentimentBasedImage.addEventListener('click', () => {
+      //   this.generateSentimentReviewButtonHandler()
+      // })
       // Set delete annotations image and event
       let deleteAnnotationsImageURL = chrome.runtime.getURL('/images/deleteAnnotations.png')
       this.deleteAnnotationsImage = this.container.querySelector('#deleteAnnotationsButton')

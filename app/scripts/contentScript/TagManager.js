@@ -239,7 +239,7 @@ class TagManager {
   }
 
   createTagsButtonsForEvidencing () {
-    let groups = _.map(_.uniqBy(_.values(this.currentTags), (criteria) => { return criteria.config.options.group }), 'config.options.group')
+    // let groups = _.map(_.uniqBy(_.values(this.currentTags), (criteria) => { return criteria.config.options.group }), 'config.options.group')
     /* for (let i = 0; i < groups.length; i++) {
       let group = groups[i]
       this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: group, groupHandler: this.collapseExpandGroupedButtonsHandler}))
