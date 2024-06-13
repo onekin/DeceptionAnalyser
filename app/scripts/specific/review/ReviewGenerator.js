@@ -151,6 +151,14 @@ class ReviewGenerator {
           }
         }
       }
+      let fullQuestion = ''
+      if (currentTagGroup.config.options.fullQuestion) {
+        fullQuestion = currentTagGroup.config.options.fullQuestion
+      }
+      let description = ''
+      if (currentTagGroup.config.options.description) {
+        description = currentTagGroup.config.options.description
+      }
       if (compile || alternative || (tagGroupAnnotations && tagGroupAnnotations.length > 0)) {
         let data = {}
         data.criterion = currentTagGroup.config.name
@@ -159,6 +167,12 @@ class ReviewGenerator {
         }
         if (alternative) {
           data.alternative = alternative
+        }
+        if (fullQuestion) {
+          data.fullQuestion = fullQuestion
+        }
+        if (description) {
+          data.description = description
         }
         let assessedTag = new AssessedTag(data)
         r.insertAssessedCriteria(assessedTag)

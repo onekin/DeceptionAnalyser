@@ -236,6 +236,43 @@ class CustomCriteriasManager {
     })
   }
 
+  static deleteTagAnnotations (tag, callback) {
+    // Get tags used in storage to store this tag or annotations with this tag
+    let annotationsToDelete = []
+    // Get annotation of the tag group
+    window.abwa.storageManager.client.searchAnnotations({
+      tags: tag[0]
+    }, (err, annotations) => {
+      if (err) {
+        // TODO Send message unable to delete
+      } else {
+        annotationsToDelete = annotationsToDelete.concat(_.map(annotations, 'id'))
+        // Delete all the annotations
+        let promises = []
+        for (let i = 0; i < annotationsToDelete.length; i++) {
+          promises.push(new Promise((resolve, reject) => {
+            window.abwa.storageManager.client.deleteAnnotation(annotationsToDelete[i], (err) => {
+              if (err) {
+                reject(new Error('Unable to delete annotation id: ' + annotationsToDelete[i]))
+              } else {
+                resolve()
+              }
+            })
+            return true
+          }))
+        }
+        // When all the annotations are deleted
+        Promise.all(promises).catch(() => {
+          Alerts.errorAlert({ text: 'There was an error when trying to delete all the annotations for this tag, please reload and try it again.' })
+        }).then(() => {
+          if (_.isFunction(callback)) {
+            callback()
+          }
+        })
+      }
+    })
+  }
+
   destroyContextMenus () {
     let arrayOfTagGroups = _.values(window.abwa.tagManager.currentTags)
     arrayOfTagGroups.forEach(tagGroup => {
@@ -393,15 +430,10 @@ class CustomCriteriasManager {
       let tagGroup = arrayOfTagGroups[i]
       let criterion = tagGroup.config.name
       let description = tagGroup.config.options.description
-      let fullQuestion = tagGroup.config.options.fullQuestion
       let items = {}
       if (tagGroup.config.options.group === 'Premises') {
         // Highlight criterion by LLM
         items['annotatePremise'] = { name: 'State premise with annotation' }
-        // Assess criterion by LLM
-        // items['compile'] = { name: 'Compile' }
-        // Find alternative viewpoints by LLM
-        // items['alternative'] = { name: 'Provide viewpoints' }
         // Find alternative viewpoints by LLM
         items['recap'] = { name: 'Recap' }
       } else if (tagGroup.config.options.group === 'Critical questions') {
@@ -448,7 +480,7 @@ class CustomCriteriasManager {
               } else if (key === 'annotatePremise') {
                 this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
               } else if (key === 'annotateCriticalQuestion') {
-                this.formulateResearchQuestion(criterion, description, fullQuestion)
+                this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation)
               }
             },
             items: items
@@ -461,8 +493,8 @@ class CustomCriteriasManager {
   static showParagraph (annotation, criterion) {
     if (annotation) {
       Alerts.infoAlert({
-        title: 'The LLM suggests this information for ' + criterion,
-        text: annotation.paragraph,
+        title: 'The LLM suggests this information for ' + criterion + ' answering ' + annotation.question,
+        text: annotation.paragraph + '<br/><br/>' + ' that justifies ' + annotation.text,
         confirmButtonText: 'OK',
         showCancelButton: false
       })
@@ -472,7 +504,7 @@ class CustomCriteriasManager {
   static showAnnotatedParagraph (annotation, criterion) {
     if (annotation) {
       Alerts.infoAlert({
-        title: 'The LLM suggests this information for ' + criterion,
+        title: 'The LLM suggests this information for ' + criterion + ' answering ' + annotation.question,
         text: annotation.paragraph + '<br/><br/>' + ' that justifies ' + annotation.text,
         confirmButtonText: 'OK',
         showCancelButton: false
@@ -736,10 +768,12 @@ class CustomCriteriasManager {
                     let tag = [
                       model.namespace + ':' + model.config.grouped.relation + ':' + criterion
                     ]
-                    LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
-                      tags: tag,
-                      selectors: selectors,
-                      commentData: commentData
+                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                      LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                        tags: tag,
+                        selectors: selectors,
+                        commentData: commentData
+                      })
                     })
                   }
                   if (annotation.selectors.length === 0) {
@@ -819,7 +853,7 @@ class CustomCriteriasManager {
     }
   }
 
-  formulateResearchQuestion (criterion, description, fullQuestion = null) {
+  formulateCriticalQuestion (criterion, description, tagAnnotation) {
     if (description.length < 20) {
       Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
     } else {
@@ -831,86 +865,100 @@ class CustomCriteriasManager {
         if (llm && llm !== '') {
           let selectedLLM = llm
           Alerts.confirmAlert({
-            title: 'Find annotations for ' + criterion,
-            text: 'Do you want to create new annotations for this criterion using ' + llm.charAt(0).toUpperCase() + llm.slice(1) + '?',
+            title: 'Formulate ' + criterion,
+            text: 'Do you want to answer the critical question using ' + llm.charAt(0).toUpperCase() + llm.slice(1) + '?',
             cancelButtonText: 'Cancel',
             callback: async () => {
               let documents = []
               documents = await LLMTextUtils.loadDocument()
-              if (documents[0].pageContent.includes('Abstract') && documents[0].pageContent.includes('Keywords')) {
-                documents[0].pageContent = this.removeTextBetween(documents[0].pageContent, 'Abstract', 'Keywords')
-              }
               chrome.runtime.sendMessage({
                 scope: 'llm',
                 cmd: 'getAPIKEY',
                 data: selectedLLM
               }, ({ apiKey }) => {
                 let callback = (json) => {
-                  // let comment = json.comment
-                  // let sentiment = json.sentiment
-                  let annotations = []
-                  for (let i = 0; i < json.excerpts.length; i += 1) {
-                    let excerptElement = json.excerpts[i]
-                    let excerpt = ''
-                    let sentiment = 'not met'
-                    if (excerptElement && excerptElement.text) {
-                      excerpt = excerptElement.text
+                  let excerpt = json.excerpt
+                  let question = json.adaptedQuestion
+                  let answer = json.answer
+                  let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                  let annotation = {
+                    paragraph: excerpt,
+                    text: answer,
+                    question: question,
+                    selectors: selectors
+                  }
+                  if (selectors.length > 0) {
+                    let commentData = {
+                      comment: '',
+                      statement: answer,
+                      llm: llm,
+                      paragraph: excerpt
                     }
-                    if (excerptElement && excerptElement.sentiment) {
-                      sentiment = excerptElement.sentiment.toLowerCase()
-                    }
-                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
-                    let annotation = {
-                      paragraph: excerpt,
-                      selectors: selectors
-                    }
-                    annotations.push(annotation)
-                    if (selectors.length > 0) {
-                      let commentData = {
-                        comment: '',
-                        sentiment: sentiment,
-                        llm: llm,
-                        paragraph: excerpt
-                      }
-                      let model = window.abwa.tagManager.model
-                      let tag = [
-                        model.namespace + ':' + model.config.grouped.relation + ':' + criterion
-                      ]
+                    let model = window.abwa.tagManager.model
+                    let tag = [
+                      model.namespace + ':' + model.config.grouped.relation + ':' + criterion
+                    ]
+                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
                       LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                         tags: tag,
                         selectors: selectors,
                         commentData: commentData
                       })
-                    }
+                    })
                   }
-                  let noCreatedAnnotations = annotations.filter((annotation) => annotation.selectors.length === 0)
-                  let createdAnnotations = annotations.filter((annotation) => annotation.selectors.length === 3)
-                  let info
-                  if (createdAnnotations && createdAnnotations.length > 0) {
-                    info = ' has createad ' + createdAnnotations.length + ' annotations.'
+                  if (annotation.selectors.length === 0) {
+                    CustomCriteriasManager.showParagraph(annotation, criterion)
                   } else {
-                    info = ' did not annotate fragments.'
+                    CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
                   }
-                  Alerts.infoAlert({
-                    title: 'The criterion ' + criterion + ' has been annotated ',
-                    text: llm.charAt(0).toUpperCase() + llm.slice(1) + info,
-                    confirmButtonText: 'OK',
-                    showCancelButton: false,
-                    callback: () => {
-                      if (createdAnnotations.length > 0) {
-                        CustomCriteriasManager.showAnnotatedParagraphs(createdAnnotations, noCreatedAnnotations, criterion)
-                      } else if (noCreatedAnnotations.length > 0) {
-                        CustomCriteriasManager.showParagraphs(noCreatedAnnotations, criterion)
-                      }
-                    }
-                  })
+                  // retrieve tag annotation
+                  let data
+                  if (tagAnnotation.text) {
+                    data = jsYaml.load(tagAnnotation.text)
+                    // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                    data.compile = []
+                    data.fullQuestion = question
+                    // Now that we're sure data.resume is an array, push the new object into it.
+                    data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                  }
+                  tagAnnotation.text = jsYaml.dump(data)
+                  LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                  Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
                 }
                 if (apiKey && apiKey !== '') {
-                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePrompt'} }, ({ prompt }) => {
+                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
                     if (!prompt) {
-                      prompt = Config.prompts.annotatePrompt
+                      prompt = Config.prompts.criticalQuestionPrompt
                     }
-                    prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion)
+                    let scheme = ''
+                    if (window.abwa.tagManager) {
+                      let currentTags = window.abwa.tagManager.currentTags
+                      // Retrieve Premises
+                      let premises = currentTags.filter(tag => {
+                        return tag.config.options.group === 'Premises'
+                      })
+                      let conclusion
+                      for (let i = 0; i < premises.length; i++) {
+                        const premise = premises[i]
+                        if (premise.config.name === 'Conclusion') {
+                          conclusion = premise
+                        } else {
+                          scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                          if (premise.config.options.compile.answer) {
+                            scheme += premise.config.options.compile.answer + '\n'
+                          } else {
+                            scheme += premise.config.options.description + '\n'
+                          }
+                        }
+                      }
+                      scheme += conclusion.config.name.toUpperCase() + ': '
+                      if (conclusion.config.options.compile.answer) {
+                        scheme += conclusion.config.options.compile.answer + '\n'
+                      } else {
+                        scheme += conclusion.config.options.description + '\n'
+                      }
+                    }
+                    prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_SCHEME]', scheme)
                     let params = {
                       criterion: criterion,
                       description: description,
@@ -1202,6 +1250,9 @@ class CustomCriteriasManager {
       let html = '<div width=900px style="text-align: justify;text-justify: inter-word">'
       if (compile) {
         html += '<h3>Description:</h3><div width=800px>' + currentTagGroup.config.options.description + '</div></br>'
+      }
+      if (currentTagGroup.config.options.fullQuestion) {
+        html += '<h3>Question:</h3><div width=800px>' + currentTagGroup.config.options.fullQuestion + '</div></br>'
       }
       if (compile) {
         html += '<h3>Statement:</h3><div width=800px>' + compile.answer + '</div></br>'

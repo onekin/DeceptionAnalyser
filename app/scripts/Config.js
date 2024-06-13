@@ -44,9 +44,16 @@ const Config = {
       '"answer": [provide different viewpoints in different bullet points using dashes (all in a single string), you have to put a "</br>" before each dash like "</br>-". You have to mark the different view point with bold xml tags (<b>). All the content must be specified in the answer key, without creating keys inside, if you mention one of the paragraphs in your answer reference the full paragraphs instead of the paragraph number)],\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
-    factCheckingPrompt: 'Fack check the following text <text>[C_EXCERPT]</text>.' +
-      ' You have to provide the response in JSON format with' +
-      ' the following key: -"answer" (the answer to the question. all the content must be specified in the answer key, without creating keys inside),',
+    criticalQuestionPrompt: 'Story: [The story is provided above]\n' +
+      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
+      'Now I want to answer a critical question for Argument deception. The critical question is: [C_DESCRIPTION]\n' +
+      'Based on the above, i want you to analyse the provided story, then instantiate the question with the values from the story and answer the question. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answer for the question. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+      '{\n' +
+      '"adaptedQuestion": "the question [C_DESCRIPTION}, but rewritten with the values of the story",\n' +
+      '"answer": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
+      '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
+      '}\n' +
+      'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     socialJudgePrompt: 'Is it socially appropriate to say the following text? <text>[C_EXCERPT]<text> as important.' +
       ' You have to provide the response in JSON format with' +
       ' the following keys: -"name" (contains the criteria name), -"answer" (the answer to the question. all the content must be specified in the answer key, without creating keys inside),',

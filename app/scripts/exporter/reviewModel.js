@@ -12,27 +12,11 @@ export class Review {
   insertAssessedCriteria(annotation){
     this._assessedCriteria.push(annotation)
   }
+  groupByCriterionInsideLevel (){
+    return this._annotations;
+  }
   get annotations(){
-    return this._annotations
-  }
-  groupByCriterionInsideLevel (level){
-    let that = this
-    let groups = []
-    let levelAnnotations = this._annotations.filter((e) => {return e.level===level})
-    for(let i in levelAnnotations){
-      if(groups.find((e) => {return e.annotations[0].criterion===levelAnnotations[i].criterion})!=null) continue;
-      groups.push(new AnnotationGroup(levelAnnotations.filter((e) => {return e.criterion===levelAnnotations[i].criterion}),that));
-    }
-    return groups;
-  }
-  get strengths(){
     return this.groupByCriterionInsideLevel("Strength")
-  }
-  get minorConcerns(){
-    return this.groupByCriterionInsideLevel("Minor weakness")
-  }
-  get majorConcerns(){
-    return this.groupByCriterionInsideLevel("Major weakness")
   }
   get typos(){
     return this.annotations.filter((e) => {return e.criterion==="Typos"})
@@ -84,39 +68,6 @@ export class Review {
         t += "Viewpoints:" + assessedCriteria.alternative.replaceAll('</br>','\n').replaceAll('<b>','').replaceAll('</b>','') + "\r\n";
       }
       t += "\r\n";
-      // Strengths
-      if (this.strengths.length > 0) {
-        for (let s in this.strengths) {
-          if (this.strengths[s].annotations[0].criterion === assessedCriteria.criterion) {
-            t += '\t' + "***Strengths***\r\n";
-            t += '\t' + (this.strengths[s].toGroupByCategories()) + "\r\n";
-          }
-        }
-        t += "\r\n";
-      }
-
-      // Major concerns
-      if (this.majorConcerns.length > 0) {
-        for (let i = 0; i < this.majorConcerns.length; i++) {
-          if (this.majorConcerns[i].annotations[0].criterion === assessedCriteria.criterion) {
-            t += '\t' + "***Major weaknesses***\r\n"
-            t += '\t' + (this.majorConcerns[i].toGroupByCategories()) + "\r\n";
-          }
-        }
-        t += "\r\n";
-      }
-
-      // Minor concerns
-      if (this.minorConcerns.length > 0) {
-        for (let i = 0; i < this.minorConcerns.length; i++) {
-          if (this.minorConcerns[i].annotations[0].criterion === assessedCriteria.criterion) {
-            t += '\t' + "***Minor weaknesses***\r\n"
-            t += '\t' + (this.minorConcerns[i].toGroupByCategories()) + "\r\n";
-          }
-        }
-        t += "\r\n";
-      }
-
       // Other Comments
       const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
       if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
@@ -184,53 +135,23 @@ export class Review {
       htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + "</h2>";
 
       if (assessedCriteria.compile) {
-        htmlContent += "<div class='editable'><h3>Compilation: (" + assessedCriteria.compile.sentiment + ") </h3><textarea>" + assessedCriteria.compile.answer + "</textarea></div>";
+        if (assessedCriteria.fullQuestion) {
+          htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.fullQuestion + "</div>";
+        } else if {
+          htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.description + "</div>";
+        }
+        htmlContent += "<div class='editable'><h3>Answer: </h3>" + assessedCriteria.compile.answer + "</div>";
       }
-
-      if (assessedCriteria.alternative) {
-        let alternativeText = assessedCriteria.alternative.replace(/<\/br>/g, '<br>').replace(/<b>/g, '<strong>').replace(/<\/b>/g, '</strong>');
-        htmlContent += "<div class='editable'>" + alternativeText + "</div>";
-      }
-
-      // Adding strengths, major concerns, minor concerns, and other comments
-      htmlContent += this.formatCategorySection('Strength', this.strengths, assessedCriteria);
-      htmlContent += this.formatCategorySection('Minor Concern', this.minorConcerns, assessedCriteria);
-      htmlContent += this.formatCategorySection('Major Concern', this.majorConcerns, assessedCriteria);
       const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
       if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
         htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
       }
       htmlContent += "</div>"
     });
-
-    // Presentation errors
-    if(this.presentationErrors.length>0){
-      htmlContent += "<h3>PRESENTATION ERRORS</h3>";
-      this.presentationErrors.forEach(error => {
-        htmlContent += "<p>- " + error.toGroupByCategories() + "</p>";
-      });
-    }
-
-    htmlContent += "<h3>Comments to Editors</h3><div class='editable'><textarea></textarea></div>";
-    // Append any additional content here
-
     // Closing HTML tags
     htmlContent += "</body></html>";
 
     return htmlContent;
-  }
-
-// Function to format category sections like strengths, concerns, etc.
-  formatCategorySection(sentiment, categoryArray, assessedCriteria) {
-    let htmlSection = "";
-    if (categoryArray.length > 0) {
-      categoryArray.forEach(item => {
-        if (item.annotations[0].criterion === assessedCriteria.criterion) {
-          htmlSection +=  item.toGroupByCategoriesHTML(sentiment)
-        }
-      });
-    }
-    return htmlSection;
   }
 
 // Function to format unsorted annotations
@@ -410,10 +331,12 @@ export class Annotation {
 }
 
 export class AssessedTag {
-  constructor({ criterion, compile = null, alternative = null }){
+  constructor({ criterion, compile = null, alternative = null, fullQuestion = null, description = null }) {
     this._criterion = criterion
     this._compile = compile
     this._alternative = alternative
+    this._fullQuestion = fullQuestion
+    this._description = description
   }
   get criterion(){
     return this._criterion
@@ -423,6 +346,12 @@ export class AssessedTag {
   }
   get alternative(){
     return this._alternative
+  }
+  get fullQuestion(){
+    return this._fullQuestion
+  }
+  get description(){
+    return this._description
   }
 }
 
@@ -464,49 +393,14 @@ export class AnnotationGroup {
     return t
   }
 
-  toSentimentString () {
-    let t = '\t***' + this._annotations[0].criterion + '***'
-    for (let i in this._annotations) {
-      if (this._annotations[i].highlightText === null) continue
-      t += '\r\n\t\t* '
-      if (this._annotations[i].page !== null) t += 'EXCERPT: (Page ' + this._annotations[i].page + ') '
-      t += '"' + this._annotations[i].highlightText + '". ';
-      if ((this._annotations[i].comment != null && this._annotations[i].comment != "") || (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") || (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") || (this._annotations[i].clarifications != null && this._annotations[i].clarifications != "")) {
-        t += '\t' + '\r\n\t* COMMENTS: '
-        if (this._annotations[i].comment != null && this._annotations[i].comment != "") t += this.isFirstComment(t) + this._annotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") t += this.isFirstComment(t) + 'Fact checking suggests that ' + this._annotations[i].factChecking.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") t += this.isFirstComment(t) + 'Social Judgement suggests that: ' + this._annotations[i].socialJudgement.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].clarifications && this._annotations[i].clarifications.length > 0) {
-          for (let j in this._annotations[i].clarifications) {
-            t += this.isFirstComment(t) + '[' + this._annotations[i].clarifications[j].question + ']: ' + this._annotations[i].clarifications[j].answer.replace(/(\r\n|\n|\r)/gm, '');
-          }
-        }
-      }
-    }
-    return t
-  }
-
-  toGroupByCategoriesHTML (sentiment) {
+  toGroupByCategoriesHTML () {
     let t = ''
     for (let i in this._annotations) {
       if (this._annotations[i].highlightText === null) continue
       t += "<div className='excerpt'>"
       t += `<li>`;
-      if (this._annotations[i].page !== null && sentiment) t += sentiment + ': (Page ' + this._annotations[i].page + '): '
-      if (this._annotations[i].page !== null && !sentiment) t += '(Page ' + this._annotations[i].page + '): '
+      if (this._annotations[i].page !== null) t += ': (Page ' + this._annotations[i].page + '): '
       t += '"' + this._annotations[i].highlightText + '". ' + '</li>';
-      if ((this._annotations[i].comment != null && this._annotations[i].comment != "") || (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") || (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") || (this._annotations[i].clarifications != null && this._annotations[i].clarifications != "")) {
-        t += "<div class='editable'><textarea>COMMENTS: "
-        if (this._annotations[i].comment != null && this._annotations[i].comment != "") t += this.isFirstCommentHTML(t) + + this._annotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") t += this.isFirstCommentHTML(t) + 'Fact checking suggests that ' + this._annotations[i].factChecking.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") t += this.isFirstCommentHTML(t) + 'Social Judgement suggests that: ' + this._annotations[i].socialJudgement.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].clarifications && this._annotations[i].clarifications.length > 0) {
-          for (let j in this._annotations[i].clarifications) {
-            t += this.isFirstCommentHTML(t) + '[' + this._annotations[i].clarifications[j].question + ']: ' + this._annotations[i].clarifications[j].answer.replace(/(\r\n|\n|\r)/gm, '');
-          }
-        }
-        t += '</textarea></div>'
-      }
       t += '</div>'
     }
     return t
