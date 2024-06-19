@@ -10,13 +10,15 @@ class Criteria extends GuideElement {
     this.group = group
     this.review = this.parentElement
     this.description = description
-    this.fullQuestion = fullQuestion
     this.custom = custom
     if (compile) {
       this.compile = compile
     }
     if (alternative) {
       this.alternative = alternative
+    }
+    if (fullQuestion) {
+      this.fullQuestion = fullQuestion
     }
   }
 
@@ -45,6 +47,12 @@ class Criteria extends GuideElement {
     } else {
       alternative = ''
     }
+    let fullQuestion
+    if (this.fullQuestion) {
+      fullQuestion = this.fullQuestion
+    } else {
+      fullQuestion = ''
+    }
     return {
       group: review.storageGroup.id,
       permissions: {
@@ -55,7 +63,7 @@ class Criteria extends GuideElement {
       target: [],
       text: jsYaml.dump({
         description: this.description,
-        fullQuestion: this.fullQuestion,
+        fullQuestion: fullQuestion,
         group: this.group,
         custom: this.custom,
         alternative: alternative,

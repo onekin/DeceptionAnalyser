@@ -142,6 +142,14 @@ class LanguageUtils {
       return null
     }
   }
+
+  static findValuesEndingWithName (obj, suffix) {
+    for (let key in obj) {
+      if (key.endsWith(suffix)) {
+        return obj[key] // Return the value of the key ending with 'name'
+      }
+    }
+  }
 }
 
 module.exports = LanguageUtils

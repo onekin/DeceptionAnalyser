@@ -23,6 +23,11 @@ const Config = {
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
+    annotateAllPremisesPrompt: 'Story: [The story is provided above]\n' +
+      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
+      'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state all the premises based on the schema, with the premises and their descriptions. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story for each premises that is associated with the statement of the premise or conlusion. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+      '[C_FORMAT]\n' +
+      'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     compilePrompt: 'Research Paper Context: [The research paper is provided above]\n' +
       'Criterion for Evaluation: [C_NAME]\n' +
       'Criterion Description: [C_DESCRIPTION]\n' +
@@ -34,14 +39,15 @@ const Config = {
       '"comment": "[the reason of the results, if you mention one of the paragraphs in your comment reference the full paragraphs instead of the paragraph number]",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
-    alternativePrompt: 'Research Paper Context: [The research paper is provided above]\n' +
-      'Criterion for Evaluation: [C_NAME]\n' +
-      'Criterion Description: [C_DESCRIPTION]\n' +
-      'Paragraphs: [C_EXCERPTS]\n' +
-      'You have to act as an academic reviewer and generate multiple alternative view points for the asessed criterion (Positive Viewpoint, Critical Viewpoint, Constructive Viewpoint, Alternative Viewpoint). Base on the above and base your opinion mainly in the above Paragraphs to analyze the full research paper and generate a JSON response. The JSON format should be as follows:\n' +
+    argumentsPrompt: 'Research Paper Context: [The research paper is provided above]\n' +
+      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
+      'The critical question is: [C_QUESTION]\n' +
+      'And the answer you provided is: [C_ANSWER]\n' +
+      'Now I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.' +
+      'You have to provide an argument and counterargument for the critical question. Base on the above generate a JSON response. The JSON format should be as follows:\n' +
       '{\n' +
-      '"name": "[Criterion Name]",\n' +
-      '"answer": [provide different viewpoints in different bullet points using dashes (all in a single string), you have to put a "</br>" before each dash like "</br>-". You have to mark the different view point with bold xml tags (<b>). All the content must be specified in the answer key, without creating keys inside, if you mention one of the paragraphs in your answer reference the full paragraphs instead of the paragraph number)],\n' +
+      '"name": "[C_NAME]",\n' +
+      '"answer": "provide an argument and counterargument for the given critical questions in different bullet points using dashes (all in a single string), you have to put a "</br>" before each dash like "</br>-". You have to provide the evidence after the argument and counter argument reasoning between paranthesis and in italic (<i>). All the content must be specified in the answer key, without creating keys inside.",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
     criticalQuestionPrompt: 'Story: [The story is provided above]\n' +
@@ -53,6 +59,12 @@ const Config = {
       '"answer": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
       '}\n' +
+      'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
+    allCriticalQuestionPrompt: 'Story: [The story is provided above]\n' +
+      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
+      'Critical questions:\n [C_QUESTIONS]\n' +
+      'Based on the above, i want you to analyse the provided story, then instantiate each of the questions with the values from the story and answer the questions. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answers for the questions. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+      '[C_FORMAT]\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     socialJudgePrompt: 'Is it socially appropriate to say the following text? <text>[C_EXCERPT]<text> as important.' +
       ' You have to provide the response in JSON format with' +

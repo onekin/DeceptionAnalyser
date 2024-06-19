@@ -4,6 +4,7 @@ export class Review {
   constructor(){
     this._annotations = []
     this._assessedCriteria = []
+    this._allCriteria = []
   }
   insertAnnotation(annotation){
     this._annotations.push(annotation)
@@ -11,6 +12,9 @@ export class Review {
 
   insertAssessedCriteria(annotation){
     this._assessedCriteria.push(annotation)
+  }
+  insertCriteria(annotation){
+    this._allCriteria.push(annotation)
   }
   groupByCriterionInsideLevel (){
     return this._annotations;
@@ -53,67 +57,13 @@ export class Review {
     }
   }
 
-  groupByCategory(){
-    // Summary of the work
-    let t = "Review report date: " + new Date().toLocaleDateString() + "\r\n\r\n";
-
-    // Criterion Assessment
-    t += "<Criterion assessments>\r\n\r\n";
-    this._assessedCriteria.forEach( (assessedCriteria) => {
-      t += "Criterion Review: " + assessedCriteria.criterion.toUpperCase() + "\r\n\r\n";
-      if (assessedCriteria.compile) {
-        t += "Compilation:" + '(' + assessedCriteria.compile.sentiment + ')' + assessedCriteria.compile.answer + "\r\n";
-      }
-      if (assessedCriteria.alternative) {
-        t += "Viewpoints:" + assessedCriteria.alternative.replaceAll('</br>','\n').replaceAll('<b>','').replaceAll('</b>','') + "\r\n";
-      }
-      t += "\r\n";
-      // Other Comments
-      const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
-      if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
-        // Other comments
-        t += '\t' + '***Other comments***:\r\n'
-        for (let i = 0; i < criterionUnsortedAnnotations.length; i++) {
-          t += "\t* "
-          if(criterionUnsortedAnnotations[i].page!=null) t+= 'EXCERPT: (Page '+criterionUnsortedAnnotations[i].page+'): '
-          t += '"' + criterionUnsortedAnnotations[i].highlightText + '". ';
-          if ((criterionUnsortedAnnotations[i].comment != null && criterionUnsortedAnnotations[i].comment != "") || (criterionUnsortedAnnotations[i].factChecking != null && criterionUnsortedAnnotations[i].factChecking != "") || (criterionUnsortedAnnotations[i].socialJudgement != null && criterionUnsortedAnnotations[i].socialJudgement != "") || (criterionUnsortedAnnotations[i].clarifications != null && criterionUnsortedAnnotations[i].clarifications != "")) {
-            t += '\t' + '\r\n\t* COMMENTS: '
-            if (criterionUnsortedAnnotations[i].comment != null && criterionUnsortedAnnotations[i].comment != "") t += this.isFirstComment(t) + + criterionUnsortedAnnotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-            if (criterionUnsortedAnnotations[i].factChecking != null && criterionUnsortedAnnotations[i].factChecking != "") t += this.isFirstComment(t) + '- Fact checking suggests that ' + criterionUnsortedAnnotations[i].factChecking.replace(/(\r\n|\n|\r)/gm, '');
-            if (criterionUnsortedAnnotations[i].socialJudgement != null && criterionUnsortedAnnotations[i].socialJudgement != "") t += this.isFirstComment(t) + '- Social Judgement suggests that: ' + criterionUnsortedAnnotations[i].socialJudgement.replace(/(\r\n|\n|\r)/gm, '');
-            if (criterionUnsortedAnnotations[i].clarifications && criterionUnsortedAnnotations[i].clarifications.length > 0) {
-              for (let j in criterionUnsortedAnnotations[i].clarifications) {
-                t += this.isFirstComment(t) + '[' + criterionUnsortedAnnotations[i].clarifications[j].question + ']: ' + criterionUnsortedAnnotations[i].clarifications[j].answer.replace(/(\r\n|\n|\r)/gm, '');
-              }
-            }
-          }
-          t += '\r\n'
-        }
-        t += "\r\n";
-      }
-    })
-    // Presentation errors
-    if(this.presentationErrors.length>0){
-      t += "PRESENTATION:\r\n\r\n"
-      for(let i=0;i<this.presentationErrors.length;i++){
-        t += "- "+this.presentationErrors[i].toGroupByCategories()+"\r\n\r\n"
-      }
-      t += "\r\n"
-    }
-
-    t += "\r\n<Comments to editors>";
-
-    return t;
-  }
-
   groupByCategoryHTML(){
     // Starting HTML structure with internal CSS
     let htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Review Report</title>
+      <title>Report of the analysis</title>
       <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
             h1, h2, h3 { color: navy; }
@@ -128,25 +78,54 @@ export class Review {
     <body>
     `;
     // Adding date at the top
-    htmlContent += "<h1>Review Report </h1><p>Date: "+ new Date().toLocaleDateString() + "</p>";
+    htmlContent += "<h1>Report of the analysis </h1><p>Date: "+ new Date().toLocaleDateString() + "</p>";
 
-    // Criterion Assessment
+    // Premises
     this._assessedCriteria.forEach( (assessedCriteria) => {
-      htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + "</h2>";
+      if (assessedCriteria.group === 'Premises') {
+        htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + "</h2>";
 
-      if (assessedCriteria.compile) {
-        if (assessedCriteria.fullQuestion) {
-          htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.fullQuestion + "</div>";
-        } else if {
-          htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.description + "</div>";
+        if (assessedCriteria.compile) {
+          if (assessedCriteria.fullQuestion && assessedCriteria.fullQuestion.fullQuestion) {
+            htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.fullQuestion.fullQuestion + "</div>";
+          } else if (assessedCriteria.description) {
+            htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.description + "</div>";
+          }
+          htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+          htmlContent += "<div class='editable'><h3>Evidence: </h3>"
+          const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
+          if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
+            htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
+          }
+          htmlContent += "</div>"
         }
-        htmlContent += "<div class='editable'><h3>Answer: </h3>" + assessedCriteria.compile.answer + "</div>";
+        htmlContent += "</div>"
       }
-      const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
-      if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
-        htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
+    });
+    // Critical Questions
+    this._assessedCriteria.forEach( (assessedCriteria) => {
+      if (assessedCriteria.group === 'Critical questions') {
+        htmlContent += "<div class='criterion'><h2>" + assessedCriteria.criterion.toUpperCase() + "</h2>";
+        if (assessedCriteria.compile) {
+          if (assessedCriteria.description) {
+            htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.description + "</div>";
+          }
+          if (assessedCriteria.fullQuestion && assessedCriteria.fullQuestion.fullQuestion) {
+            htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.fullQuestion.fullQuestion + "</div>";
+          }
+          htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+        }
+        if (assessedCriteria.alternative) {
+          htmlContent += "<div class='editable'><h3>Arguments: </h3>" + assessedCriteria.alternative + "</div>";
+        }
+        htmlContent += "<div class='editable'><h3>Evidence: </h3>"
+        const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
+        if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
+          htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
+        }
+        htmlContent += "</div>"
+        htmlContent += "</div>"
       }
-      htmlContent += "</div>"
     });
     // Closing HTML tags
     htmlContent += "</body></html>";
@@ -182,103 +161,6 @@ export class Review {
     return t;
   }
 
-  groupBySentiment(){
-    // Summary of the work
-    let t = "Review report date: " + new Date().toLocaleDateString() + "\r\n\r\n";
-
-    // Strengths
-    let strengtCriteria = this._assessedCriteria.filter(e => {
-      if (e.compile && e.compile.sentiment) {
-        return e.compile.sentiment === "Strength"
-      }
-    })
-    if(this.strengths.length>0 || strengtCriteria.length>0){
-      t+= "STRENGTHS:\r\n\r\n";
-      for (let i=0; i<strengtCriteria.length; i++) {
-        t += "- (" + strengtCriteria[i].criterion + ')' + strengtCriteria[i].compile.answer+"\r\n\r\n";
-      }
-      for(let s in this.strengths){
-        t += "- "+this.strengths[s].toSentimentString()+"\r\n\r\n";
-      }
-      t += "\r\n";
-    }
-
-    // Major concerns
-    let majorWeaknessCriteria = this._assessedCriteria.filter(e => {
-      if (e.compile && e.compile.sentiment) {
-        return e.compile.sentiment === "Major weakness"
-      }
-    })
-    if(this.majorConcerns.length>0 || majorWeaknessCriteria.length>0){
-      t += "MAJOR WEAKNESSES:\r\n\r\n"
-
-      for (let i=0; i<majorWeaknessCriteria.length; i++) {
-        t += '- ' + majorWeaknessCriteria[i].compile.answer+"\r\n\r\n";
-      }
-      for(let i=0;i<this.majorConcerns.length;i++){
-        t += (i+1)+"- "+this.majorConcerns[i].toSentimentString()+"\r\n\r\n";
-      }
-      t += "\r\n";
-    }
-
-    // Minor concerns
-    let minorWeaknessCriteria = this._assessedCriteria.filter(e => {
-      if (e.compile && e.compile.sentiment) {
-        return e.compile.sentiment === "Minor weakness"
-      }
-    })
-    if(this.minorConcerns.length>0 || minorWeaknessCriteria.length>0){
-      t += "MINOR WEAKNESSES:\r\n\r\n"
-      for (let i=0; i<minorWeaknessCriteria.length; i++) {
-        t += "- "+minorWeaknessCriteria[i].compile.answer+"\r\n\r\n";
-      }
-      for(let i=0;i<this.minorConcerns.length;i++){
-        t += (i+1)+" "+this.minorConcerns[i].toSentimentString()+"\r\n\r\n";
-      }
-      t += "\r\n";
-    }
-
-    // Presentation errors
-    if(this.presentationErrors.length>0){
-      t += "PRESENTATION:\r\n\r\n"
-      for(let i=0;i<this.presentationErrors.length;i++){
-        t += "- "+this.presentationErrors[i].toString()+"\r\n\r\n"
-      }
-      t += "\r\n"
-    }
-
-    // Other comments
-    t += "OTHER COMMENTS:\r\n\r\n"
-    this._assessedCriteria.forEach( (assessedCriteria) => {
-      if (assessedCriteria.alternative) {
-        if (!assessedCriteria.alternative.isArray) {
-          t += "- Viewpoints for " + assessedCriteria.criterion + ': ' + assessedCriteria.alternative.replaceAll('</br>','\n\t').replaceAll('<b>','').replaceAll('</b>','') + "\r\n\r\n";
-        }
-      }
-    })
-    if(this.unsortedAnnotations.length>0){
-      for(let i=0;i<this.unsortedAnnotations.length;i++){
-        t += '\t* ' + this.unsortedAnnotations[i].criterion + ' '
-        if(this.unsortedAnnotations[i].page!=null) t+= '(EXCERPT: Page '+this.unsortedAnnotations[i].page+'): '
-        t += '"' + this.unsortedAnnotations[i].highlightText + '". ';
-        if ((this.unsortedAnnotations[i].comment != null && this.unsortedAnnotations[i].comment != "") || (this.unsortedAnnotations[i].factChecking != null && this.unsortedAnnotations[i].factChecking != "") || (this.unsortedAnnotations[i].socialJudgement != null && this.unsortedAnnotations[i].socialJudgement != "") || (this.unsortedAnnotations[i].clarifications != null && this.unsortedAnnotations[i].clarifications != "")) {
-          t += '\t' + '\r\n\t* COMMENTS: '
-          if (this.unsortedAnnotations[i].comment != null && this.unsortedAnnotations[i].comment != "") t += this.isFirstComment(t) + this.unsortedAnnotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-          if (this.unsortedAnnotations[i].factChecking != null && this.unsortedAnnotations[i].factChecking != "") t += this.isFirstComment(t) + 'Fact checking suggests that ' + this.unsortedAnnotations[i].factChecking.replace(/(\r\n|\n|\r)/gm, '');
-          if (this.unsortedAnnotations[i].socialJudgement != null && this.unsortedAnnotations[i].socialJudgement != "") t += this.isFirstComment(t) + 'Social Judgement suggests that: ' + this.unsortedAnnotations[i].socialJudgement.replace(/(\r\n|\n|\r)/gm, '');
-          if (this.unsortedAnnotations[i].clarifications && this.unsortedAnnotations[i].clarifications.length > 0) {
-            for (let j in this.unsortedAnnotations[i].clarifications) {
-              t += this.isFirstComment(t) + '[' + this.unsortedAnnotations[i].clarifications[j].question + ']: ' + this.unsortedAnnotations[i].clarifications[j].answer.replace(/(\r\n|\n|\r)/gm, '');
-            }
-          }
-        }
-        t += '\r\n'
-      }
-    }
-    t += "\r\n<Comments to editors>";
-
-    return t;
-  }
 }
 
 export class Annotation {
@@ -331,8 +213,9 @@ export class Annotation {
 }
 
 export class AssessedTag {
-  constructor({ criterion, compile = null, alternative = null, fullQuestion = null, description = null }) {
+  constructor({ criterion, group = null, compile = null, alternative = null, fullQuestion = null, description = null }) {
     this._criterion = criterion
+    this._group = group
     this._compile = compile
     this._alternative = alternative
     this._fullQuestion = fullQuestion
@@ -340,6 +223,9 @@ export class AssessedTag {
   }
   get criterion(){
     return this._criterion
+  }
+  get group(){
+    return this._group
   }
   get compile(){
     return this._compile
@@ -365,22 +251,6 @@ export class AnnotationGroup {
     return this._annotations
   }
 
-  isFirstComment (t) {
-    if (t.endsWith("COMMENTS: ")) {
-      return ''
-    } else {
-      return '\r\n\t\t-'
-    }
-  }
-
-  isFirstCommentHTML (t) {
-    if (t.endsWith("COMMENTS: ")) {
-      return ''
-    } else {
-      return '\r\n\n-'
-    }
-  }
-
   toString () {
     let t = this._annotations[0].criterion + ':'
     for (let i in this._annotations) {
@@ -389,41 +259,6 @@ export class AnnotationGroup {
       if (this._annotations[i].page !== null) t += '(Page ' + this._annotations[i].page + '): '
       t += '"' + this._annotations[i].highlightText + '". ';
       if (this._annotations[i].comment != null && this._annotations[i].comment != "") t += '\r\n\t' + this._annotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-    }
-    return t
-  }
-
-  toGroupByCategoriesHTML () {
-    let t = ''
-    for (let i in this._annotations) {
-      if (this._annotations[i].highlightText === null) continue
-      t += "<div className='excerpt'>"
-      t += `<li>`;
-      if (this._annotations[i].page !== null) t += ': (Page ' + this._annotations[i].page + '): '
-      t += '"' + this._annotations[i].highlightText + '". ' + '</li>';
-      t += '</div>'
-    }
-    return t
-  }
-
-  toGroupByCategories () {
-    let t = ''
-    for (let i in this._annotations) {
-      if (this._annotations[i].highlightText === null) continue
-      t += '\t' + '\r\n\t* '
-      if (this._annotations[i].page !== null) t += 'EXCERPT: (Page ' + this._annotations[i].page + '): '
-      t += '"' + this._annotations[i].highlightText + '". ';
-      if ((this._annotations[i].comment != null && this._annotations[i].comment != "") || (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") || (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") || (this._annotations[i].clarifications != null && this._annotations[i].clarifications != "")) {
-        t += '\t' + '\r\n\t* COMMENTS: '
-        if (this._annotations[i].comment != null && this._annotations[i].comment != "") t += this.isFirstComment(t) + + this._annotations[i].comment.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].factChecking != null && this._annotations[i].factChecking != "") t += this.isFirstComment(t) + 'Fact checking suggests that ' + this._annotations[i].factChecking.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].socialJudgement != null && this._annotations[i].socialJudgement != "") t += this.isFirstComment(t) + 'Social Judgement suggests that: ' + this._annotations[i].socialJudgement.replace(/(\r\n|\n|\r)/gm, '');
-        if (this._annotations[i].clarifications && this._annotations[i].clarifications.length > 0) {
-          for (let j in this._annotations[i].clarifications) {
-            t += this.isFirstComment(t) + '[' + this._annotations[i].clarifications[j].question + ']: ' + this._annotations[i].clarifications[j].answer.replace(/(\r\n|\n|\r)/gm, '');
-          }
-        }
-      }
     }
     return t
   }

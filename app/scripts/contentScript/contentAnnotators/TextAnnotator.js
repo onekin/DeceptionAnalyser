@@ -10,10 +10,6 @@ import LanguageUtils from '../../utils/LanguageUtils'
 import $ from 'jquery'
 import _ from 'lodash'
 import Alerts from '../../utils/Alerts'
-import LLMTextUtils from '../../utils/LLMTextUtils'
-import Config from '../../Config'
-import AnthropicManager from '../../llm/anthropic/AnthropicManager'
-import OpenAIManager from '../../llm/openAI/OpenAIManager'
 require('components-jqueryui')
 require('jquery-contextmenu/dist/jquery.contextMenu')
 let swal = null
@@ -63,14 +59,16 @@ class TextAnnotator extends ContentAnnotator {
         this.initAnnotateByLLMEvent(() => {
           this.initUpdateAnnotationEvent(() => {
             this.initUpdateTagAnnotationEvent(() => {
-              this.initReloadAnnotationsEvent(() => {
-                this.initDeleteAllAnnotationsEvent(() => {
-                  this.initDocumentURLChangeEvent(() => {
-                    this.initTagsUpdatedEvent(() => {
-                      // Reload annotations periodically
-                      if (_.isFunction(callback)) {
-                        callback()
-                      }
+              this.initUpdateTagAnnotationsEvent(() => {
+                this.initReloadAnnotationsEvent(() => {
+                  this.initDeleteAllAnnotationsEvent(() => {
+                    this.initDocumentURLChangeEvent(() => {
+                      this.initTagsUpdatedEvent(() => {
+                        // Reload annotations periodically
+                        if (_.isFunction(callback)) {
+                          callback()
+                        }
+                      })
                     })
                   })
                 })
@@ -164,6 +162,14 @@ class TextAnnotator extends ContentAnnotator {
   initUpdateTagAnnotationEvent (callback) {
     this.events.updateTagAnnotationEvent = { element: document, event: Events.updateTagAnnotation, handler: this.updateTagAnnotationEventHandler() }
     this.events.updateTagAnnotationEvent.element.addEventListener(this.events.updateTagAnnotationEvent.event, this.events.updateTagAnnotationEvent.handler, false)
+    if (_.isFunction(callback)) {
+      callback()
+    }
+  }
+
+  initUpdateTagAnnotationsEvent (callback) {
+    this.events.updateTagAnnotationsEvent = { element: document, event: Events.updateTagAnnotations, handler: this.updateTagAnnotationsEventHandler() }
+    this.events.updateTagAnnotationsEvent.element.addEventListener(this.events.updateTagAnnotationsEvent.event, this.events.updateTagAnnotationsEvent.handler, false)
     if (_.isFunction(callback)) {
       callback()
     }
@@ -489,10 +495,10 @@ class TextAnnotator extends ContentAnnotator {
           if (LanguageUtils.isInstanceOf(tagInstance, TagGroup)) {
             group = tagInstance
             // Set message
-            highlightedElement.title = group.config.name + '\nLevel is pending, please right click to set a level.'
+            highlightedElement.title = group.config.name
           } else if (LanguageUtils.isInstanceOf(tagInstance, Tag)) {
             group = tagInstance.group
-            highlightedElement.title = group.config.name + '\nLevel: ' + tagInstance.name
+            highlightedElement.title = group.config.name
           }
           if (!_.isEmpty(annotation.text)) {
             try {
@@ -506,8 +512,6 @@ class TextAnnotator extends ContentAnnotator {
         // Create context menu event for highlighted elements
         this.createContextMenuForAnnotation(annotation)
         // Create click event to move to next annotation
-        // Create double click event handler
-        this.createDoubleClickEventHandler(annotation)
       } catch (e) {
         // TODO Handle error (maybe send in callback the error ¿?)
         if (_.isFunction(callback)) {
@@ -521,74 +525,18 @@ class TextAnnotator extends ContentAnnotator {
     }
   }
 
-  createDoubleClickEventHandler (annotation) {
-    let highlights = document.querySelectorAll('[data-annotation-id="' + annotation.id + '"]')
-    for (let i = 0; i < highlights.length; i++) {
-      let highlight = highlights[i]
-      highlight.addEventListener('dblclick', () => {
-        this.commentAnnotationHandler(annotation)
-      })
-    }
-  }
-
   createContextMenuForAnnotation (annotation) {
-    let paragraph
-    let groupTag = window.abwa.tagManager.getGroupFromAnnotation(annotation)
-    let criterionName = groupTag.config.name
-    let selectors = annotation.target[0].selector
-    let fragmentTextSelector
-    if (selectors) {
-      fragmentTextSelector = selectors.find((selector) => {
-        return selector.type === 'TextQuoteSelector'
-      })
-    }
-    if (fragmentTextSelector) {
-      paragraph = fragmentTextSelector.exact.replace(/(\r\n|\n|\r)/gm, '')
-    }
     $.contextMenu({
       selector: '[data-annotation-id="' + annotation.id + '"]',
       build: () => {
         // Create items for context menu
         let items = {}
         // If current user is the same as author, allow to remove annotation or add a comment
-        items['clarify'] = {name: 'Clarify'}
-        items['factChecking'] = {name: 'Fact Checking'}
-        items['socialJudge'] = {name: 'Social judging'}
-        items['comment'] = {name: 'Render'}
         items['delete'] = {name: 'Delete'}
         return {
           callback: (key) => {
             if (key === 'delete') {
               this.deleteAnnotationHandler(annotation)
-            } else if (key === 'comment') {
-              this.commentAnnotationHandler(annotation)
-            } else if (key === 'clarify') {
-              // this.commentAnnotationHandler(annotation)
-              Alerts.inputTextAlert({
-                title: 'Clarify by LLM',
-                inputPlaceholder: 'Your question',
-                preConfirm: () => {
-                  return new Promise((resolve) => {
-                    let question = document.querySelector('.swal2-input').value
-                    if (question && question.length > 3) {
-                      resolve(question)
-                    } else {
-                      Alerts.errorAlert({text: 'Please enter a question'})
-                    }
-                  })
-                },
-                callback: () => {
-                  let question = document.querySelector('.swal2-input').value
-                  TextAnnotator.askQuestionClarify(paragraph, question, criterionName, annotation)
-                }
-              })
-            } else if (key === 'factChecking') {
-              // this.commentAnnotationHandler(annotation)
-              // let question = document.querySelector('#swal-criterionQuestion').value
-              TextAnnotator.askQuestionFactChecking(paragraph, criterionName, annotation)
-            } else if (key === 'socialJudge') {
-              // this.commentAnnotationHandler(annotation)
-              TextAnnotator.askQuestionSocialJudge(paragraph, criterionName, annotation)
             }
           },
           items: items
@@ -624,320 +572,6 @@ class TextAnnotator extends ContentAnnotator {
               DOMTextUtils.unHighlightElements([...document.querySelectorAll('[data-annotation-id="' + annotation.id + '"]')])
             }
           }
-        })
-      }
-    })
-  }
-
-  commentAnnotationHandler (annotation) {
-    // Close sidebar if opened
-    let isSidebarOpened = window.abwa.sidebar.isOpened()
-    this.closeSidebar()
-    // Open sweetalert
-    // let that = this
-
-    let updateAnnotation = (comment, level, form) => {
-      form.comment = comment
-      form.level = level
-      annotation.text = JSON.stringify(form)
-
-      // Assign level to annotation
-      if (level != null) {
-        let tagGroup = window.abwa.tagManager.getGroupFromAnnotation(annotation)
-        let pole = tagGroup.tags.find((e) => { return e.name === level })
-        annotation.tags = pole.tags
-      }
-
-      LanguageUtils.dispatchCustomEvent(Events.updateAnnotation, {annotation: annotation})
-
-      if (isSidebarOpened) {
-        window.abwa.contentAnnotator.openSidebar()
-      }
-    }
-    let showAlert = (form) => {
-      let hasLevel = (annotation, level) => {
-        return annotation.tags.find((e) => { return e === Config.review.namespace + ':' + Config.review.tags.grouped.subgroup + ':' + level }) != null
-      }
-
-      let groupTag = window.abwa.tagManager.getGroupFromAnnotation(annotation)
-      let criterionName
-      if (form.llm) {
-        criterionName = 'Criterion:' + groupTag.config.name + ' [highlighted by ' + form.llm + ']'
-      } else {
-        criterionName = 'Criterion:' + groupTag.config.name
-      }
-      let poles = groupTag.tags.map((e) => { return e.name })
-      // let poleChoiceRadio = poles.length>0 ? '<h3>Pole</h3>' : ''
-      let poleChoiceRadio = '<div>'
-      poles.forEach((e) => {
-        poleChoiceRadio += '<input type="radio" name="pole" class="swal2-radio poleRadio" value="' + e + '" '
-        if (hasLevel(annotation, e)) poleChoiceRadio += 'checked'
-        poleChoiceRadio += '>'
-        switch (e) {
-          case 'Strength':
-            poleChoiceRadio += '<img class="poleImage" alt="Strength" title="Mark as a strength" width="20" src="' + chrome.runtime.getURL('images/strength.png') + '"/>'
-            break
-          case 'Major weakness':
-            poleChoiceRadio += '<img class="poleImage" alt="Major concern" title="Mark as a major concern" width="20" src="' + chrome.runtime.getURL('images/majorConcern.png') + '"/>'
-            break
-          case 'Minor weakness':
-            poleChoiceRadio += '<img class="poleImage" alt="Minor concern" title="Mark as a minor concern" width="20" src="' + chrome.runtime.getURL('images/minorConcern.png') + '"/>'
-            break
-        }
-        poleChoiceRadio += ' <span class="swal2-label" style="margin-right:5%;" title="\'+e+\'">' + e + '</span>'
-      })
-      poleChoiceRadio += '</div>'
-      let factChecking = ''
-      let socialJudge = ''
-      let clarifications = ''
-      let userComment = ''
-      let userCommentHTML = ''
-      if (form.comment) {
-        userComment = form.comment
-      }
-      userCommentHTML = '<br/><span>Comment:</span><br/>' + '<textarea rows="4" cols="40" id="swal-textarea">' + userComment + '</textarea>'
-      if (form.clarifications) {
-        let clarificationsQuestions = form.clarifications
-        clarificationsQuestions.forEach((e) => {
-          clarifications += '<br/><span>' + e.question + '</span><br/>'
-          clarifications += '<textarea readonly rows="4" cols="40">' + e.answer + '</textarea>'
-        })
-      }
-      if (form.factChecking) {
-        factChecking = '<br/><span>Fact checking:</span><br/>' + '<textarea readonly rows="4" cols="40" id="swal-textarea-factChecking">' + form.factChecking + '</textarea>'
-      }
-      if (form.socialJudge) {
-        socialJudge = '<br/><span>Social Judge:</span><br/>' + '<textarea readonly rows="4" cols="40" id="swal-textarea-socialJudge">' + form.socialJudge + '</textarea>'
-      }
-      TextAnnotator.tryToLoadSwal()
-      if (_.isNull(swal)) {
-        console.log('Unable to load swal')
-      } else {
-        swal.fire({
-          html: '<h3 class="criterionName">' + criterionName + '</h3>' + poleChoiceRadio + userCommentHTML + clarifications + factChecking + socialJudge,
-          showLoaderOnConfirm: true,
-          width: '40em',
-          preConfirm: () => {
-            let newComment = $('#swal-textarea').val()
-            let level = $('.poleRadio:checked') != null && $('.poleRadio:checked').length === 1 ? $('.poleRadio:checked')[0].value : null
-            updateAnnotation(newComment, level, form)
-          }
-        })
-      }
-      if (!form.llm) {
-        $('.poleRadio + img').on('click', function () {
-          $(this).prev('.poleRadio').prop('checked', true)
-        })
-      }
-    }
-    if (annotation.text === null || annotation.text === '') {
-      showAlert({comment: ''})
-    } else {
-      showAlert(JSON.parse(annotation.text))
-    }
-  }
-
-  static askQuestionClarify (excerpt, question, criterion, annotation) {
-    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-      if (llm === '') {
-        llm = Config.review.defaultLLM
-      }
-      if (llm && llm !== '') {
-        let selectedLLM = llm
-        chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'clarifyPrompt'} }, ({ prompt }) => {
-          let clarifyPrompt
-          if (prompt) {
-            clarifyPrompt = prompt
-          } else {
-            clarifyPrompt = Config.prompts.clarifyPrompt
-          }
-          criterion = criterion.replace(/\[.*?\]/g, '')
-          clarifyPrompt = clarifyPrompt.replaceAll('[C_EXCERPT]', excerpt).replaceAll('[C_NAME]', criterion).replaceAll('[C_QUESTION]', question)
-          Alerts.confirmAlert({
-            title: 'Clarification',
-            text: '<div style="text-align: justify;text-justify: inter-word">You are going to ask the following question:\n ' + clarifyPrompt + '</div>',
-            cancelButtonText: 'Cancel',
-            callback: async () => {
-              let documents = []
-              documents = await LLMTextUtils.loadDocument()
-              chrome.runtime.sendMessage({
-                scope: 'llm',
-                cmd: 'getAPIKEY',
-                data: selectedLLM
-              }, ({ apiKey }) => {
-                let callback = (json) => {
-                  let answer = json.answer
-                  Alerts.answerTextFragmentAlert({
-                    answer: answer,
-                    excerpt: excerpt,
-                    question: question,
-                    criterion: criterion,
-                    type: 'clarification',
-                    annotation: annotation
-                  })
-                }
-                if (apiKey && apiKey !== '') {
-                  let params = {
-                    criterion: criterion,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback,
-                    prompt: clarifyPrompt
-                  }
-                  if (selectedLLM === 'anthropic') {
-                    AnthropicManager.askCriteria(params)
-                  } else if (selectedLLM === 'openAI') {
-                    OpenAIManager.askCriteria(params)
-                  }
-                } else {
-                  let callback = () => {
-                    window.open(chrome.runtime.getURL('pages/options.html'))
-                  }
-                  Alerts.infoAlert({
-                    text: 'Please, configure your LLM.',
-                    title: 'Please select a LLM and provide your API key',
-                    callback: callback()
-                  })
-                }
-              })
-            }
-          })
-        })
-      }
-    })
-  }
-
-  static askQuestionFactChecking (excerpt, criterion, annotation) {
-    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-      if (llm === '') {
-        llm = Config.review.defaultLLM
-      }
-      if (llm && llm !== '') {
-        let selectedLLM = llm
-        chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'factCheckingPrompt'} }, ({ prompt }) => {
-          let factCheckingPrompt
-          if (prompt) {
-            factCheckingPrompt = prompt
-          } else {
-            factCheckingPrompt = Config.prompts.factCheckingPrompt
-          }
-          factCheckingPrompt = factCheckingPrompt.replaceAll('[C_EXCERPT]', excerpt)
-          Alerts.confirmAlert({
-            title: 'Fact Checking',
-            text: '<div style="text-align: justify;text-justify: inter-word">You are going to ask the following question:\n ' + factCheckingPrompt + '</div>',
-            cancelButtonText: 'Cancel',
-            callback: async () => {
-              let documents = []
-              documents = await LLMTextUtils.loadDocument()
-              chrome.runtime.sendMessage({
-                scope: 'llm',
-                cmd: 'getAPIKEY',
-                data: selectedLLM
-              }, ({ apiKey }) => {
-                let callback = (json) => {
-                  let answer = json.answer
-                  Alerts.answerTextFragmentAlert({
-                    answer: answer,
-                    excerpt: excerpt,
-                    criterion: criterion,
-                    type: 'factChecking',
-                    annotation: annotation
-                  })
-                }
-                if (apiKey && apiKey !== '') {
-                  let params = {
-                    criterion: criterion,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback,
-                    prompt: factCheckingPrompt
-                  }
-                  if (selectedLLM === 'anthropic') {
-                    AnthropicManager.askCriteria(params)
-                  } else if (selectedLLM === 'openAI') {
-                    OpenAIManager.askCriteria(params)
-                  }
-                } else {
-                  let callback = () => {
-                    window.open(chrome.runtime.getURL('pages/options.html'))
-                  }
-                  Alerts.infoAlert({
-                    text: 'Please, configure your LLM.',
-                    title: 'Please select a LLM and provide your API key',
-                    callback: callback()
-                  })
-                }
-              })
-            }
-          })
-        })
-      }
-    })
-  }
-
-  static askQuestionSocialJudge (excerpt, criterion, annotation) {
-    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-      if (llm === '') {
-        llm = Config.review.defaultLLM
-      }
-      if (llm && llm !== '') {
-        let selectedLLM = llm
-        chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'socialJudgePrompt'} }, ({ prompt }) => {
-          let socialJudgePrompt
-          if (prompt) {
-            socialJudgePrompt = prompt
-          } else {
-            socialJudgePrompt = Config.prompts.socialJudgePrompt
-          }
-          socialJudgePrompt = socialJudgePrompt.replaceAll('[C_EXCERPT]', excerpt)
-          Alerts.confirmAlert({
-            title: 'Social Judge',
-            text: '<div style="text-align: justify;text-justify: inter-word">You are going to ask the following question:\n ' + socialJudgePrompt + '</div>',
-            cancelButtonText: 'Cancel',
-            callback: async () => {
-              let documents = []
-              documents = await LLMTextUtils.loadDocument()
-              chrome.runtime.sendMessage({
-                scope: 'llm',
-                cmd: 'getAPIKEY',
-                data: selectedLLM
-              }, ({ apiKey }) => {
-                let callback = (json) => {
-                  let answer = json.answer
-                  Alerts.answerTextFragmentAlert({
-                    answer: answer,
-                    excerpt: excerpt,
-                    criterion: criterion,
-                    type: 'socialJudge',
-                    annotation: annotation
-                  })
-                }
-                if (apiKey && apiKey !== '') {
-                  let params = {
-                    criterion: criterion,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback,
-                    prompt: socialJudgePrompt
-                  }
-                  if (selectedLLM === 'anthropic') {
-                    AnthropicManager.askCriteria(params)
-                  } else if (selectedLLM === 'openAI') {
-                    OpenAIManager.askCriteria(params)
-                  }
-                } else {
-                  let callback = () => {
-                    window.open(chrome.runtime.getURL('pages/options.html'))
-                  }
-                  Alerts.infoAlert({
-                    text: 'Please, configure your LLM.',
-                    title: 'Please select a LLM and provide your API key',
-                    callback: callback()
-                  })
-                }
-              })
-            }
-          })
         })
       }
     })
@@ -1077,38 +711,6 @@ class TextAnnotator extends ContentAnnotator {
    * @param newTags
    * @param callback Error, Result
    */
-  updateTagsForAllAnnotationsWithTag (oldTags, newTags, callback) {
-    // Get all annotations with oldTags
-    let oldTagsAnnotations = _.filter(this.allAnnotations, (annotation) => {
-      let tags = annotation.tags
-      return oldTags.every((oldTag) => {
-        return tags.includes(oldTag)
-      })
-    })
-    let promises = []
-    for (let i = 0; i < oldTagsAnnotations.length; i++) {
-      let oldTagAnnotation = oldTagsAnnotations[i]
-      promises.push(new Promise((resolve, reject) => {
-        oldTagAnnotation.tags = newTags
-        window.abwa.storageManager.client.updateAnnotation(oldTagAnnotation.id, oldTagAnnotation, (err, annotation) => {
-          if (err) {
-            reject(new Error('Unable to update annotation ' + oldTagAnnotation.id))
-          } else {
-            resolve(annotation)
-          }
-        })
-      }))
-    }
-    let annotations = []
-    Promise.all(promises).then((result) => {
-      // All annotations updated
-      annotations = result
-    }).finally((result) => {
-      if (_.isFunction(callback)) {
-        callback(null, annotations)
-      }
-    })
-  }
 
   redrawAnnotations () {
     // Unhighlight all annotations
@@ -1162,17 +764,6 @@ class TextAnnotator extends ContentAnnotator {
         }
       })
     }, 1000)
-  }
-
-  static findTagForSentiment (sentiment) {
-    sentiment = sentiment.toLowerCase()
-    if (sentiment === 'not met') {
-      return 'review:level:Major weakness'
-    } else if (sentiment === 'partially met') {
-      return 'review:level:Minor weakness'
-    } else if (sentiment === 'met') {
-      return 'review:level:Strength'
-    }
   }
 
   static tryToLoadSwal () {
@@ -1234,6 +825,38 @@ class TextAnnotator extends ContentAnnotator {
             window.abwa.tagManager.reloadTags()
           }
         })
+    }
+  }
+
+  updateTagAnnotationsEventHandler () {
+    return (event) => {
+      // Get annotation to update
+      const annotations = event.detail.annotations
+      let updateCount = 0
+      const totalUpdates = annotations.length
+
+      // Callback to be executed after each update
+      const updateCallback = (err) => {
+        if (err) {
+          // Show error message
+          Alerts.errorAlert({ text: chrome.i18n.getMessage('errorUpdatingAnnotationComment') })
+        } else {
+          updateCount++
+          if (updateCount === totalUpdates) {
+            // Reload tags only after all updates are completed
+            window.abwa.tagManager.reloadTags()
+          }
+        }
+      }
+
+      // Update each annotation
+      annotations.forEach(annotation => {
+        window.abwa.storageManager.client.updateAnnotation(
+          annotation.id,
+          annotation,
+          updateCallback
+        )
+      })
     }
   }
 }

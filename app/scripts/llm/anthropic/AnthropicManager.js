@@ -15,14 +15,14 @@ class AnthropicManager {
         }
       } else {
         Swal.fire({
-          title: 'Asking Anthropic',
+          title: 'Asking LLM...',
           text: 'Please wait to the response',
           allowEscapeKey: false,
           allowOutsideClick: false,
           onOpen: async () => {
             Swal.showLoading()
             const b = document.getElementById('swal2-title')
-            b.innerText = 'Asking Anthropic'
+            b.innerText = 'Asking LLM'
             // Document QA
             let query
             if (prompt) {
@@ -31,10 +31,10 @@ class AnthropicManager {
             chrome.runtime.sendMessage({ scope: 'askLLM', cmd: 'anthropic', data: {documents: documents, apiKey: apiKey, query: query} }, function (response) {
               if (chrome.runtime.lastError) {
                 Swal.close()
-                Alerts.errorAlert({text: 'Unable to ask Anthropic: ' + chrome.runtime.lastError.message})
+                Alerts.errorAlert({text: 'Unable to ask LLM: ' + chrome.runtime.lastError.message})
               } else if (response.res.error) {
                 Swal.close()
-                Alerts.errorAlert({text: 'Unable to ask Anthropic: ' + response.res.error})
+                Alerts.errorAlert({text: 'Unable to ask LLM: ' + response.res.error})
               } else {
                 Swal.close()
                 const jsonString = response.res.text

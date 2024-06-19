@@ -104,61 +104,6 @@ class CustomCriteriasManager {
     }
   }
 
-  createAddCustomCriteriaButton (groupName) {
-    // Get container
-    let addCriteriaButton = document.querySelector('.groupName[title="' + groupName + '"]').previousElementSibling
-    addCriteriaButton.title = 'Add new criteria to ' + groupName
-
-    // Create button for new element
-    addCriteriaButton.addEventListener('click', this.createAddCustomCriteriaButtonHandler(groupName))
-  }
-
-  createAddCustomCriteriaButtonHandler (groupName) {
-    return () => {
-      let criteriaName
-      let criteriaDescription
-      Alerts.multipleInputAlert({
-        title: 'Creating a new criterion for category ' + groupName,
-        html: '<div>' +
-          '<input id="criteriaName" class="swal2-input customizeInput" placeholder="Type your criteria name..."/>' +
-          '</div>' +
-          '<div>' +
-          '<textarea id="criteriaDescription" class="swal2-input customizeInput" placeholder="Type your criteria description..."></textarea>' +
-          '</div>',
-        preConfirm: () => {
-          // Retrieve values from inputs
-          criteriaName = document.getElementById('criteriaName').value
-          criteriaDescription = document.getElementById('criteriaDescription').value
-          // Find if criteria name already exists
-          let currentTags = _.map(window.abwa.tagManager.currentTags, tag => tag.config.name)
-          let criteriaExists = _.find(currentTags, tag => tag === criteriaName)
-          if (_.isString(criteriaExists)) {
-            const swal = require('sweetalert2')
-            swal.showValidationMessage('A criteria with that name already exists.')
-            window.abwa.sidebar.openSidebar()
-          }
-        },
-        callback: (err) => {
-          if (err) {
-            Alerts.errorAlert({ text: 'Unable to create this custom criteria, try it again.' })
-          } else {
-            // Check if not selected cancel or esc
-            if (criteriaName) {
-              this.createNewCustomCriteria({
-                name: criteriaName,
-                description: criteriaDescription,
-                group: groupName,
-                callback: () => {
-                  window.abwa.sidebar.openSidebar()
-                }
-              })
-            }
-          }
-        }
-      })
-    }
-  }
-
   createNewCustomCriteria ({ name, description = 'Custom criteria', group, callback }) {
     let review = new Review({ reviewId: '' })
     review.storageGroup = window.abwa.groupSelector.currentGroup
@@ -292,132 +237,24 @@ class CustomCriteriasManager {
   initContextMenuForCriteriaGroups () {
     let items = {}
     // Modify menu element
-    items['modify'] = { name: 'Modify criteria group' }
+    items['annotate'] = { name: 'Annotate all elements' }
     // If custom criteria, it is also possible to delete it
-    items['delete'] = { name: 'Delete criteria group' }
     $.contextMenu({
       selector: '.tagGroup[data-group-name]',
       build: () => {
         return {
           callback: (key, ev) => {
             let criteriaGroupName = ev.$trigger.attr('data-group-name')
-            if (key === 'delete') {
+            if (key === 'annotate') {
               // TODO
-              this.deleteCriteriaGroup(criteriaGroupName)
-            } else if (key === 'modify') {
-              // TODO
-              this.modifyCriteriaGroup(criteriaGroupName)
+              if (criteriaGroupName === 'Premises') {
+                this.annotateAllPremises(criteriaGroupName)
+              } else {
+                this.annotateAllCriticalQuestions(criteriaGroupName)
+              }
             }
           },
           items: items
-        }
-      }
-    })
-  }
-
-  modifyCriteriaGroup (criteriaGroupName, callback) {
-    // Get all criteria with criteria group name
-    let arrayOfTagGroups = _.filter(_.values(window.abwa.tagManager.currentTags), tag => tag.config.options.group === criteriaGroupName)
-    Alerts.inputTextAlert({
-      title: 'Rename criteria group ' + criteriaGroupName,
-      inputValue: criteriaGroupName,
-      inputPlaceholder: 'Write the group name here...',
-      input: 'text',
-      preConfirm: (themeName) => {
-        if (_.isEmpty(themeName)) {
-          const swal = require('sweetalert2')
-          swal.showValidationMessage('The criteria group name cannot be empty.')
-        } else if (themeName === criteriaGroupName) {
-          return null
-        } else {
-          let themeElement = document.querySelector('.tagGroup[data-group-name="' + themeName + '"')
-          if (_.isElement(themeElement)) {
-            const swal = require('sweetalert2')
-            swal.showValidationMessage('A criteria group with that name already exists.')
-            window.abwa.sidebar.openSidebar()
-          } else {
-            return themeName
-          }
-        }
-      },
-      callback: (err, groupName) => {
-        if (err) {
-          window.alert('Unable to show form to modify custom criteria group. Contact developer.')
-        } else {
-          if (_.isNull(groupName)) {
-            window.abwa.sidebar.openSidebar()
-          } else {
-            // Modify group in all criteria and update tag manager
-            let promises = []
-            for (let i = 0; i < arrayOfTagGroups.length; i++) {
-              let tagGroup = arrayOfTagGroups[i]
-              promises.push(new Promise((resolve, reject) => {
-                CustomCriteriasManager.modifyCriteria({
-                  tagGroup,
-                  group: groupName,
-                  callback: (err) => {
-                    if (err) {
-                      reject(err)
-                    } else {
-                      resolve()
-                    }
-                  }
-                })
-              }))
-            }
-            Promise.all(promises).catch(() => {
-              Alerts.errorAlert({ text: 'Unable to modify criteria group name.' })
-            }).then(() => {
-              window.abwa.tagManager.reloadTags(() => {
-                window.abwa.contentAnnotator.updateAllAnnotations(() => {
-                  window.abwa.sidebar.openSidebar()
-                })
-              })
-            })
-          }
-        }
-      }
-    })
-  }
-
-  deleteCriteriaGroup (criteriaGroupName, callback) {
-    // Get all criteria with criteria group name
-    let arrayOfTagGroups = _.filter(_.values(window.abwa.tagManager.currentTags), tag => tag.config.options.group === criteriaGroupName)
-    // Ask user if they are sure to delete the current tag
-    Alerts.confirmAlert({
-      alertType: Alerts.alertType.warning,
-      title: chrome.i18n.getMessage('DeleteCriteriaGroupConfirmationTitle', criteriaGroupName),
-      text: chrome.i18n.getMessage('DeleteCriteriaGroupConfirmationMessage'),
-      callback: (err, toDelete) => {
-        // It is run only when the user confirms the dialog, so delete all the annotations
-        if (err) {
-          // Nothing to do
-        } else {
-          let promises = []
-          for (let i = 0; i < arrayOfTagGroups.length; i++) {
-            promises.push(new Promise((resolve, reject) => {
-              this.deleteTag(arrayOfTagGroups[i], () => {
-                if (err) {
-                  reject(err)
-                } else {
-                  resolve()
-                }
-              })
-              return true
-            }))
-          }
-          Promise.all(promises).catch((err) => {
-            Alerts.errorAlert({ text: 'Error when deleting criteria group. Error:<br/>' + err })
-          }).then(() => {
-            window.abwa.tagManager.reloadTags(() => {
-              window.abwa.contentAnnotator.updateAllAnnotations(() => {
-                window.abwa.sidebar.openSidebar()
-                if (_.isFunction(callback)) {
-                  callback()
-                }
-              })
-            })
-          })
         }
       }
     })
@@ -435,16 +272,12 @@ class CustomCriteriasManager {
         // Highlight criterion by LLM
         items['annotatePremise'] = { name: 'State premise with annotation' }
         // Find alternative viewpoints by LLM
-        items['recap'] = { name: 'Recap' }
+        items['recap'] = { name: 'Show analysis' }
       } else if (tagGroup.config.options.group === 'Critical questions') {
         // Highlight criterion by LLM
         items['annotateCriticalQuestion'] = { name: 'Formulate question' }
-        // Assess criterion by LLM
-        // items['compile'] = { name: 'Compile' }
-        // Find alternative viewpoints by LLM
-        // items['alternative'] = { name: 'Provide viewpoints' }
-        // Find alternative viewpoints by LLM
-        items['recap'] = { name: 'Recap' }
+        items['arguments'] = { name: 'Arguments & Counter-Arguments' }
+        items['recap'] = { name: 'Show analysis' }
       }
       $.contextMenu({
         selector: '[data-mark="' + tagGroup.config.name + '"]',
@@ -464,23 +297,63 @@ class CustomCriteriasManager {
                     })
                   }
                 })
-              } else if (key === 'alternative') {
+              } else if (key === 'arguments') {
                 this.getParagraphs(criterion, (paragraphs) => {
                   if (paragraphs) {
-                    CustomCriteriasManager.alternative(criterion, description, paragraphs, currentTagGroup.config.annotation)
+                    CustomCriteriasManager.arguments(criterion, description, paragraphs, currentTagGroup.config.annotation)
                   } else {
                     Alerts.errorAlert({
                       title: 'There are not annotations',
-                      text: 'Please, highlight some paragraphs to assess the ' + criterion + ' criterion'
+                      text: 'Please, highlight some paragraphs to assess the ' + criterion
                     })
                   }
                 })
               } else if (key === 'recap') {
                 CustomCriteriasManager.recap(currentTagGroup)
               } else if (key === 'annotatePremise') {
-                this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
+                if (currentTagGroup.config.name === 'Conclusion') {
+                  // Find conclusion tag and if it has a statement
+                  let majorTag = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === 'Major')
+                  let currentMajorPremise
+                  if (majorTag.config.options.compile === '') {
+                    Alerts.errorAlert({
+                      title: 'You do not have set the major premise',
+                      text: 'Please, retrieve the major premise to draw the conclusion.'
+                    })
+                  } else if (majorTag.config.options.compile) {
+                    currentMajorPremise = majorTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    if (currentMajorPremise) {
+                      this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
+                    } else {
+                      Alerts.errorAlert({
+                        title: 'You do not have a conclusion',
+                        text: 'Please, retrieve the major premise to draw the conclusion.'
+                      })
+                    }
+                  }
+                } else {
+                  this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
+                }
               } else if (key === 'annotateCriticalQuestion') {
-                this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation)
+                // Find conclusion tag and if it has a statement
+                let conclusionTag = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === 'Conclusion')
+                let currentConclusion
+                if (conclusionTag.config.options.compile === '') {
+                  Alerts.errorAlert({
+                    title: 'You do not have a conclusion',
+                    text: 'Please, retrieve a conclusion to formulate a critical question.'
+                  })
+                } else if (conclusionTag.config.options.compile) {
+                  currentConclusion = conclusionTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                  if (currentConclusion) {
+                    this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation, currentConclusion)
+                  } else {
+                    Alerts.errorAlert({
+                      title: 'You do not have a conclusion',
+                      text: 'Please, retrieve a conclusion to formulate a critical question.'
+                    })
+                  }
+                }
               }
             },
             items: items
@@ -537,8 +410,8 @@ class CustomCriteriasManager {
   }
 
   static modifyCriteriaHandler (tagGroup, defaultNameValue = null, defaultDescriptionValue = null, defaultFullQuestion = null) {
-    let criteriaName
-    let criteriaDescription
+    // let criteriaName
+    // let criteriaDescription
     let formCriteriaNameValue = defaultNameValue || tagGroup.config.name
     let formCriteriaNameValueForm
     if (formCriteriaNameValue.includes('CQ')) {
@@ -548,7 +421,15 @@ class CustomCriteriasManager {
     }
     let formCriteriaDescriptionValue = defaultDescriptionValue || tagGroup.config.options.description
     let fullQuestion = defaultFullQuestion || tagGroup.config.options.fullQuestion || ''
-    let custom = tagGroup.config.options.custom || false
+    if (Array.isArray(fullQuestion)) {
+      fullQuestion = fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+      if (fullQuestion) {
+        fullQuestion = fullQuestion.fullQuestion
+      } else {
+        fullQuestion = ''
+      }
+    }
+    // let custom = tagGroup.config.options.custom || false
     let html = '<div>' +
       '<span style="text-align: left;">Name</span>' +
       '<input readonly id="criteriaName" class="swal2-input customizeInput" value="' + formCriteriaNameValue + '"/>' +
@@ -558,64 +439,52 @@ class CustomCriteriasManager {
       '<textarea readonly id="criteriaDescription" class="swal2-input customizeInput" placeholder="Description">' + formCriteriaDescriptionValue + '</textarea>' +
       '</div>'
     if (tagGroup.config.options.group === 'Critical questions') {
-      html += '<span style="text-align:left">Instantiation</span><textarea  id="fullQuestion" class="swal2-input customizeInput" placeholder="Formulated question">' + fullQuestion + '</textarea></div>'
+      html += '<span style="text-align:left">Instantiation</span><textarea readonly id="fullQuestion" class="swal2-input customizeInput" placeholder="Formulated question">' + fullQuestion + '</textarea></div>'
     }
     Alerts.threeOptionsAlert({
-      title: 'Modifying name and description for ' + formCriteriaNameValueForm,
+      title: 'Values for ' + formCriteriaNameValueForm,
       html: html,
-      preConfirm: () => {
-        // Retrieve values from inputs
-        criteriaName = document.getElementById('criteriaName').value
-        criteriaDescription = document.getElementById('criteriaDescription').value
-        if (tagGroup.config.options.group === 'Critical questions') {
-          fullQuestion = document.getElementById('fullQuestion').value
-        }
-      },
-      callback: () => {
-        // Revise to execute only when OK button is pressed or criteria name and descriptions are not undefined
-        if (!_.isUndefined(criteriaName) && !_.isUndefined(criteriaDescription)) {
-          if (!fullQuestion) {
-            fullQuestion = ''
-          }
-          CustomCriteriasManager.modifyCriteria({
-            tagGroup: tagGroup,
-            name: criteriaName,
-            description: criteriaDescription,
-            fullQuestion: fullQuestion,
-            custom,
-            callback: (err) => {
-              if (err) {
-                Alerts.errorAlert({ text: 'Unable to update criteria. Error:<br/>' + err.message })
-              } else {
-                window.abwa.tagManager.reloadTags(() => {
-                  window.abwa.contentAnnotator.updateAllAnnotations(() => {
-                    window.abwa.sidebar.openSidebar()
-                  })
-                })
-              }
-            }
-          })
-        }
-      },
-      denyButtonText: 'Delete',
-      denyButtonColor: '#d33',
+      showCancelButton: false,
+      showDenyButton: false,
+      confirmButtonText: 'OK',
+      denyButtonText: 'Restore',
+      denyButtonColor: 'blue',
       denyCallback: () => {
-        CustomCriteriasManager.deleteCriteriaHandler(tagGroup)
+        // Restore
       }
     })
   }
 
   static modifyCriteria ({ tagGroup, name, description, fullQuestion, custom = true, group, callback }) {
     // Check if name has changed
+    let data = tagGroup.config.options
     if (name === tagGroup.config.name || _.isUndefined(name)) {
       // Check if description has changed
-      if ((description !== tagGroup.config.options.description || _.isUndefined(description)) || (fullQuestion !== tagGroup.config.options.fullQuestion || _.isUndefined(fullQuestion))) {
+      if ((description !== data.description || _.isUndefined(description)) || (fullQuestion !== data.fullQuestion || _.isUndefined(fullQuestion))) {
         name = name || tagGroup.config.name
-        description = description || tagGroup.config.options.description
-        if (fullQuestion !== tagGroup.config.options.fullQuestion || _.isUndefined(fullQuestion)) {
-          fullQuestion = fullQuestion || tagGroup.config.options.fullQuestion
+        description = description || data.description
+        let fullQuestionObject
+        if (_.isUndefined(fullQuestion)) {
+          console.log('fullQuestion is not updated')
+          if (data.fullQuestion) {
+            fullQuestionObject = data.fullQuestion
+          } else {
+            fullQuestionObject = []
+          }
         } else {
-          fullQuestion = ''
+          if (!Array.isArray(data.fullQuestion)) {
+            fullQuestionObject = []
+            fullQuestionObject.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: fullQuestion })
+          } else {
+            fullQuestionObject = data.fullQuestion
+            let foundFullQuestion = fullQuestionObject.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+            if (!foundFullQuestion) {
+              // If not, create and add it to the array
+              fullQuestionObject.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: fullQuestion })
+            } else {
+              foundFullQuestion.fullQuestion = fullQuestion
+            }
+          }
         }
         // Update annotation description
         let oldAnnotation = tagGroup.config.annotation
@@ -625,7 +494,7 @@ class CustomCriteriasManager {
         let criteria = new Criteria({
           name: name,
           description: description,
-          fullQuestion: fullQuestion,
+          fullQuestion: fullQuestionObject,
           group: group || tagGroup.config.options.group,
           review,
           custom: custom
@@ -716,15 +585,6 @@ class CustomCriteriasManager {
     }
   }
 
-  removeTextBetween (s, start, end) {
-    let startIdx = s.indexOf(start)
-    let endIdx = s.indexOf(end, startIdx)
-    if (startIdx === -1 || endIdx === -1) {
-      return s // start or end not found, return original string
-    }
-    return s.substring(0, startIdx) + s.substring(endIdx + end.length)
-  }
-
   annotatePremise (criterion, description, tagAnnotation) {
     if (description.length < 20) {
       Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
@@ -738,7 +598,7 @@ class CustomCriteriasManager {
           let selectedLLM = llm
           Alerts.confirmAlert({
             title: 'Find annotations for ' + criterion + ' premise',
-            text: 'Do you want to state the premises using ' + llm.charAt(0).toUpperCase() + llm.slice(1) + '?',
+            text: 'Do you want to state the premises using LLM?',
             cancelButtonText: 'Cancel',
             callback: async () => {
               let documents = []
@@ -853,6 +713,350 @@ class CustomCriteriasManager {
     }
   }
 
+  annotateAllPremises (groupName) {
+    // this.modifyCriteriaHandler(currentTagGroup)
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.review.defaultLLM
+      }
+      if (llm && llm !== '') {
+        let selectedLLM = llm
+        Alerts.confirmAlert({
+          title: 'Find annotations for premises',
+          text: 'Do you want to state the premises using LLM?',
+          cancelButtonText: 'Cancel',
+          callback: async () => {
+            let documents = []
+            documents = await LLMTextUtils.loadDocument()
+            chrome.runtime.sendMessage({
+              scope: 'llm',
+              cmd: 'getAPIKEY',
+              data: selectedLLM
+            }, ({ apiKey }) => {
+              let callback = (json) => {
+                let answers = this.parseAllPremisesAnswer(json)
+                let tagAnnotations = []
+                if (answers.length > 0) {
+                  answers.forEach(answer => {
+                    let excerpt = answer.excerpt
+                    let statement = answer.statement
+                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                    if (selectors.length > 0) {
+                      let commentData = {
+                        comment: '',
+                        statement: statement,
+                        llm: llm,
+                        paragraph: excerpt
+                      }
+                      let model = window.abwa.tagManager.model
+                      let tag = [
+                        model.namespace + ':' + model.config.grouped.relation + ':' + answer.name
+                      ]
+                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                          tags: tag,
+                          selectors: selectors,
+                          commentData: commentData
+                        })
+                      })
+                    }
+                    // retrieve tag annotation
+                    let data
+                    let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === answer.name)
+                    let tagAnnotation = currentTagGroup.config.annotation
+                    if (tagAnnotation.text) {
+                      data = jsYaml.load(tagAnnotation.text)
+                      // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                      data.compile = []
+                      // Now that we're sure data.resume is an array, push the new object into it.
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement })
+                    }
+                    tagAnnotation.text = jsYaml.dump(data)
+                    tagAnnotations.push(tagAnnotation)
+                  })
+                }
+                LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
+                Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
+              }
+              if (apiKey && apiKey !== '') {
+                chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
+                  if (!prompt) {
+                    prompt = Config.prompts.annotateAllPremisesPrompt
+                  }
+                  let scheme = ''
+                  let format = ''
+                  if (window.abwa.tagManager) {
+                    let currentTags = window.abwa.tagManager.currentTags
+                    // Retrieve Premises
+                    let premises = currentTags.filter(tag => {
+                      return tag.config.options.group === 'Premises'
+                    })
+                    let conclusion
+                    for (let i = 0; i < premises.length; i++) {
+                      const premise = premises[i]
+                      if (premise.config.name === 'Conclusion') {
+                        conclusion = premise
+                      } else {
+                        scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                        scheme += premise.config.options.description + '\n'
+                      }
+                    }
+                    scheme += conclusion.config.name.toUpperCase() + ': '
+                    scheme += conclusion.config.options.description + '\n'
+                    // FORMAT
+                    format += '{\n' + '"items": ['
+                    for (let i = 0; i < premises.length; i++) {
+                      if (i === 0) {
+                        format += '{"name":"' + premises[i].config.name + '",' +
+                          '"statement": "Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
+                          '"excerpt": "Excerpt from the story that justifies the statement of the premise",\n' +
+                          '}'
+                      } else {
+                        format += ',{"name":"' + premises[i].config.name + '",' +
+                          '"statement": "Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
+                          '"excerpt": "Excerpt from the story that justifies the statement of the premise",\n' +
+                          '}'
+                      }
+                    }
+                    //
+                  }
+                  prompt = prompt.replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
+                  let params = {
+                    groupName: groupName,
+                    apiKey: apiKey,
+                    documents: documents,
+                    callback: callback,
+                    prompt: prompt,
+                    selectedLLM
+                  }
+                  if (selectedLLM === 'anthropic') {
+                    AnthropicManager.askCriteria(params)
+                  } else if (selectedLLM === 'openAI') {
+                    OpenAIManager.askCriteria(params)
+                  }
+                })
+              } else {
+                let callback = () => {
+                  window.open(chrome.runtime.getURL('pages/options.html'))
+                }
+                Alerts.infoAlert({
+                  text: 'Please, configure your LLM.',
+                  title: 'Please select a LLM and provide your API key',
+                  callback: callback()
+                })
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+  annotateAllCriticalQuestions (groupName) {
+    // this.modifyCriteriaHandler(currentTagGroup)
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.review.defaultLLM
+      }
+      if (llm && llm !== '') {
+        let selectedLLM = llm
+        Alerts.confirmAlert({
+          title: 'Find annotations for critical questions',
+          text: 'Do you want to perform the critical questions using LLM?',
+          cancelButtonText: 'Cancel',
+          callback: async () => {
+            let documents = []
+            documents = await LLMTextUtils.loadDocument()
+            chrome.runtime.sendMessage({
+              scope: 'llm',
+              cmd: 'getAPIKEY',
+              data: selectedLLM
+            }, ({ apiKey }) => {
+              let callback = (json) => {
+                let answers = this.parseAllCriticalQuestionsAnswer(json)
+                let tagAnnotations = []
+                if (answers.length > 0) {
+                  answers.forEach(llmAnswer => {
+                    let excerpt = llmAnswer.excerpt
+                    let question = llmAnswer.adaptedQuestion
+                    let answer = llmAnswer.answer
+                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                    if (selectors.length > 0) {
+                      let commentData = {
+                        comment: '',
+                        statement: answer,
+                        llm: llm,
+                        paragraph: excerpt
+                      }
+                      let model = window.abwa.tagManager.model
+                      let tag = [
+                        model.namespace + ':' + model.config.grouped.relation + ':' + llmAnswer.name
+                      ]
+                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                          tags: tag,
+                          selectors: selectors,
+                          commentData: commentData
+                        })
+                      })
+                    }
+                    // retrieve tag annotation
+                    let data
+                    let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === llmAnswer.name)
+                    if (currentTagGroup) {
+                      let tagAnnotation = currentTagGroup.config.annotation
+                      if (tagAnnotation.text) {
+                        data = jsYaml.load(tagAnnotation.text)
+                        // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                        if (!Array.isArray(data.compile)) {
+                          data.compile = []
+                        }
+                        let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        if (!foundCompile) {
+                          // If not, create and add it to the array
+                          data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                        } else {
+                          foundCompile.answer = answer
+                        }
+                        if (!Array.isArray(data.fullQuestion)) {
+                          data.fullQuestion = []
+                        }
+                        let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        if (!foundFullQuestion) {
+                          // If not, create and add it to the array
+                          data.fullQuestion.push({
+                            document: window.abwa.contentTypeManager.pdfFingerprint,
+                            fullQuestion: question
+                          })
+                        } else {
+                          foundFullQuestion.fullQuestion = question
+                        }
+                        tagAnnotation.text = jsYaml.dump(data)
+                        tagAnnotations.push(tagAnnotation)
+                      }
+                    }
+                  })
+                }
+                LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
+                Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
+              }
+              if (apiKey && apiKey !== '') {
+                chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
+                  if (!prompt) {
+                    prompt = Config.prompts.allCriticalQuestionPrompt
+                  }
+                  let scheme = ''
+                  let format = ''
+                  let questions = ''
+                  if (window.abwa.tagManager) {
+                    let currentTags = window.abwa.tagManager.currentTags
+                    // Retrieve Premises
+                    let premises = currentTags.filter(tag => {
+                      return tag.config.options.group === 'Premises'
+                    })
+                    let conclusion
+                    for (let i = 0; i < premises.length; i++) {
+                      const premise = premises[i]
+                      if (premise.config.name === 'Conclusion') {
+                        conclusion = premise
+                      } else {
+                        scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                        if (premise.config.options.compile.answer) {
+                          scheme += premise.config.options.compile.answer + '\n'
+                        } else {
+                          scheme += premise.config.options.description + '\n'
+                        }
+                      }
+                    }
+                    scheme += conclusion.config.name.toUpperCase() + ': '
+                    if (conclusion.config.options.compile.answer) {
+                      scheme += conclusion.config.options.compile.answer + '\n'
+                    } else {
+                      scheme += conclusion.config.options.description + '\n'
+                    }
+                    // Retrieve CRITICAL QUESTIONS
+                    let criticalQuestions = currentTags.filter(tag => {
+                      return tag.config.options.group === 'Critical questions'
+                    })
+                    for (let i = 0; i < criticalQuestions.length; i++) {
+                      const criticalQuestion = criticalQuestions[i]
+                      questions += criticalQuestion.config.name.toUpperCase() + ': '
+                      questions += criticalQuestion.config.options.description + '\n'
+                    }
+                    // FORMAT
+                    format += '{\n' + '"items": ['
+                    for (let i = 0; i < criticalQuestions.length; i++) {
+                      if (i === 0) {
+                        format += '{"name":"' + criticalQuestions[i].config.name + '",' +
+                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
+                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
+                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
+                          '}'
+                      } else {
+                        format += ',{"name":"' + criticalQuestions[i].config.name + '",' +
+                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
+                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
+                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
+                          '}'
+                      }
+                    }
+                  }
+                  prompt = prompt.replaceAll('[C_QUESTIONS]', questions).replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
+                  let params = {
+                    criterion: groupName,
+                    apiKey: apiKey,
+                    documents: documents,
+                    callback: callback,
+                    prompt: prompt,
+                    selectedLLM
+                  }
+                  if (selectedLLM === 'anthropic') {
+                    AnthropicManager.askCriteria(params)
+                  } else if (selectedLLM === 'openAI') {
+                    OpenAIManager.askCriteria(params)
+                  }
+                })
+              } else {
+                let callback = () => {
+                  window.open(chrome.runtime.getURL('pages/options.html'))
+                }
+                Alerts.infoAlert({
+                  text: 'Please, configure your LLM.',
+                  title: 'Please select a LLM and provide your API key',
+                  callback: callback()
+                })
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+  parseAllPremisesAnswer (json, excerpts = false) {
+    let gptItems
+    gptItems = Array.from(Object.values(json)[0]).filter(item =>
+      Object.keys(item).some(key => key.startsWith('name'))
+    )
+    let gptItemsNodes = []
+    gptItems.forEach((item) => {
+      gptItemsNodes.push({name: item.name, statement: item.statement, excerpt: item.excerpt})
+    })
+    return gptItemsNodes
+  }
+
+  parseAllCriticalQuestionsAnswer (json, excerpts = false) {
+    let gptItems
+    gptItems = Array.from(Object.values(json)[0]).filter(item =>
+      Object.keys(item).some(key => key.startsWith('name'))
+    )
+    let gptItemsNodes = []
+    gptItems.forEach((item) => {
+      gptItemsNodes.push({name: item.name, adaptedQuestion: item.adaptedQuestion, excerpt: item.excerpt, answer: item.answer})
+    })
+    return gptItemsNodes
+  }
+
   formulateCriticalQuestion (criterion, description, tagAnnotation) {
     if (description.length < 20) {
       Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
@@ -866,7 +1070,7 @@ class CustomCriteriasManager {
           let selectedLLM = llm
           Alerts.confirmAlert({
             title: 'Formulate ' + criterion,
-            text: 'Do you want to answer the critical question using ' + llm.charAt(0).toUpperCase() + llm.slice(1) + '?',
+            text: 'Do you want to answer the critical question using LLM?',
             cancelButtonText: 'Cancel',
             callback: async () => {
               let documents = []
@@ -916,10 +1120,26 @@ class CustomCriteriasManager {
                   if (tagAnnotation.text) {
                     data = jsYaml.load(tagAnnotation.text)
                     // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                    data.compile = []
-                    data.fullQuestion = question
-                    // Now that we're sure data.resume is an array, push the new object into it.
-                    data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                    if (!Array.isArray(data.compile)) {
+                      data.compile = []
+                    }
+                    let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    if (!foundCompile) {
+                      // If not, create and add it to the array
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                    } else {
+                      foundCompile.answer = answer
+                    }
+                    if (!Array.isArray(data.fullQuestion)) {
+                      data.fullQuestion = []
+                    }
+                    let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    if (!foundFullQuestion) {
+                      // If not, create and add it to the array
+                      data.fullQuestion.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: question })
+                    } else {
+                      foundFullQuestion.fullQuestion = question
+                    }
                   }
                   tagAnnotation.text = jsYaml.dump(data)
                   LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
@@ -1005,7 +1225,7 @@ class CustomCriteriasManager {
           let selectedLLM = llm
           Alerts.confirmAlert({
             title: criterion + ' assessment',
-            text: '<div style="text-align: justify;text-justify: inter-word">Do you want to compile the assessment using ' + llm + '?</div>',
+            text: '<div style="text-align: justify;text-justify: inter-word">Do you want to compile the assessment using LLM?</div>',
             cancelButtonText: 'Cancel',
             callback: async () => {
               let documents = []
@@ -1070,10 +1290,22 @@ class CustomCriteriasManager {
     }
   }
 
-  static alternative (criterion, description, paragraphs, annotation) {
+  static arguments (criterion, description, paragraphs, annotation) {
     if (description.length < 20) {
       Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
     } else {
+      let scheme = ''
+      let answer = ''
+      let question = ''
+      if (annotation.text) {
+        let data = jsYaml.load(annotation.text)
+        if (data.compile) {
+          answer = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        }
+        if (data.fullQuestion) {
+          question = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        }
+      }
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
         if (llm === '') {
           llm = Config.review.defaultLLM
@@ -1082,7 +1314,7 @@ class CustomCriteriasManager {
           let selectedLLM = llm
           Alerts.confirmAlert({
             title: criterion + ' assessment',
-            text: '<div style="text-align: justify;text-justify: inter-word">Do you want to generate alternative view points for this criterion using ' + llm + '?</div>',
+            text: '<div style="text-align: justify;text-justify: inter-word">Do you want to generate arguments and counter-arguments using LLM?</div>',
             cancelButtonText: 'Cancel',
             callback: async () => {
               let documents = []
@@ -1095,30 +1327,57 @@ class CustomCriteriasManager {
                 let callback = (json) => {
                   let answer = json.answer
                   Alerts.answerCriterionAlert({
-                    title: 'These are the alternative viewpoint for ' + criterion,
+                    title: 'These are the arguments and counter arguments',
                     answer: answer,
                     description: description,
-                    criterion: criterion,
+                    criterion: question.fullQuestion,
                     annotation: annotation,
                     type: 'alternative'
                   })
                 }
                 if (apiKey && apiKey !== '') {
-                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'alternativePrompt'} }, ({ prompt }) => {
-                    let alternativePrompt
+                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'argumentsPrompt'} }, ({ prompt }) => {
+                    let argumentsPrompt
                     if (prompt) {
-                      alternativePrompt = prompt
+                      argumentsPrompt = prompt
                     } else {
-                      alternativePrompt = Config.prompts.alternativePrompt
+                      argumentsPrompt = Config.prompts.argumentsPrompt
                     }
-                    alternativePrompt = alternativePrompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_EXCERPTS]', paragraphs)
+                    if (window.abwa.tagManager) {
+                      let currentTags = window.abwa.tagManager.currentTags
+                      // Retrieve Premises
+                      let premises = currentTags.filter(tag => {
+                        return tag.config.options.group === 'Premises'
+                      })
+                      let conclusion
+                      for (let i = 0; i < premises.length; i++) {
+                        const premise = premises[i]
+                        if (premise.config.name === 'Conclusion') {
+                          conclusion = premise
+                        } else {
+                          scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                          if (premise.config.options.compile.answer) {
+                            scheme += premise.config.options.compile.answer + '\n'
+                          } else {
+                            scheme += premise.config.options.description + '\n'
+                          }
+                        }
+                      }
+                      scheme += conclusion.config.name.toUpperCase() + ': '
+                      if (conclusion.config.options.compile.answer) {
+                        scheme += conclusion.config.options.compile.answer + '\n'
+                      } else {
+                        scheme += conclusion.config.options.description + '\n'
+                      }
+                    }
+                    argumentsPrompt = argumentsPrompt.replaceAll('[C_QUESTION]', question.fullQuestion).replaceAll('[C_ANSWER]', answer.answer).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
                     let params = {
                       criterion: criterion,
                       description: description,
                       apiKey: apiKey,
                       documents: documents,
                       callback: callback,
-                      prompt: alternativePrompt
+                      prompt: argumentsPrompt
                     }
                     if (selectedLLM === 'anthropic') {
                       AnthropicManager.askCriteria(params)
@@ -1246,19 +1505,28 @@ class CustomCriteriasManager {
         alternative = findAlternative.answer
       }
     }
+    let fullQuestion = ''
+    if (currentTagGroup.config.options.fullQuestion !== '') {
+      const findFullQuestion = currentTagGroup.config.options.fullQuestion.find((fullQuestion) => {
+        return fullQuestion.document === window.abwa.contentTypeManager.pdfFingerprint
+      })
+      if (findFullQuestion) {
+        fullQuestion = findFullQuestion.fullQuestion
+      }
+    }
     if (compile || alternative || paragraphs.length > 0) {
       let html = '<div width=900px style="text-align: justify;text-justify: inter-word">'
       if (compile) {
         html += '<h3>Description:</h3><div width=800px>' + currentTagGroup.config.options.description + '</div></br>'
       }
       if (currentTagGroup.config.options.fullQuestion) {
-        html += '<h3>Question:</h3><div width=800px>' + currentTagGroup.config.options.fullQuestion + '</div></br>'
+        html += '<h3>Question:</h3><div width=800px>' + fullQuestion + '</div></br>'
       }
       if (compile) {
         html += '<h3>Statement:</h3><div width=800px>' + compile.answer + '</div></br>'
       }
       if (alternative) {
-        html += '<h3>Provided alternatives:</h3><div width=800px>' + alternative + '</div></br>'
+        html += '<h3>Arguments:</h3><div width=800px>' + alternative + '</div></br>'
       }
       if (paragraphs.length > 0) {
         html += '<h3>Excerpts:</h3></br><ul>'
@@ -1268,7 +1536,7 @@ class CustomCriteriasManager {
         html += '</ul></div>'
       }
       html += '</div>'
-      Alerts.criterionInfoAlert({ title: 'Criterion Review: ' + criterion, text: html })
+      Alerts.criterionInfoAlert({ title: criterion, text: html })
     } else {
       Alerts.errorAlert({
         title: 'No assessed',

@@ -222,9 +222,15 @@ class Alerts {
 
     } else {
       const buttons = '<button id="llmAnswerOKButton" >Ok</button></br><button id="redoButton" class="llmAnswerButton">Redo</brbutton><button id="summaryButton" class="llmAnswerButton">Save answer</button>'
+      let html
+      if (criterion) {
+        html = '<b>' + criterion + ':</b><br>' + '<div style="text-align: justify;text-justify: inter-word" width=550px>' + answer + '</div></br>' + buttons
+      } else {
+        html = '<div style="text-align: justify;text-justify: inter-word" width=550px>' + answer + '</div></br>' + buttons
+      }
       swal.fire({
         title: title,
-        html: '<div style="text-align: justify;text-justify: inter-word" width=550px>' + answer + '</div></br>' + buttons,
+        html: html,
         showCancelButton: false,
         showConfirmButton: false,
         onBeforeOpen: () => {
@@ -251,11 +257,8 @@ class Alerts {
                 if (!Array.isArray(data.compile)) {
                   data.compile = []
                 }
-                let sentiment = TextAnnotator.findTagForSentiment(compileSentiment.toLowerCase())
-                let parts = sentiment.split(':')
-                let lastValue = parts[parts.length - 1]
                 // Now that we're sure data.resume is an array, push the new object into it.
-                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, sentiment: lastValue })
+                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
               } else if (type === 'alternative') {
                 // Check if data.alternative exists and is an array. If not, initialize it as an empty array.
                 if (!Array.isArray(data.alternative)) {

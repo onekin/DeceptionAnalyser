@@ -33,13 +33,6 @@ class ReviewGenerator {
       this.categoryBasedImage.addEventListener('click', () => {
         this.generateCategoryReviewButtonHandler()
       })
-      // Set generator image and event
-      // let sentimentImageURL = chrome.runtime.getURL('/images/generatorS.png')
-      // this.sentimentBasedImage = this.container.querySelector('#sentimentReviewGeneratorButton')
-      // this.sentimentBasedImage.src = sentimentImageURL
-      // this.sentimentBasedImage.addEventListener('click', () => {
-      //   this.generateSentimentReviewButtonHandler()
-      // })
       // Set delete annotations image and event
       let deleteAnnotationsImageURL = chrome.runtime.getURL('/images/deleteAnnotations.png')
       this.deleteAnnotationsImage = this.container.querySelector('#deleteAnnotationsButton')
@@ -152,29 +145,36 @@ class ReviewGenerator {
         }
       }
       let fullQuestion = ''
-      if (currentTagGroup.config.options.fullQuestion) {
-        fullQuestion = currentTagGroup.config.options.fullQuestion
+      if (currentTagGroup.config.options.fullQuestion && currentTagGroup.config.options.fullQuestion.length > 0) {
+        const findFullQuestion = currentTagGroup.config.options.fullQuestion.find((question) => {
+          return question.document === window.abwa.contentTypeManager.pdfFingerprint
+        })
+        if (findFullQuestion) {
+          fullQuestion = findFullQuestion
+        }
       }
       let description = ''
       if (currentTagGroup.config.options.description) {
         description = currentTagGroup.config.options.description
       }
+      let data = {}
+      data.criterion = currentTagGroup.config.name
+      data.group = currentTagGroup.config.options.group
+      if (compile) {
+        data.compile = compile
+      }
+      if (alternative) {
+        data.alternative = alternative
+      }
+      if (fullQuestion) {
+        data.fullQuestion = fullQuestion
+      }
+      if (description) {
+        data.description = description
+      }
+      let assessedTag = new AssessedTag(data)
+      r.insertCriteria(assessedTag)
       if (compile || alternative || (tagGroupAnnotations && tagGroupAnnotations.length > 0)) {
-        let data = {}
-        data.criterion = currentTagGroup.config.name
-        if (compile) {
-          data.compile = compile
-        }
-        if (alternative) {
-          data.alternative = alternative
-        }
-        if (fullQuestion) {
-          data.fullQuestion = fullQuestion
-        }
-        if (description) {
-          data.description = description
-        }
-        let assessedTag = new AssessedTag(data)
         r.insertAssessedCriteria(assessedTag)
       }
     })
@@ -183,10 +183,6 @@ class ReviewGenerator {
 
   generateCategoryReviewButtonHandler () {
     this.generateReviewByCategory()
-  }
-
-  generateSentimentReviewButtonHandler () {
-    this.generateReviewBySentiment()
   }
 
   configurationButtonHandler () {
@@ -230,18 +226,6 @@ class ReviewGenerator {
     let docTitle = 'Review report'
     if(title!=='') docTitle += ' for '+title
     FileSaver.saveAs(blob, docTitle+'.html')
-    Alerts.closeAlert()
-  }
-
-  generateReviewBySentiment () {
-    Alerts.loadingAlert({text: chrome.i18n.getMessage('GeneratingReviewReport')})
-    let review = this.parseAnnotations(window.abwa.contentAnnotator.allAnnotations)
-    let report = review.groupBySentiment()
-    let blob = new Blob([report], {type: 'text/plain;charset=utf-8'})
-    let title = window.PDFViewerApplication.baseUrl !== null ? window.PDFViewerApplication.baseUrl.split("/")[window.PDFViewerApplication.baseUrl.split("/").length-1].replace(/\.pdf/i,"") : ""
-    let docTitle = 'Review report'
-    if(title!=='') docTitle += ' for '+title
-    FileSaver.saveAs(blob, docTitle+'.txt')
     Alerts.closeAlert()
   }
 
@@ -376,6 +360,7 @@ class ReviewGenerator {
           }
           let clusterProperty = propertyTemplate.content.cloneNode(true)
           clusterProperty.querySelector(".propertyLabel").innerText = canvasClusters[key][i]
+          let criteria = review._allCriteria.filter((e) => {return e._criterion === canvasClusters[key][i]})
           /*if(canvasClusters[key].length==1||canvasClusters[key].length==2||(canvasClusters[key].length%2==1&&i==canvasClusters[key].length-1)) clusterProperty.querySelector(".clusterProperty").style.height = "100%"
           else clusterProperty.querySelector(".clusterProperty").style.height = "50%";*/
           let propertyHeight = 100
@@ -386,20 +371,27 @@ class ReviewGenerator {
           clusterProperty.querySelector(".clusterProperty").style.width = "100%";
 
           let criterionAnnotations = review.annotations.filter((e) => {return e.criterion === canvasClusters[key][i]})
-          if(criterionAnnotations.length==0) clusterProperty.querySelector('.propertyAnnotations').style.display = 'none'
+          // if(criterionAnnotations.length==0) clusterProperty.querySelector('.propertyAnnotations').style.display = 'none'
           clusterProperty.querySelector('.clusterProperty').className += ' '+getCriterionLevel(criterionAnnotations)
 
           let annotationWidth = 100.0/criterionAnnotations.length
+          let annotationElement
+          annotationElement = annotationTemplate.content.cloneNode(true)
+          annotationElement.querySelector('.canvasAnnotation').style.width = annotationWidth+'%'
+          if (criteria.length > 0) {
+            criteria = criteria[0]
+            if (criteria._fullQuestion) {
+              annotationElement.querySelector('.canvasAnnotation').innerHTML += '<b>' + criteria._fullQuestion.fullQuestion + '</b>'
+            } else {
+              annotationElement.querySelector('.canvasAnnotation').innerHTML += '<b>' + criteria._description + '</b>'
+            }
+            if (criteria._compile) {
+              annotationElement.querySelector('.canvasAnnotation').innerHTML += criteria._compile.answer
+            }
+          }
+          clusterProperty.querySelector('.propertyAnnotations').appendChild(annotationElement)
           for(let j=0;j<criterionAnnotations.length;j++){
-            let annotationElement = annotationTemplate.content.cloneNode(true)
-            annotationElement.querySelector('.canvasAnnotation').style.width = annotationWidth+'%'
-            if(criterionAnnotations[j].highlightText!=null) annotationElement.querySelector('.canvasAnnotation').innerText = '"'+criterionAnnotations[j].highlightText+'"'
-            if(criterionAnnotations[j].level!=null) annotationElement.querySelector('.canvasAnnotation').className += ' '+criterionAnnotations[j].level.replace(/\s/g,'')
-            else annotationElement.querySelector('.canvasAnnotation').className += ' unsorted'
-            annotationElement.querySelector('.canvasAnnotation').addEventListener('click',function(){
-              displayAnnotation(criterionAnnotations[j])
-            })
-            clusterProperty.querySelector('.propertyAnnotations').appendChild(annotationElement)
+            if(criterionAnnotations[j].highlightText!=null) clusterProperty.querySelector('.canvasAnnotation').innerHTML += '<i>"( '+criterionAnnotations[j].highlightText+')"</i>'
           }
 
           currentColumn.querySelector('.clusterColumn').appendChild(clusterProperty)
