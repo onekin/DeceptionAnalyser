@@ -181,6 +181,68 @@ class CustomCriteriasManager {
     })
   }
 
+  static restoreTag (tagGroup, callback) {
+    // Get tags used in storage to store this tag or annotations with this tag
+    let annotationsToDelete = []
+    window.abwa.storageManager.client.searchAnnotations({
+      tags: Config.review.namespace + ':' + Config.review.tags.grouped.relation + ':' + tagGroup.config.name
+    }, (err, annotations) => {
+      if (err) {
+        // TODO Send message unable to delete
+      } else {
+        annotationsToDelete = annotationsToDelete.concat(_.map(annotations, 'id'))
+        // Delete all the annotations
+        let promises = []
+        for (let i = 0; i < annotationsToDelete.length; i++) {
+          promises.push(new Promise((resolve, reject) => {
+            window.abwa.storageManager.client.deleteAnnotation(annotationsToDelete[i], (err) => {
+              if (err) {
+                reject(new Error('Unable to delete annotation id: ' + annotationsToDelete[i]))
+              } else {
+                resolve()
+              }
+            })
+            return true
+          }))
+        }
+        // When all the annotations are deleted
+        Promise.all(promises).catch(() => {
+          Alerts.errorAlert({ text: 'There was an error when trying to delete all the annotations for this tag, please reload and try it again.' })
+        }).then(() => {
+          let oldAnnotation = tagGroup.config.annotation
+          // Update annotation description
+          // Create new annotation
+          let review = new Review({ reviewId: '' })
+          review.storageGroup = window.abwa.groupSelector.currentGroup
+          let criteria = new Criteria({
+            name: tagGroup.config.name,
+            description: tagGroup.config.options.description,
+            fullQuestion: '',
+            compile: '',
+            alternative: '',
+            feedback: '',
+            group: tagGroup.config.options.group,
+            review,
+            custom: true
+          })
+          let annotation = criteria.toAnnotation()
+          window.abwa.storageManager.client.updateAnnotation(oldAnnotation.id, annotation, (err, annotation) => {
+            if (err) {
+              // TODO Show err
+              if (_.isFunction(callback)) {
+                callback(err)
+              }
+            } else {
+              if (_.isFunction(callback)) {
+                callback(annotation)
+              }
+            }
+          })
+        })
+      }
+    })
+  }
+
   static deleteTagAnnotations (tag, callback) {
     // Get tags used in storage to store this tag or annotations with this tag
     let annotationsToDelete = []
@@ -250,7 +312,7 @@ class CustomCriteriasManager {
               if (criteriaGroupName === 'Premises') {
                 this.annotateAllPremises(criteriaGroupName)
               } else {
-                this.annotateAllCriticalQuestions(criteriaGroupName)
+                this.formulateAllCriticalQuestions(criteriaGroupName)
               }
             }
           },
@@ -332,7 +394,9 @@ class CustomCriteriasManager {
                     }
                   }
                 } else {
-                  this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
+                  this.getParagraphs(criterion, (paragraphs) => {
+                    this.annotatePremise(criterion, description, currentTagGroup.config.annotation, paragraphs)
+                  })
                 }
               } else if (key === 'annotateCriticalQuestion') {
                 // Find conclusion tag and if it has a statement
@@ -346,7 +410,9 @@ class CustomCriteriasManager {
                 } else if (conclusionTag.config.options.compile) {
                   currentConclusion = conclusionTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                   if (currentConclusion) {
-                    this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation, currentConclusion)
+                    this.getParagraphs(criterion, (paragraphs) => {
+                      this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation, paragraphs)
+                    })
                   } else {
                     Alerts.errorAlert({
                       title: 'You do not have a conclusion',
@@ -383,6 +449,128 @@ class CustomCriteriasManager {
         showCancelButton: false
       })
     }
+  }
+
+  static provideFeedback (tagGroup, feedback) {
+    console.log('provideFeedback')
+    if (feedback) {
+      CustomCriteriasManager.editFeedback(tagGroup, feedback)
+      // You can perform further actions with the found rating here
+    } else {
+      CustomCriteriasManager.newFeedback(tagGroup)
+    }
+  }
+
+  static newFeedback (tagGroup) {
+    let comment
+    let rate
+    let annotation = tagGroup.config.annotation
+    let html =
+      '<span style="text-align: left;">Comment</span>' +
+      '<textarea id="userAnnotation" class="swal2-input customizeInput" placeholder="Provide your feedback"></textarea>' +
+      '</div>'
+    html += '<span style="text-align:left">Rating (0 Stronly disagree - 4 Strongly agree):</span><input type="number" min="0" max="4" id="ratingValue" class="swal2-input customizeInput" placeholder="Rate the answer"></input></div>'
+    Alerts.feedbackAlert({
+      title: 'Providing feedback for ' + tagGroup.config.name,
+      html: html,
+      showDenyButton: false,
+      willOpen: () => {
+        let element = document.querySelector('.swal2-popup')
+        element.style.width = '900px'
+      },
+      preConfirm: () => {
+        // Retrieve values from inputs
+        comment = document.getElementById('userAnnotation').value
+        rate = document.getElementById('ratingValue').value
+        if (!rate) {
+          // Throw an error or reject a promise to prevent closing the alert
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a rating.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        } else if (rate < 0 || rate > 4) {
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a rating between 1 and 5.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        }
+        if (!comment) {
+          // Throw an error or reject a promise to prevent closing the alert
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a comment.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        }
+      },
+      callback: () => {
+        let data
+        if (annotation.text) {
+          data = jsYaml.load(annotation.text)
+          // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+          if (!Array.isArray(data.feedback)) {
+            data.feedback = []
+          }
+          // Now that we're sure data.resume is an array, push the new object into it.
+          data.feedback.push({ document: window.abwa.contentTypeManager.pdfFingerprint, comment: comment, rate: rate })
+        }
+        annotation.text = jsYaml.dump(data)
+        LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: annotation})
+        Alerts.successAlert({title: 'Saved', text: 'Feedback saved successfully'})
+      }
+    })
+  }
+
+  static editFeedback (tagGroup, feedback) {
+    let comment = feedback.comment
+    let rate = feedback.rate
+    let annotation = tagGroup.config.annotation
+    let html =
+      '<span style="text-align: left;">Comment</span>' +
+      '<textarea id="userAnnotation" class="swal2-input customizeInput" placeholder="Provide your feedback">' + comment + '</textarea>' +
+      '</div>'
+    html += '<span style="text-align:left">Rating (0 Stronly disagree - 4 Strongly agree):</span><input type="number" min="0" max="4" id="ratingValue" class="swal2-input customizeInput" placeholder="Rate the answer" value="' + rate + '"></input></div>'
+    Alerts.feedbackAlert({
+      title: 'Editing feedback for ' + tagGroup.config.name,
+      html: html,
+      preConfirm: () => {
+        // Retrieve values from inputs
+        comment = document.getElementById('userAnnotation').value
+        rate = document.getElementById('ratingValue').value
+        if (!rate) {
+          // Throw an error or reject a promise to prevent closing the alert
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a rating.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        } else if (rate < 0 || rate > 4) {
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a rating between 1 and 5.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        }
+        if (!comment) {
+          // Throw an error or reject a promise to prevent closing the alert
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('Please provide a comment.') // This will display an error message in the SweetAlert
+          return false // Prevents the alert from closing
+        }
+      },
+      willOpen: () => {
+        let element = document.querySelector('.swal2-popup')
+        element.style.width = '900px'
+      },
+      callback: () => {
+        // Save model
+        let data
+        if (annotation.text) {
+          data = jsYaml.load(annotation.text)
+          // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+          if (!Array.isArray(data.feedback)) {
+            data.feedback = []
+          }
+          // Now that we're sure data.resume is an array, push the new object into it.
+          data.feedback.push({ document: window.abwa.contentTypeManager.pdfFingerprint, comment: comment, rate: rate })
+        }
+        annotation.text = jsYaml.dump(data)
+        LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: annotation})
+        Alerts.successAlert({title: 'Saved', text: 'Feedback saved successfully'})
+      }
+    })
   }
 
   static deleteCriteriaHandler (tagGroup) {
@@ -444,13 +632,21 @@ class CustomCriteriasManager {
     Alerts.threeOptionsAlert({
       title: 'Values for ' + formCriteriaNameValueForm,
       html: html,
-      showCancelButton: false,
+      showCancelButton: true,
       showDenyButton: false,
       confirmButtonText: 'OK',
-      denyButtonText: 'Restore',
-      denyButtonColor: 'blue',
-      denyCallback: () => {
+      cancelButtonText: 'Restore',
+      cancelButtonColor: '#f6583c',
+      cancelCallback: () => {
         // Restore
+        CustomCriteriasManager.restoreTag(tagGroup, (annotation) => {
+          console.log('Restored' + annotation)
+          window.abwa.tagManager.reloadTags(() => {
+            window.abwa.contentAnnotator.updateAllAnnotations(() => {
+              window.abwa.sidebar.openSidebar()
+            })
+          })
+        })
       }
     })
   }
@@ -585,9 +781,17 @@ class CustomCriteriasManager {
     }
   }
 
-  annotatePremise (criterion, description, tagAnnotation) {
-    if (description.length < 20) {
-      Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
+  annotatePremise (criterion, description, tagAnnotation, paragraphs) {
+    let data = tagAnnotation.text
+    let findFeedback
+    if (data) {
+      data = jsYaml.load(data)
+      if (data.feedback) {
+        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+      }
+    }
+    if (findFeedback) {
+      this.annotatePremiseWithFeedback(criterion, description, tagAnnotation, findFeedback, data, paragraphs)
     } else {
       // this.modifyCriteriaHandler(currentTagGroup)
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
@@ -711,6 +915,149 @@ class CustomCriteriasManager {
         }
       })
     }
+  }
+
+  annotatePremiseWithFeedback (criterion, description, tagAnnotation, feedback, previousAnswer, paragraphs) {
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.review.defaultLLM
+      }
+      if (llm && llm !== '') {
+        let selectedLLM = llm
+        Alerts.confirmAlert({
+          title: 'Find annotations for ' + criterion + ' premise',
+          text: 'Do you want to state the premises using LLM?',
+          cancelButtonText: 'Cancel',
+          callback: () => {
+            Alerts.confirmAlert({
+              title: 'Use you feedback',
+              text: 'Do you want to use your feedback to annotate the premise?',
+              cancelButtonText: 'No',
+              confirmButtonText: 'Yes',
+              showCancelButton: true,
+              // eslint-disable-next-line handle-callback-err
+              callback: async (err, addFeedback) => {
+                console.log(addFeedback)
+                let documents = []
+                documents = await LLMTextUtils.loadDocument()
+                chrome.runtime.sendMessage({
+                  scope: 'llm',
+                  cmd: 'getAPIKEY',
+                  data: selectedLLM
+                }, ({ apiKey }) => {
+                  let callback = (json) => {
+                    let excerpt = json.excerpt
+                    let statement = json.statement
+                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                    let annotation = {
+                      paragraph: excerpt,
+                      text: statement,
+                      selectors: selectors
+                    }
+                    if (selectors.length > 0) {
+                      let commentData = {
+                        comment: '',
+                        statement: statement,
+                        llm: llm,
+                        paragraph: excerpt
+                      }
+                      let model = window.abwa.tagManager.model
+                      let tag = [
+                        model.namespace + ':' + model.config.grouped.relation + ':' + criterion
+                      ]
+                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                          tags: tag,
+                          selectors: selectors,
+                          commentData: commentData
+                        })
+                      })
+                    }
+                    if (annotation.selectors.length === 0) {
+                      CustomCriteriasManager.showParagraph(annotation, criterion)
+                    } else {
+                      CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                    }
+                    // retrieve tag annotation
+                    let data
+                    if (tagAnnotation.text) {
+                      data = jsYaml.load(tagAnnotation.text)
+                      // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                      data.compile = []
+                      // Now that we're sure data.resume is an array, push the new object into it.
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement })
+                      data.feedback = ''
+                    }
+                    tagAnnotation.text = jsYaml.dump(data)
+                    LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                    Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
+                  }
+                  if (apiKey && apiKey !== '') {
+                    chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
+                      if (!prompt) {
+                        prompt = Config.prompts.annotatePremisePrompt
+                      }
+                      let scheme = ''
+                      if (window.abwa.tagManager) {
+                        let currentTags = window.abwa.tagManager.currentTags
+                        // Retrieve Premises
+                        let premises = currentTags.filter(tag => {
+                          return tag.config.options.group === 'Premises'
+                        })
+                        let conclusion
+                        for (let i = 0; i < premises.length; i++) {
+                          const premise = premises[i]
+                          if (premise.config.name === 'Conclusion') {
+                            conclusion = premise
+                          } else {
+                            scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                            scheme += premise.config.options.description + '\n'
+                          }
+                        }
+                        scheme += conclusion.config.name.toUpperCase() + ': '
+                        scheme += conclusion.config.options.description + '\n'
+                      }
+                      prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
+                      if (addFeedback) {
+                        let findStatement = previousAnswer.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        prompt = prompt + '\n\nYour previous answer for this same prompt has been: \n'
+                        prompt = prompt + '"statement":' + findStatement.answer + '\n'
+                        prompt = prompt + '"excerpt":' + paragraphs.replaceAll('paragraph1:', '') + '\n'
+                        prompt = prompt + 'Please, now consider the following feedback for improving your answer.\n'
+                        prompt = prompt + '\n\nFeedback for your previous answer: ' + feedback.comment + '\nRating of your previous answer from 0 to 4: ' + feedback.rate
+                      }
+                      let params = {
+                        criterion: criterion,
+                        description: description,
+                        apiKey: apiKey,
+                        documents: documents,
+                        callback: callback,
+                        prompt: prompt,
+                        selectedLLM
+                      }
+                      if (selectedLLM === 'anthropic') {
+                        AnthropicManager.askCriteria(params)
+                      } else if (selectedLLM === 'openAI') {
+                        OpenAIManager.askCriteria(params)
+                      }
+                    })
+                  } else {
+                    let callback = () => {
+                      window.open(chrome.runtime.getURL('pages/options.html'))
+                    }
+                    Alerts.infoAlert({
+                      text: 'Please, configure your LLM.',
+                      title: 'Please select a LLM and provide your API key',
+                      callback: callback()
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+    })
   }
 
   annotateAllPremises (groupName) {
@@ -852,7 +1199,349 @@ class CustomCriteriasManager {
     })
   }
 
-  annotateAllCriticalQuestions (groupName) {
+  formulateCriticalQuestion (criterion, description, tagAnnotation, paragraphs) {
+    let data = tagAnnotation.text
+    let findFeedback
+    if (data) {
+      data = jsYaml.load(data)
+      if (data.feedback) {
+        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+      }
+    }
+    if (findFeedback) {
+      this.formulateCriticalQuestionWithFeedback(criterion, description, tagAnnotation, findFeedback, data, paragraphs)
+    } else {
+      // this.modifyCriteriaHandler(currentTagGroup)
+      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+        if (llm === '') {
+          llm = Config.review.defaultLLM
+        }
+        if (llm && llm !== '') {
+          let selectedLLM = llm
+          Alerts.confirmAlert({
+            title: 'Formulate ' + criterion,
+            text: 'Do you want to answer the critical question using LLM?',
+            cancelButtonText: 'Cancel',
+            callback: async () => {
+              let documents = []
+              documents = await LLMTextUtils.loadDocument()
+              chrome.runtime.sendMessage({
+                scope: 'llm',
+                cmd: 'getAPIKEY',
+                data: selectedLLM
+              }, ({ apiKey }) => {
+                let callback = (json) => {
+                  let excerpt = json.excerpt
+                  let question = json.adaptedQuestion
+                  let answer = json.answer
+                  let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                  let annotation = {
+                    paragraph: excerpt,
+                    text: answer,
+                    question: question,
+                    selectors: selectors
+                  }
+                  if (selectors.length > 0) {
+                    let commentData = {
+                      comment: '',
+                      statement: answer,
+                      llm: llm,
+                      paragraph: excerpt
+                    }
+                    let model = window.abwa.tagManager.model
+                    let tag = [
+                      model.namespace + ':' + model.config.grouped.relation + ':' + criterion
+                    ]
+                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                      LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                        tags: tag,
+                        selectors: selectors,
+                        commentData: commentData
+                      })
+                    })
+                  }
+                  if (annotation.selectors.length === 0) {
+                    CustomCriteriasManager.showParagraph(annotation, criterion)
+                  } else {
+                    CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                  }
+                  // retrieve tag annotation
+                  let data
+                  if (tagAnnotation.text) {
+                    data = jsYaml.load(tagAnnotation.text)
+                    // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                    if (!Array.isArray(data.compile)) {
+                      data.compile = []
+                    }
+                    let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    if (!foundCompile) {
+                      // If not, create and add it to the array
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                    } else {
+                      foundCompile.answer = answer
+                    }
+                    if (!Array.isArray(data.fullQuestion)) {
+                      data.fullQuestion = []
+                    }
+                    let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    if (!foundFullQuestion) {
+                      // If not, create and add it to the array
+                      data.fullQuestion.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: question })
+                    } else {
+                      foundFullQuestion.fullQuestion = question
+                    }
+                  }
+                  tagAnnotation.text = jsYaml.dump(data)
+                  LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                  Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
+                }
+                if (apiKey && apiKey !== '') {
+                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
+                    if (!prompt) {
+                      prompt = Config.prompts.criticalQuestionPrompt
+                    }
+                    let scheme = ''
+                    if (window.abwa.tagManager) {
+                      let currentTags = window.abwa.tagManager.currentTags
+                      // Retrieve Premises
+                      let premises = currentTags.filter(tag => {
+                        return tag.config.options.group === 'Premises'
+                      })
+                      let conclusion
+                      for (let i = 0; i < premises.length; i++) {
+                        const premise = premises[i]
+                        if (premise.config.name === 'Conclusion') {
+                          conclusion = premise
+                        } else {
+                          scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                          if (premise.config.options.compile.answer) {
+                            scheme += premise.config.options.compile.answer + '\n'
+                          } else {
+                            scheme += premise.config.options.description + '\n'
+                          }
+                        }
+                      }
+                      scheme += conclusion.config.name.toUpperCase() + ': '
+                      if (conclusion.config.options.compile.answer) {
+                        scheme += conclusion.config.options.compile.answer + '\n'
+                      } else {
+                        scheme += conclusion.config.options.description + '\n'
+                      }
+                    }
+                    prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_SCHEME]', scheme)
+                    let params = {
+                      criterion: criterion,
+                      description: description,
+                      apiKey: apiKey,
+                      documents: documents,
+                      callback: callback,
+                      prompt: prompt,
+                      selectedLLM
+                    }
+                    if (selectedLLM === 'anthropic') {
+                      AnthropicManager.askCriteria(params)
+                    } else if (selectedLLM === 'openAI') {
+                      OpenAIManager.askCriteria(params)
+                    }
+                  })
+                } else {
+                  let callback = () => {
+                    window.open(chrome.runtime.getURL('pages/options.html'))
+                  }
+                  Alerts.infoAlert({
+                    text: 'Please, configure your LLM.',
+                    title: 'Please select a LLM and provide your API key',
+                    callback: callback()
+                  })
+                }
+              })
+            }
+          })
+        }
+      })
+    }
+  }
+
+  formulateCriticalQuestionWithFeedback (criterion, description, tagAnnotation, feedback, previousAnswer, paragraphs) {
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
+      if (llm === '') {
+        llm = Config.review.defaultLLM
+      }
+      if (llm && llm !== '') {
+        let selectedLLM = llm
+        Alerts.confirmAlert({
+          title: 'Formulate ' + criterion,
+          text: 'Do you want to answer the critical question using LLM?',
+          cancelButtonText: 'Cancel',
+          callback: () => {
+            Alerts.confirmAlert({
+              title: 'Use you feedback',
+              text: 'Do you want to use your feedback to annotate the premise?',
+              cancelButtonText: 'No',
+              confirmButtonText: 'Yes',
+              showCancelButton: true,
+              // eslint-disable-next-line handle-callback-err
+              callback: async (err, addFeedback) => {
+                console.log(addFeedback)
+                let documents = []
+                documents = await LLMTextUtils.loadDocument()
+                chrome.runtime.sendMessage({
+                  scope: 'llm',
+                  cmd: 'getAPIKEY',
+                  data: selectedLLM
+                }, ({ apiKey }) => {
+                  let callback = (json) => {
+                    let excerpt = json.excerpt
+                    let question = json.adaptedQuestion
+                    let answer = json.answer
+                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                    let annotation = {
+                      paragraph: excerpt,
+                      text: answer,
+                      question: question,
+                      selectors: selectors
+                    }
+                    if (selectors.length > 0) {
+                      let commentData = {
+                        comment: '',
+                        statement: answer,
+                        llm: llm,
+                        paragraph: excerpt
+                      }
+                      let model = window.abwa.tagManager.model
+                      let tag = [
+                        model.namespace + ':' + model.config.grouped.relation + ':' + criterion
+                      ]
+                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                          tags: tag,
+                          selectors: selectors,
+                          commentData: commentData
+                        })
+                      })
+                    }
+                    if (annotation.selectors.length === 0) {
+                      CustomCriteriasManager.showParagraph(annotation, criterion)
+                    } else {
+                      CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                    }
+                    // retrieve tag annotation
+                    let data
+                    if (tagAnnotation.text) {
+                      data = jsYaml.load(tagAnnotation.text)
+                      data.feedback = ''
+                      // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                      if (!Array.isArray(data.compile)) {
+                        data.compile = []
+                      }
+                      let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                      if (!foundCompile) {
+                        // If not, create and add it to the array
+                        data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                      } else {
+                        foundCompile.answer = answer
+                      }
+                      if (!Array.isArray(data.fullQuestion)) {
+                        data.fullQuestion = []
+                      }
+                      let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                      if (!foundFullQuestion) {
+                        // If not, create and add it to the array
+                        data.fullQuestion.push({
+                          document: window.abwa.contentTypeManager.pdfFingerprint,
+                          fullQuestion: question
+                        })
+                      } else {
+                        foundFullQuestion.fullQuestion = question
+                      }
+                    }
+                    tagAnnotation.text = jsYaml.dump(data)
+                    LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, { annotation: tagAnnotation })
+                    Alerts.successAlert({ title: 'Saved', text: 'The text has been saved in the report' })
+                  }
+                  if (apiKey && apiKey !== '') {
+                    chrome.runtime.sendMessage({
+                      scope: 'prompt',
+                      cmd: 'getPrompt',
+                      data: { type: 'criticalQuestionPrompt' }
+                    }, ({ prompt }) => {
+                      if (!prompt) {
+                        prompt = Config.prompts.criticalQuestionPrompt
+                      }
+                      let scheme = ''
+                      if (window.abwa.tagManager) {
+                        let currentTags = window.abwa.tagManager.currentTags
+                        // Retrieve Premises
+                        let premises = currentTags.filter(tag => {
+                          return tag.config.options.group === 'Premises'
+                        })
+                        let conclusion
+                        for (let i = 0; i < premises.length; i++) {
+                          const premise = premises[i]
+                          if (premise.config.name === 'Conclusion') {
+                            conclusion = premise
+                          } else {
+                            scheme += premise.config.name.toUpperCase() + ' PREMISE: '
+                            if (premise.config.options.compile.answer) {
+                              scheme += premise.config.options.compile.answer + '\n'
+                            } else {
+                              scheme += premise.config.options.description + '\n'
+                            }
+                          }
+                        }
+                        scheme += conclusion.config.name.toUpperCase() + ': '
+                        if (conclusion.config.options.compile.answer) {
+                          scheme += conclusion.config.options.compile.answer + '\n'
+                        } else {
+                          scheme += conclusion.config.options.description + '\n'
+                        }
+                      }
+                      prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_SCHEME]', scheme)
+                      if (addFeedback) {
+                        let findStatement = previousAnswer.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        let findFullQuestion = previousAnswer.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        prompt = prompt + '\n\nYour previous answer for this same prompt has been: \n'
+                        prompt = prompt + '"adaptedQuestion":' + findFullQuestion.fullQuestion + '\n'
+                        prompt = prompt + '"answer":' + findStatement.answer + '\n'
+                        prompt = prompt + '"excerpt":' + paragraphs.replaceAll('paragraph1:', '') + '\n'
+                        prompt = prompt + 'Please, now consider the following feedback for improving your answer.\n'
+                        prompt = prompt + '\n\nFeedback for your previous answer: ' + feedback.comment + '\nRating of your previous answer from 0 to 4: ' + feedback.rate
+                      }
+                      let params = {
+                        criterion: criterion,
+                        description: description,
+                        apiKey: apiKey,
+                        documents: documents,
+                        callback: callback,
+                        prompt: prompt,
+                        selectedLLM
+                      }
+                      if (selectedLLM === 'anthropic') {
+                        AnthropicManager.askCriteria(params)
+                      } else if (selectedLLM === 'openAI') {
+                        OpenAIManager.askCriteria(params)
+                      }
+                    })
+                  } else {
+                    let callback = () => {
+                      window.open(chrome.runtime.getURL('pages/options.html'))
+                    }
+                    Alerts.infoAlert({
+                      text: 'Please, configure your LLM.',
+                      title: 'Please select a LLM and provide your API key',
+                      callback: callback()
+                    })
+                  }
+                })
+              }
+            })
+          }
+        })
+      }
+    })
+  }
+
+  formulateAllCriticalQuestions (groupName) {
     // this.modifyCriteriaHandler(currentTagGroup)
     chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
       if (llm === '') {
@@ -1055,239 +1744,6 @@ class CustomCriteriasManager {
       gptItemsNodes.push({name: item.name, adaptedQuestion: item.adaptedQuestion, excerpt: item.excerpt, answer: item.answer})
     })
     return gptItemsNodes
-  }
-
-  formulateCriticalQuestion (criterion, description, tagAnnotation) {
-    if (description.length < 20) {
-      Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
-    } else {
-      // this.modifyCriteriaHandler(currentTagGroup)
-      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-        if (llm === '') {
-          llm = Config.review.defaultLLM
-        }
-        if (llm && llm !== '') {
-          let selectedLLM = llm
-          Alerts.confirmAlert({
-            title: 'Formulate ' + criterion,
-            text: 'Do you want to answer the critical question using LLM?',
-            cancelButtonText: 'Cancel',
-            callback: async () => {
-              let documents = []
-              documents = await LLMTextUtils.loadDocument()
-              chrome.runtime.sendMessage({
-                scope: 'llm',
-                cmd: 'getAPIKEY',
-                data: selectedLLM
-              }, ({ apiKey }) => {
-                let callback = (json) => {
-                  let excerpt = json.excerpt
-                  let question = json.adaptedQuestion
-                  let answer = json.answer
-                  let selectors = this.getSelectorsFromLLM(excerpt, documents)
-                  let annotation = {
-                    paragraph: excerpt,
-                    text: answer,
-                    question: question,
-                    selectors: selectors
-                  }
-                  if (selectors.length > 0) {
-                    let commentData = {
-                      comment: '',
-                      statement: answer,
-                      llm: llm,
-                      paragraph: excerpt
-                    }
-                    let model = window.abwa.tagManager.model
-                    let tag = [
-                      model.namespace + ':' + model.config.grouped.relation + ':' + criterion
-                    ]
-                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
-                      LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
-                        tags: tag,
-                        selectors: selectors,
-                        commentData: commentData
-                      })
-                    })
-                  }
-                  if (annotation.selectors.length === 0) {
-                    CustomCriteriasManager.showParagraph(annotation, criterion)
-                  } else {
-                    CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
-                  }
-                  // retrieve tag annotation
-                  let data
-                  if (tagAnnotation.text) {
-                    data = jsYaml.load(tagAnnotation.text)
-                    // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                    if (!Array.isArray(data.compile)) {
-                      data.compile = []
-                    }
-                    let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                    if (!foundCompile) {
-                      // If not, create and add it to the array
-                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
-                    } else {
-                      foundCompile.answer = answer
-                    }
-                    if (!Array.isArray(data.fullQuestion)) {
-                      data.fullQuestion = []
-                    }
-                    let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                    if (!foundFullQuestion) {
-                      // If not, create and add it to the array
-                      data.fullQuestion.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: question })
-                    } else {
-                      foundFullQuestion.fullQuestion = question
-                    }
-                  }
-                  tagAnnotation.text = jsYaml.dump(data)
-                  LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
-                  Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
-                }
-                if (apiKey && apiKey !== '') {
-                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
-                    if (!prompt) {
-                      prompt = Config.prompts.criticalQuestionPrompt
-                    }
-                    let scheme = ''
-                    if (window.abwa.tagManager) {
-                      let currentTags = window.abwa.tagManager.currentTags
-                      // Retrieve Premises
-                      let premises = currentTags.filter(tag => {
-                        return tag.config.options.group === 'Premises'
-                      })
-                      let conclusion
-                      for (let i = 0; i < premises.length; i++) {
-                        const premise = premises[i]
-                        if (premise.config.name === 'Conclusion') {
-                          conclusion = premise
-                        } else {
-                          scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                          if (premise.config.options.compile.answer) {
-                            scheme += premise.config.options.compile.answer + '\n'
-                          } else {
-                            scheme += premise.config.options.description + '\n'
-                          }
-                        }
-                      }
-                      scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
-                      } else {
-                        scheme += conclusion.config.options.description + '\n'
-                      }
-                    }
-                    prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_SCHEME]', scheme)
-                    let params = {
-                      criterion: criterion,
-                      description: description,
-                      apiKey: apiKey,
-                      documents: documents,
-                      callback: callback,
-                      prompt: prompt,
-                      selectedLLM
-                    }
-                    if (selectedLLM === 'anthropic') {
-                      AnthropicManager.askCriteria(params)
-                    } else if (selectedLLM === 'openAI') {
-                      OpenAIManager.askCriteria(params)
-                    }
-                  })
-                } else {
-                  let callback = () => {
-                    window.open(chrome.runtime.getURL('pages/options.html'))
-                  }
-                  Alerts.infoAlert({
-                    text: 'Please, configure your LLM.',
-                    title: 'Please select a LLM and provide your API key',
-                    callback: callback()
-                  })
-                }
-              })
-            }
-          })
-        }
-      })
-    }
-  }
-
-  static compile (criterion, description, paragraphs, annotation) {
-    if (description.length < 20) {
-      Alerts.infoAlert({ text: 'You have to provide a description for the given criterion' })
-    } else {
-      // this.modifyCriteriaHandler(currentTagGroup)
-      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-        if (llm === '') {
-          llm = Config.review.defaultLLM
-        }
-        if (llm && llm !== '') {
-          let selectedLLM = llm
-          Alerts.confirmAlert({
-            title: criterion + ' assessment',
-            text: '<div style="text-align: justify;text-justify: inter-word">Do you want to compile the assessment using LLM?</div>',
-            cancelButtonText: 'Cancel',
-            callback: async () => {
-              let documents = []
-              documents = await LLMTextUtils.loadDocument()
-              chrome.runtime.sendMessage({
-                scope: 'llm',
-                cmd: 'getAPIKEY',
-                data: selectedLLM
-              }, ({ apiKey }) => {
-                let callback = (json) => {
-                  let sentiment = json.sentiment
-                  let answer = json.comment
-                  Alerts.answerCriterionAlert({
-                    title: 'The criterion ' + criterion + ' is ' + sentiment,
-                    answer: answer,
-                    paragraphs: paragraphs,
-                    description: description,
-                    criterion: criterion,
-                    annotation: annotation,
-                    type: 'compile',
-                    compileSentiment: sentiment
-                  })
-                }
-                if (apiKey && apiKey !== '') {
-                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'compilePrompt'} }, ({ prompt }) => {
-                    let compilePrompt
-                    if (prompt) {
-                      compilePrompt = prompt
-                    } else {
-                      compilePrompt = Config.prompts.compilePrompt
-                    }
-                    compilePrompt = compilePrompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_EXCERPTS]', paragraphs)
-                    let params = {
-                      criterion: criterion,
-                      description: description,
-                      apiKey: apiKey,
-                      documents: documents,
-                      callback: callback,
-                      prompt: compilePrompt
-                    }
-                    if (selectedLLM === 'anthropic') {
-                      AnthropicManager.askCriteria(params)
-                    } else if (selectedLLM === 'openAI') {
-                      OpenAIManager.askCriteria(params)
-                    }
-                  })
-                } else {
-                  let callback = () => {
-                    window.open(chrome.runtime.getURL('pages/options.html'))
-                  }
-                  Alerts.infoAlert({
-                    text: 'Please, configure your LLM.',
-                    title: 'Please select a LLM and provide your API key',
-                    callback: callback()
-                  })
-                }
-              })
-            }
-          })
-        }
-      })
-    }
   }
 
   static arguments (criterion, description, paragraphs, annotation) {
@@ -1506,12 +1962,22 @@ class CustomCriteriasManager {
       }
     }
     let fullQuestion = ''
-    if (currentTagGroup.config.options.fullQuestion !== '') {
+    if (currentTagGroup.config.options.fullQuestion && currentTagGroup.config.options.fullQuestion !== '') {
       const findFullQuestion = currentTagGroup.config.options.fullQuestion.find((fullQuestion) => {
         return fullQuestion.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findFullQuestion) {
         fullQuestion = findFullQuestion.fullQuestion
+      }
+    }
+    let feedback = ''
+    let findFeedback
+    if (currentTagGroup.config.options.feedback && (currentTagGroup.config.options.feedback !== '')) {
+      findFeedback = currentTagGroup.config.options.feedback.find((feedback) => {
+        return feedback.document === window.abwa.contentTypeManager.pdfFingerprint
+      })
+      if (findFeedback) {
+        feedback = findFeedback.comment + ' - ' + findFeedback.rate
       }
     }
     if (compile || alternative || paragraphs.length > 0) {
@@ -1528,6 +1994,9 @@ class CustomCriteriasManager {
       if (alternative) {
         html += '<h3>Arguments:</h3><div width=800px>' + alternative + '</div></br>'
       }
+      if (feedback) {
+        html += '<h3>Feedback:</h3><div width=800px>' + feedback + '</div></br>'
+      }
       if (paragraphs.length > 0) {
         html += '<h3>Excerpts:</h3></br><ul>'
         for (const item of paragraphs) {
@@ -1536,7 +2005,22 @@ class CustomCriteriasManager {
         html += '</ul></div>'
       }
       html += '</div>'
-      Alerts.criterionInfoAlert({ title: criterion, text: html })
+      let cancelButtonText
+      if (feedback) {
+        cancelButtonText = 'Edit feedback'
+      } else {
+        cancelButtonText = 'Provide feedback'
+      }
+      Alerts.criterionInfoAlert({
+        title: criterion,
+        text: html,
+        cancelButtonText: cancelButtonText,
+        showCancelButton: true,
+        cancelButtonColor: '#d2371d',
+        cancelCallback: () => {
+          CustomCriteriasManager.provideFeedback(currentTagGroup, findFeedback)
+        }
+      })
     } else {
       Alerts.errorAlert({
         title: 'No assessed',

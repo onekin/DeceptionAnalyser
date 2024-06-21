@@ -28,17 +28,6 @@ const Config = {
       'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state all the premises based on the schema, with the premises and their descriptions. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story for each premises that is associated with the statement of the premise or conlusion. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '[C_FORMAT]\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
-    compilePrompt: 'Research Paper Context: [The research paper is provided above]\n' +
-      'Criterion for Evaluation: [C_NAME]\n' +
-      'Criterion Description: [C_DESCRIPTION]\n' +
-      'Paragraphs: [C_EXCERPTS]\n' +
-      'Based on the above, you have to act as an academic reviewer and assess. For the criterion, you have to assess if it is met considering these possible results:' + ' Met, Partially met, or Not met. Then, you have to explain why it is met or not met. Base your opinion mainly in the above paragraphs. The JSON format should be as follows:\n' +
-      '{\n' +
-      '"name": "[Criterion Name]",\n' +
-      '"sentiment": "[Met/Partially met/Not met]",\n' +
-      '"comment": "[the reason of the results, if you mention one of the paragraphs in your comment reference the full paragraphs instead of the paragraph number]",\n' +
-      '}\n' +
-      'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
     argumentsPrompt: 'Research Paper Context: [The research paper is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'The critical question is: [C_QUESTION]\n' +

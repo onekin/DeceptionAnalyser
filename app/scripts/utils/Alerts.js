@@ -11,7 +11,7 @@ if (document && document.head) {
 }
 
 class Alerts {
-  static confirmAlert ({alertType = Alerts.alertType.info, title = '', text = '', cancelButtonText = 'Cancel', confirmButtonText = 'OK', showCancelButton = true, callback}) {
+  static confirmAlert ({alertType = Alerts.alertType.info, title = '', text = '', cancelButtonText = 'Cancel', confirmButtonText = 'OK', showCancelButton = true, callback, cancelCallback}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -27,6 +27,10 @@ class Alerts {
         confirmButtonText: confirmButtonText
       }).then((result) => {
         if (result.value) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
+        } else {
           if (_.isFunction(callback)) {
             callback(null, result.value)
           }
@@ -77,7 +81,7 @@ class Alerts {
     }
   }
 
-  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width}) {
+  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -89,13 +93,67 @@ class Alerts {
         title: title,
         confirmButtonText: confirmButtonText,
         html: text,
+        showCancelButton: showCancelButton,
+        cancelButtonText: cancelButtonText,
+        cancelButtonColor: cancelButtonColor,
         onBeforeOpen: () => {
           let element = document.querySelector('.swal2-popup')
           element.style.width = '900px'
         }
-      }).then(() => {
-        if (_.isFunction(callback)) {
-          callback(null)
+      }).then((result) => {
+        /* Read more about isConfirmed, isDenied below */
+        if (result.isConfirmed) {
+          if (_.isFunction(callback)) {
+            callback(null)
+          }
+        } else {
+          if (_.isFunction(cancelCallback)) {
+            cancelCallback(null)
+          }
+        }
+      })
+    }
+  }
+
+  static feedbackAlert ({ title = 'Input', html = '', preConfirm, preDeny, position = 'center', onBeforeOpen, showDenyButton = true, showCancelButton = true, confirmButtonText = 'Confirm', confirmButtonColor = '#4BB543', denyButtonText = 'Deny', denyButtonColor = '#3085D6', cancelButtonText = 'Cancel', allowOutsideClick = true, allowEscapeKey = true, callback, denyCallback, cancelCallback, customClass, willOpen }) {
+    Alerts.tryToLoadSwal()
+    if (_.isNull(swal)) {
+      if (_.isFunction(callback)) {
+        callback(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        title: title,
+        html: html,
+        focusConfirm: false,
+        preConfirm: preConfirm,
+        preDeny: preDeny,
+        position: position,
+        allowOutsideClick,
+        allowEscapeKey,
+        customClass: customClass,
+        showDenyButton: showDenyButton,
+        showCancelButton: showCancelButton,
+        confirmButtonText: confirmButtonText,
+        confirmButtonColor: confirmButtonColor,
+        denyButtonText: denyButtonText,
+        denyButtonColor: denyButtonColor,
+        cancelButtonText: cancelButtonText,
+        willOpen: willOpen
+      }).then((result) => {
+        /* Read more about isConfirmed, isDenied below */
+        if (result.isConfirmed) {
+          if (_.isFunction(callback)) {
+            callback(null, result.value)
+          }
+        } else if (result.isDenied) {
+          if (_.isFunction(callback)) {
+            denyCallback(null, result.value)
+          }
+        } else {
+          if (_.isFunction(cancelCallback)) {
+            cancelCallback(null)
+          }
         }
       })
     }
@@ -368,7 +426,7 @@ class Alerts {
     }
   }
 
-  static threeOptionsAlert ({ title = 'Input', html = '', preConfirm, preDeny, position = Alerts.position.center, onBeforeOpen, showDenyButton = true, showCancelButton = true, confirmButtonText = 'Confirm', confirmButtonColor = '#4BB543', denyButtonText = 'Deny', denyButtonColor = '#3085D6', cancelButtonText = 'Cancel', allowOutsideClick = true, allowEscapeKey = true, callback, denyCallback, cancelCallback, customClass }) {
+  static threeOptionsAlert ({ title = 'Input', html = '', preConfirm, preDeny, position = Alerts.position.center, onBeforeOpen, cancelButtonColor = '#757575', showDenyButton = true, showCancelButton = true, confirmButtonText = 'Confirm', confirmButtonColor = '#4BB543', denyButtonText = 'Deny', denyButtonColor = '#3085D6', cancelButtonText = 'Cancel', allowOutsideClick = true, allowEscapeKey = true, callback, denyCallback, cancelCallback, customClass }) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -392,7 +450,8 @@ class Alerts {
         confirmButtonColor: confirmButtonColor,
         denyButtonText: denyButtonText,
         denyButtonColor: denyButtonColor,
-        cancelButtonText: cancelButtonText
+        cancelButtonText: cancelButtonText,
+        cancelButtonColor: cancelButtonColor
 
       }).then((result) => {
         /* Read more about isConfirmed, isDenied below */
