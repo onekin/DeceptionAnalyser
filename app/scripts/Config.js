@@ -13,14 +13,14 @@ const Config = {
     }
   },
   prompts: {
-    annotatePremisePrompt: 'Story: [The story is provided above]\n' +
+    annotatePremisePrompt: 'STORY: [The story is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'Premise that I want to analyze: [C_NAME] premise\n' + 'Premise Description I want you to retrieve: [C_DESCRIPTION]\n' +
-      'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state only the [C_NAME] premise based on the description. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that is associated with the statement of the premise. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+      'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state only the [C_NAME] premise based on the description. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story, as it is written in the story, that is associated with the statement of the premise. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
       '"name": "[Premise Name]",\n' +
       '"statement": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
-      '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
+      '"excerpt": "[Excerpt from the story that justifies the statement of the premise, you have to write it as it is in the story]",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     annotateAllPremisesPrompt: 'Story: [The story is provided above]\n' +

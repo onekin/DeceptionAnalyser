@@ -483,8 +483,7 @@ class TextAnnotator extends ContentAnnotator {
       let color = tagInstance.getColor()
       try {
         let highlightedElements = []
-        highlightedElements = DOMTextUtils.highlightContent(
-          annotation.target[0].selector, classNameToHighlight, annotation.id)
+        highlightedElements = DOMTextUtils.highlightContent(annotation.target[0].selector, classNameToHighlight, annotation.id)
         // Highlight in same color as button
         highlightedElements.forEach(highlightedElement => {
           // If need to highlight, set the color corresponding to, in other case, maintain its original color

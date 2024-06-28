@@ -1881,7 +1881,7 @@ class CustomCriteriasManager {
       // let pageContent = LLMTextUtils.getPageContent(pageNumber)
       let page = documents.find(document => document.metadata.loc.pageNumber === pageNumber)
       let pageContent = page.pageContent
-      pageContent = pageContent.replace(/(\r\n|\n|\r)/gm, ' ')
+      pageContent = pageContent.replace(/(\r\n|\n|\r)/gm, ' ').replace(/\s+/g, ' ').trim()
       let index = LLMTextUtils.getIndexesOfParagraph(pageContent, paragraph)
       let textPositionSelector = {
         type: 'TextPositionSelector',
