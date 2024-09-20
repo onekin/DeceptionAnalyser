@@ -139,26 +139,16 @@ class TagManager {
       }
     }
     // Get groups names
-    let groups = _.map(_.uniqBy(_.values(tagGroupsAnnotations), (criteria) => { return criteria.config.options.group }), 'config.options.group')
-    // Get a list of colors
     // The list of colors to retrieve are 1 per group + 1 per groupTags in "Other" group
-    let listOfOtherTags = _.filter(_.values(tagGroupsAnnotations), (tagGroup) => { return tagGroup.config.options.group === 'Other' })
-    let colorsList = ColorUtils.getDifferentColors(groups.length + listOfOtherTags.length)
-    let colorsGroup = colorsList.slice(0, groups.length)
-    let colorsOthers = colorsList.slice(groups.length)
+    let colorsList = ColorUtils.getDifferentColors(Object.keys(tagGroupsAnnotations).length)
     // Set colors for each group
     let array = _.toArray(tagGroupsAnnotations)
     let colors = {}
     for (let i = 0; i < array.length; i++) {
       let tagGroup = tagGroupsAnnotations[array[i].config.name]
       let color
-      if (tagGroup.config.options.group === 'Other') { // One color for each tag element with group Other
-        color = colorsOthers[_.findIndex(listOfOtherTags, (otherTagGroup) => { return otherTagGroup.config.name === tagGroup.config.name })]
-        colors[tagGroup.config.name] = color
-      } else {
-        color = colorsGroup[_.findIndex(groups, (groupName) => { return groupName === tagGroup.config.options.group })]
-        colors[tagGroup.config.name] = color
-      }
+      color = colorsList[i]
+      colors[tagGroup.config.name] = color
       tagGroup.config.color = color
     }
     // Get elements for each subgroup
@@ -197,9 +187,9 @@ class TagManager {
     tagGroupsAnnotations = _.map(tagGroupsAnnotations, (tagGroup) => {
       if (tagGroup.tags.length > 0) {
         tagGroup.tags = _.map(tagGroup.tags, (tag, index) => {
-          let color = ColorUtils.setAlphaToColor(colors[tagGroup.config.name], 0.2 + index / tagGroup.tags.length * 0.6)
-          tag.options.color = color
-          tag.color = color
+          // let color = ColorUtils.setAlphaToColor(colors[tagGroup.config.name])
+          tag.options.color = colors[tagGroup.config.name]
+          tag.color = colors[tagGroup.config.name]
           return tag
         })
       }
@@ -253,7 +243,7 @@ class TagManager {
       let tagGroup = arrayOfTagGroups[i]
       let button = TagManager.createButton({
         name: tagGroup.config.name,
-        color: ColorUtils.setAlphaToColor(tagGroup.config.color, 0.3),
+        color: ColorUtils.setAlphaToColor(tagGroup.config.color, 0.45),
         description: tagGroup.config.options.description,
         tagGroup: tagGroup,
         handler: (event) => {
@@ -294,7 +284,7 @@ class TagManager {
     // Tag button background color change
     // TODO It should be better to set it as a CSS property, but currently there is not an option for that
     tagButton.addEventListener('mouseenter', () => {
-      tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.7)
+      tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.6)
     })
     // Add a double-click event listener to the button
     tagButton.addEventListener('dblclick', function () {
@@ -306,7 +296,7 @@ class TagManager {
     })
     tagButton.addEventListener('mouseleave', () => {
       if (tagButton.dataset.chosen === 'true') {
-        tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.6)
+        tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.45)
       } else {
         tagButton.style.backgroundColor = tagButton.dataset.baseColor
       }
@@ -378,7 +368,7 @@ class TagManager {
       let tagButton = tagButtons[i]
       tagButton.innerText = tagButton.innerText.replace(/\([^)]*\)|^\s/, '')
       tagButton.dataset.chosen = 'false'
-      tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.3)
+      tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
     }
     // Retrieve annotated tags
     if (window.abwa.contentAnnotator) {
@@ -392,15 +382,17 @@ class TagManager {
       for (let i = 0; i < annotatedTagGroups.length; i++) {
         let model = window.abwa.tagManager.model
         let tagGroup = annotatedTagGroups[i]
-        let tag = model.namespace + ':' + model.config.grouped.relation + ':' + tagGroup.config.name
-        let numberOfAnnotations = annotations.filter((annotation) => {
-          return AnnotationUtils.hasATag(annotation, tag)
-        })
-        let tagButton = this.tagsContainer.evidencing.querySelector('.tagButton[data-mark="' + tagGroup.config.name + '"]')
-        tagButton.dataset.chosen = 'true'
-        tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
-        // Change to a darker color
-        tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
+        if (tagGroup) {
+          let tag = model.namespace + ':' + model.config.grouped.relation + ':' + tagGroup.config.name
+          let numberOfAnnotations = annotations.filter((annotation) => {
+            return AnnotationUtils.hasATag(annotation, tag)
+          })
+          let tagButton = this.tagsContainer.evidencing.querySelector('.tagButton[data-mark="' + tagGroup.config.name + '"]')
+          tagButton.dataset.chosen = 'true'
+          tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
+          // Change to a darker color
+          tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
+        }
       }
     }
   }

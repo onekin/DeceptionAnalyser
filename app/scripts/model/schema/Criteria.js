@@ -4,19 +4,24 @@ const Level = require('./Level')
 const LanguageUtils = require('../../utils/LanguageUtils')
 
 class Criteria extends GuideElement {
-  constructor ({name, color, review, group = 'Other', description, fullQuestion, custom = false, compile, alternative}) {
+  constructor ({name, color, review, group = 'Other', description, feedback, fullQuestion, custom = false, compile, alternative}) {
     super({name, color, parentElement: review})
     this.levels = this.childElements
     this.group = group
     this.review = this.parentElement
     this.description = description
-    this.fullQuestion = fullQuestion
     this.custom = custom
     if (compile) {
       this.compile = compile
     }
+    if (feedback) {
+      this.feedback = feedback
+    }
     if (alternative) {
       this.alternative = alternative
+    }
+    if (fullQuestion) {
+      this.fullQuestion = fullQuestion
     }
   }
 
@@ -45,6 +50,18 @@ class Criteria extends GuideElement {
     } else {
       alternative = ''
     }
+    let feedback
+    if (this.feedback) {
+      feedback = this.feedback
+    } else {
+      feedback = ''
+    }
+    let fullQuestion
+    if (this.fullQuestion) {
+      fullQuestion = this.fullQuestion
+    } else {
+      fullQuestion = ''
+    }
     return {
       group: review.storageGroup.id,
       permissions: {
@@ -55,11 +72,12 @@ class Criteria extends GuideElement {
       target: [],
       text: jsYaml.dump({
         description: this.description,
-        fullQuestion: this.fullQuestion,
+        fullQuestion: fullQuestion,
         group: this.group,
         custom: this.custom,
         alternative: alternative,
-        compile: compile
+        compile: compile,
+        feedback: feedback
       }),
       uri: review.storageGroup.links ? review.storageGroup.links.html : review.storageGroup.url // Compatibility with both group representations getGroups and userProfile
     }
@@ -83,6 +101,7 @@ class Criteria extends GuideElement {
       group: this.group,
       description: this.description,
       fullQuestion: this.fullQuestion,
+      feedback: this.feedback,
       levels: []
     }
     if (this.custom) {

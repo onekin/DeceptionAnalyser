@@ -15,14 +15,14 @@ class OpenAIManager {
         }
       } else {
         Swal.fire({
-          title: 'Asking OpenAI',
+          title: 'Asking LLM...',
           text: 'Please wait to the response',
           allowEscapeKey: false,
           allowOutsideClick: false,
           onOpen: async () => {
             Swal.showLoading()
             const b = document.getElementById('swal2-title')
-            b.innerText = 'Asking OpenAI'
+            b.innerText = 'Asking LLM'
             let query
             if (prompt) {
               query = prompt
@@ -30,10 +30,10 @@ class OpenAIManager {
             chrome.runtime.sendMessage({ scope: 'askLLM', cmd: 'openAI', data: {documents: documents, apiKey: apiKey, query: query} }, function (response) {
               if (chrome.runtime.lastError) {
                 Swal.close()
-                Alerts.errorAlert({text: 'Unable to ask OpenAI: ' + chrome.runtime.lastError.message})
+                Alerts.errorAlert({text: 'Unable to ask LLM: ' + chrome.runtime.lastError.message})
               } else if (response.res.error) {
                 Swal.close()
-                Alerts.errorAlert({text: 'Unable to ask OpenAI: ' + response.res.error})
+                Alerts.errorAlert({text: 'Unable to ask LLM: ' + response.res.error})
               } else {
                 Swal.close()
                 const jsonString = response.res.text

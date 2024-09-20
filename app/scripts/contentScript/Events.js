@@ -13,6 +13,7 @@ const Events = {
   comment: 'annotationComment',
   updateAnnotation: 'updateAnnotation',
   updateTagAnnotation: 'updateTagAnnotation',
+  updateTagAnnotations: 'updateTagAnnotations',
   reply: 'reply',
   tagsUpdated: 'tagsUpdated',
   deleteAllAnnotations: 'deleteAllAnnotations',

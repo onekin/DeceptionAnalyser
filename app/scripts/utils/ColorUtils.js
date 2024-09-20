@@ -26,7 +26,11 @@ class ColorUtils {
   }
 
   static setAlphaToColor (color, alpha) {
-    return Color(color).alpha(alpha).rgb().string()
+    if (alpha === undefined) {
+      return Color(color).rgb().string()
+    } else {
+      return Color(color).alpha(alpha).rgb().string()
+    }
   }
 
   static customHash (str) {
