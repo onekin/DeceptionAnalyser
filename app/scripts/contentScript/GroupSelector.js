@@ -321,8 +321,8 @@ class GroupSelector {
 
   createNewGroup (callback) {
     Alerts.inputTextAlert({
-      title: 'Create a new review model',
-      inputPlaceholder: 'Type here the name of your new review model...',
+      title: 'Create a new schema',
+      inputPlaceholder: 'Type here the name of your new schema...',
       preConfirm: (groupName) => {
         if (_.isString(groupName)) {
           if (groupName.length <= 0) {
