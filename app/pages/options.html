@@ -7,7 +7,7 @@
 
   <link rel="stylesheet" type="text/css" href="../styles/options.css">
 
-  <title>AnnotatorGPT configuration</title>
+  <title>DeceptionAnalyzer configuration</title>
 </head>
 <body>
 <div class="container">
@@ -20,13 +20,13 @@
     <div class="jumbotron">
       </br></br>
       <img alt="Review and go logo" title="Review and go logo" class="logo" src="../images/fraudDetection.png">
-      <h2 class="title">AnnotatorGPT configuration</h2>
+      <h2 class="title">DeceptionAnalyzer configuration</h2>
       <div class="card">
         <div class="card-header card-header bg-dark text-white">User manual</div>
         <div class="card-body">
-          <div class="form-group">
+          <!--<div class="form-group">
             Visit whenever you want the <a href="https://github.com/haritzmedina/reviewandgo/wiki" target="_blank">user manual</a> for further information or checkout the <a href="https://www.youtube.com/watch?v=iPC6YEr3qlo">video</a>.
-          </div>
+          </div> -->
         </div>
       </div>
       <div class="card">
@@ -35,9 +35,14 @@
           <div class="form-check">
             <label for="LLMDropdown">Select your Large Language Model</label>
             <select class="form-control" id="LLMDropdown">
-              <option value="anthropic" selected="selected">Anthropic (Claude-2)</option>
-              <option value="openAI">OpenAI (GPT4-turbo)</option>
+              <option value="anthropic" selected="selected">Anthropic</option>
+              <option value="openAI">OpenAI</option>
             </select>
+          </div>
+          <!-- Model Selection -->
+          <div id="modelSelectionContainer" style="display:none;">
+            <label for="modelDropdown">Select a Model:</label>
+            <select class="form-control" id="modelDropdown"></select>
           </div>
           <br>
           <div id="anthropic-ApiKeyContainer" class="APIKey-Configuration">
@@ -46,7 +51,7 @@
             <button id="anthropic-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
           </div>
           <div id="openAI-ApiKeyContainer" class="APIKey-Configuration">
-            <label>Paste here your OpenAI API key:</label>
+            <label>Paste here your OpenAI API Plus key:</label>
             <input type="text" id="openAI-APIKey" />
             <button id="openAI-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
           </div>

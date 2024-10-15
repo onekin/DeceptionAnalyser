@@ -1,6 +1,5 @@
-import AnthropicManager from '../../llm/anthropic/AnthropicManager'
+import LLMClient from '../../llm/LLMClient'
 import LLMTextUtils from '../../utils/LLMTextUtils'
-import OpenAIManager from '../../llm/openAI/OpenAIManager'
 import Alerts from '../../utils/Alerts'
 import LanguageUtils from '../../utils/LanguageUtils'
 import Events from '../../contentScript/Events'
@@ -799,7 +798,7 @@ class CustomCriteriasManager {
           llm = Config.review.defaultLLM
         }
         if (llm && llm !== '') {
-          let selectedLLM = llm
+          let selectedLLM = llm.modelType
           Alerts.confirmAlert({
             title: 'Find annotations for ' + criterion + ' premise',
             text: 'Do you want to state the premises using LLM?',
@@ -885,19 +884,13 @@ class CustomCriteriasManager {
                     }
                     prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
                     let params = {
-                      criterion: criterion,
-                      description: description,
+                      prompt: prompt,
+                      llm: llm,
                       apiKey: apiKey,
                       documents: documents,
-                      callback: callback,
-                      prompt: prompt,
-                      selectedLLM
+                      callback: callback
                     }
-                    if (selectedLLM === 'anthropic') {
-                      AnthropicManager.askCriteria(params)
-                    } else if (selectedLLM === 'openAI') {
-                      OpenAIManager.askCriteria(params)
-                    }
+                    LLMClient.pdfBasedQuestion(params)
                   })
                 } else {
                   let callback = () => {
@@ -923,7 +916,7 @@ class CustomCriteriasManager {
         llm = Config.review.defaultLLM
       }
       if (llm && llm !== '') {
-        let selectedLLM = llm
+        let selectedLLM = llm.modelType
         Alerts.confirmAlert({
           title: 'Find annotations for ' + criterion + ' premise',
           text: 'Do you want to state the premises using LLM?',
@@ -1027,19 +1020,13 @@ class CustomCriteriasManager {
                         prompt = prompt + '\n\nFeedback for your previous answer: ' + feedback.comment + '\nRating of your previous answer from 0 to 4: ' + feedback.rate
                       }
                       let params = {
-                        criterion: criterion,
-                        description: description,
+                        prompt: prompt,
+                        llm: llm,
                         apiKey: apiKey,
                         documents: documents,
-                        callback: callback,
-                        prompt: prompt,
-                        selectedLLM
+                        callback: callback
                       }
-                      if (selectedLLM === 'anthropic') {
-                        AnthropicManager.askCriteria(params)
-                      } else if (selectedLLM === 'openAI') {
-                        OpenAIManager.askCriteria(params)
-                      }
+                      LLMClient.pdfBasedQuestion(params)
                     })
                   } else {
                     let callback = () => {
@@ -1060,14 +1047,13 @@ class CustomCriteriasManager {
     })
   }
 
-  annotateAllPremises (groupName) {
-    // this.modifyCriteriaHandler(currentTagGroup)
+  annotateAllPremises () {
     chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
       if (llm === '') {
         llm = Config.review.defaultLLM
       }
       if (llm && llm !== '') {
-        let selectedLLM = llm
+        let selectedLLM = llm.modelType
         Alerts.confirmAlert({
           title: 'Find annotations for premises',
           text: 'Do you want to state the premises using LLM?',
@@ -1169,18 +1155,13 @@ class CustomCriteriasManager {
                   }
                   prompt = prompt.replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
                   let params = {
-                    groupName: groupName,
+                    prompt: prompt,
+                    llm: llm,
                     apiKey: apiKey,
                     documents: documents,
-                    callback: callback,
-                    prompt: prompt,
-                    selectedLLM
+                    callback: callback
                   }
-                  if (selectedLLM === 'anthropic') {
-                    AnthropicManager.askCriteria(params)
-                  } else if (selectedLLM === 'openAI') {
-                    OpenAIManager.askCriteria(params)
-                  }
+                  LLMClient.pdfBasedQuestion(params)
                 })
               } else {
                 let callback = () => {
@@ -1217,7 +1198,7 @@ class CustomCriteriasManager {
           llm = Config.review.defaultLLM
         }
         if (llm && llm !== '') {
-          let selectedLLM = llm
+          let selectedLLM = llm.modelType
           Alerts.confirmAlert({
             title: 'Formulate ' + criterion,
             text: 'Do you want to answer the critical question using LLM?',
@@ -1330,19 +1311,13 @@ class CustomCriteriasManager {
                     }
                     prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_SCHEME]', scheme)
                     let params = {
-                      criterion: criterion,
-                      description: description,
+                      prompt: prompt,
+                      llm: llm,
                       apiKey: apiKey,
                       documents: documents,
-                      callback: callback,
-                      prompt: prompt,
-                      selectedLLM
+                      callback: callback
                     }
-                    if (selectedLLM === 'anthropic') {
-                      AnthropicManager.askCriteria(params)
-                    } else if (selectedLLM === 'openAI') {
-                      OpenAIManager.askCriteria(params)
-                    }
+                    LLMClient.pdfBasedQuestion(params)
                   })
                 } else {
                   let callback = () => {
@@ -1368,7 +1343,7 @@ class CustomCriteriasManager {
         llm = Config.review.defaultLLM
       }
       if (llm && llm !== '') {
-        let selectedLLM = llm
+        let selectedLLM = llm.modelType
         Alerts.confirmAlert({
           title: 'Formulate ' + criterion,
           text: 'Do you want to answer the critical question using LLM?',
@@ -1508,19 +1483,13 @@ class CustomCriteriasManager {
                         prompt = prompt + '\n\nFeedback for your previous answer: ' + feedback.comment + '\nRating of your previous answer from 0 to 4: ' + feedback.rate
                       }
                       let params = {
-                        criterion: criterion,
-                        description: description,
+                        prompt: prompt,
+                        llm: llm,
                         apiKey: apiKey,
                         documents: documents,
-                        callback: callback,
-                        prompt: prompt,
-                        selectedLLM
+                        callback: callback
                       }
-                      if (selectedLLM === 'anthropic') {
-                        AnthropicManager.askCriteria(params)
-                      } else if (selectedLLM === 'openAI') {
-                        OpenAIManager.askCriteria(params)
-                      }
+                      LLMClient.pdfBasedQuestion(params)
                     })
                   } else {
                     let callback = () => {
@@ -1548,7 +1517,7 @@ class CustomCriteriasManager {
         llm = Config.review.defaultLLM
       }
       if (llm && llm !== '') {
-        let selectedLLM = llm
+        let selectedLLM = llm.modelType
         Alerts.confirmAlert({
           title: 'Find annotations for critical questions',
           text: 'Do you want to perform the critical questions using LLM?',
@@ -1692,18 +1661,13 @@ class CustomCriteriasManager {
                   }
                   prompt = prompt.replaceAll('[C_QUESTIONS]', questions).replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
                   let params = {
-                    criterion: groupName,
+                    prompt: prompt,
+                    llm: llm,
                     apiKey: apiKey,
                     documents: documents,
-                    callback: callback,
-                    prompt: prompt,
-                    selectedLLM
+                    callback: callback
                   }
-                  if (selectedLLM === 'anthropic') {
-                    AnthropicManager.askCriteria(params)
-                  } else if (selectedLLM === 'openAI') {
-                    OpenAIManager.askCriteria(params)
-                  }
+                  LLMClient.pdfBasedQuestion(params)
                 })
               } else {
                 let callback = () => {
@@ -1767,7 +1731,7 @@ class CustomCriteriasManager {
           llm = Config.review.defaultLLM
         }
         if (llm && llm !== '') {
-          let selectedLLM = llm
+          let selectedLLM = llm.modelType
           Alerts.confirmAlert({
             title: criterion + ' assessment',
             text: '<div style="text-align: justify;text-justify: inter-word">Do you want to generate arguments and counter-arguments using LLM?</div>',
@@ -1828,18 +1792,13 @@ class CustomCriteriasManager {
                     }
                     argumentsPrompt = argumentsPrompt.replaceAll('[C_QUESTION]', question.fullQuestion).replaceAll('[C_ANSWER]', answer.answer).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
                     let params = {
-                      criterion: criterion,
-                      description: description,
+                      prompt: argumentsPrompt,
+                      llm: llm,
                       apiKey: apiKey,
                       documents: documents,
-                      callback: callback,
-                      prompt: argumentsPrompt
+                      callback: callback
                     }
-                    if (selectedLLM === 'anthropic') {
-                      AnthropicManager.askCriteria(params)
-                    } else if (selectedLLM === 'openAI') {
-                      OpenAIManager.askCriteria(params)
-                    }
+                    LLMClient.pdfBasedQuestion(params)
                   })
                 } else {
                   let callback = () => {

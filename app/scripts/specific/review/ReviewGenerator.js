@@ -7,7 +7,6 @@ import AnnotationUtils from '../../utils/AnnotationUtils'
 const axios = require('axios')
 const _ = require('lodash')
 const LanguageUtils = require('../../utils/LanguageUtils')
-const Screenshots = require('./Screenshots')
 const $ = require('jquery')
 require('jquery-contextmenu/dist/jquery.contextMenu')
 const {Review, AssessedTag, Annotation} = require('../../exporter/reviewModel.js')

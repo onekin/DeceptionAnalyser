@@ -35,14 +35,11 @@
   "permissions": [
     "storage",
     "tabs",
-    "unlimitedStorage",
-    "https://api.anthropic.com/*",
-    "https://api.anthropic.com"
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "file://*/*",
-    "https://api.anthropic.com/*",
-    "https://api.anthropic.com"
+    "https://api.anthropic.com/*"
   ],
   "web_accessible_resources": [
     {

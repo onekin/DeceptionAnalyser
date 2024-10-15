@@ -91,21 +91,13 @@ class GroupSelector {
           }
           // If group does not exist, create a new one
           if (_.isEmpty(this.currentGroup)) {
-            window.abwa.storageManager.client.createNewGroup({
-              name: 'DefaultReviewModel',
-              description: 'A Review&Go group to conduct a review'
-            }, (err, group) => {
-              this.currentGroup = group
-              // Save current group in GoogleStorage
-              ChromeStorage.setData(this.selectedGroupNamespace, {data: JSON.stringify(this.currentGroup)}, ChromeStorage.local)
-              if (err) {
-                Alerts.errorAlert({text: 'We are unable to create the annotation group for Review&Go. Please check if you are logged in the selected remote annotation storage (e.g.: Hypothes.is).'})
-              } else {
-                if (_.isFunction(callback)) {
-                  callback()
+            // Is empty, create a new group
+            Alerts.infoAlert(
+              {text: 'There is not any group. Please create a new schema to start reviewing.',
+                callback: () => {
+                  this.importStandardModelConfiguration()
                 }
-              }
-            })
+              })
           } else { // If group was found in extension storage
             if (_.isFunction(callback)) {
               callback()
@@ -311,7 +303,7 @@ class GroupSelector {
           // Update list of groups from storage
           this.retrieveGroups(() => {
             // Move group to new created one
-            this.setCurrentGroup(result.id, () => {
+            this.setCurrentGroup(result.id, true, () => {
               // Expand groups container
               this.container.setAttribute('aria-expanded', 'false')
               LanguageUtils.dispatchCustomEvent(Events.groupChanged, {
@@ -379,7 +371,7 @@ class GroupSelector {
 
   createGroupChangeEventHandler (groupId) {
     return (e) => {
-      this.setCurrentGroup(groupId)
+      this.setCurrentGroup(groupId, true)
     }
   }
 
@@ -409,7 +401,7 @@ class GroupSelector {
     }
   }
 
-  setCurrentGroup (groupId, callback) {
+  setCurrentGroup (groupId, updateCurrentGroup, callback) {
     // Set current group
     let newCurrentGroup = _.find(this.groups, (group) => { return group.id === groupId })
     if (newCurrentGroup) {
@@ -422,8 +414,10 @@ class GroupSelector {
           callback(err)
         }
       } else {
-        // Event group changed
-        this.updateCurrentGroupHandler(this.currentGroup.id)
+        if (updateCurrentGroup) {
+          // Event group changed
+          this.updateCurrentGroupHandler(this.currentGroup.id)
+        }
         // Open sidebar
         window.abwa.sidebar.openSidebar()
         if (_.isFunction(callback)) {
@@ -502,7 +496,7 @@ class GroupSelector {
                         Alerts.closeAlert()
                         // Update groups from storage
                         this.retrieveGroups(() => {
-                          this.setCurrentGroup(review.storageGroup.id)
+                          this.setCurrentGroup(review.storageGroup.id, true)
                         })
                       }
                     }
@@ -559,11 +553,12 @@ class GroupSelector {
                         Alerts.closeAlert()
                         // Update groups from storage
                         this.retrieveGroups(() => {
-                          this.setCurrentGroup(review.storageGroup.id)
-                          /* LanguageUtils.dispatchCustomEvent(Events.groupChanged, {
+                          this.setCurrentGroup(review.storageGroup.id, false)
+                          LanguageUtils.dispatchCustomEvent(Events.groupChanged, {
                             group: this.currentGroup,
-                            time: new Date()
-                          }) */
+                            time: new Date(),
+                            isNew: true
+                          })
                         })
                       }
                     }
