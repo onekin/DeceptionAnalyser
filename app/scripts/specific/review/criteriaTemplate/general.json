@@ -3,7 +3,7 @@
     {
       "name": "Major",
       "group": "Premises",
-      "description": "Claim “c” consists of information regarding some value “v”, action “\\alpha”, or state “s”",
+      "description": "Agent A makes a claim “c” intended to influence Agent B",
       "custom": true
     },
     {

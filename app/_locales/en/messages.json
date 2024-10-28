@@ -8,11 +8,11 @@
     "description": "The short_name (maximum of 12 characters recommended) is a short version of the app's name."
   },
   "appDescription": {
-    "message": "Review papers using highlights and go!",
+    "message": "Analyze deception in documents using argumentative schemas and Large Language Models!",
     "description": "The description of the application"
   },
   "browserActionTitle": {
-    "message": "AnalyzerGPT",
+    "message": "DeceptionAnalyzer",
     "description": "The title of the browser action button"
   },
   "HypothesisLoginRequired": {
