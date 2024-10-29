@@ -10,8 +10,8 @@ class Options {
       const defaultLLM = { modelType: 'openAI', model: 'gpt-4' }
       const openAIModels = [
         { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-        { value: 'gpt-4', label: 'GPT-4' },
-        { value: 'gpt-4-32k', label: 'GPT-4 32k' },
+        { value: 'gpt-4-turbo-2024-04-09', label: 'GPT-4 Turbo' },
+        { value: 'gpt-4o', label: 'GPT-4o' },
         { value: 'gpt-4-1106-preview', label: 'GPT-4-1106-Preview' }
       ]
 

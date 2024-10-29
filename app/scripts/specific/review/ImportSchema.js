@@ -87,7 +87,7 @@ class ImportSchema {
         showCancelButton: true,
         callback: (err) => {
           let jsonObject
-          if (reviewFile === 'General decepetion analysis') {
+          if (reviewFile === 'General deception analysis') {
             jsonObject = general
           } else if (reviewFile === 'Deception analysis on value') {
             jsonObject = value

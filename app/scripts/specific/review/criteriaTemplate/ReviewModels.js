@@ -1,7 +1,7 @@
 const ReviewModels = {
   reviews: {
     general: {
-      name: 'General decepetion analysis'
+      name: 'General deception analysis'
     },
     value: {
       name: 'Deception analysis on value'
