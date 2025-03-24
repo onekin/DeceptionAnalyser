@@ -42,7 +42,7 @@ class AnnotationUtils {
 
   static hasATag (annotation, tag) {
     return _.findIndex(annotation.tags, (annotationTag) => {
-      return _.startsWith(annotationTag.toLowerCase(), tag.toLowerCase())
+      return annotationTag.toLowerCase() === tag.toLowerCase()
     }) !== -1
   }
 }

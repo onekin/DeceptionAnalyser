@@ -389,7 +389,8 @@ class TagManager {
           })
           let tagButton = this.tagsContainer.evidencing.querySelector('.tagButton[data-mark="' + tagGroup.config.name + '"]')
           tagButton.dataset.chosen = 'true'
-          tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
+          // tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
+          tagButton.innerText = tagGroup.config.name
           // Change to a darker color
           tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
         }

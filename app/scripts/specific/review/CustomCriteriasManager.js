@@ -298,7 +298,7 @@ class CustomCriteriasManager {
   initContextMenuForCriteriaGroups () {
     let items = {}
     // Modify menu element
-    items['annotate'] = { name: 'Annotate all elements' }
+    items['annotate'] = { name: 'Annotate all in one go' }
     // If custom criteria, it is also possible to delete it
     $.contextMenu({
       selector: '.tagGroup[data-group-name]',
