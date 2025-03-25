@@ -1,0 +1,42 @@
+{
+  "Premises": {
+    "Major": {
+      "description": "Agent A makes a claim “c” intended to influence Agent B"
+    },
+    "Minor I": {
+      "description": "Claim “c” consists of information regarding some value “v”, action “alpha”, or state “s”."
+    },
+    "PEPITO": {
+      "description": "Agent A stands to benefit from Agent B accepting “c”"
+    },
+    "mandarina": {
+      "description": "Agent A's claim “c” should be scrutinised for deception"
+    }
+  },
+  "Critical questions": {
+    "CQ1": {
+      "description": "What values of B are promoted (respectively demoted) by “c”?"
+    },
+    "CQ2": {
+      "description": "How do B's actions or beliefs change based on accepting “c”?"
+    },
+    "CQ3": {
+      "description": "Does A have a history of being a reliable source of information?"
+    },
+    "CQ4": {
+      "description": "What potential benefit does A have from B accepting “c”"
+    },
+    "CQ5": {
+      "description": "What potential future loss does “A” risk from “B” accepting “c”?"
+    },
+    "CQ6": {
+      "description": "Are there any inconsistencies or discrepancies in “c”, “v”, “alpha”, or “s”?"
+    },
+    "CQ7": {
+      "description": "Are there independent verifications or counterclaims to “c” with respect to “v”, “alpha”, or “s”?"
+    },
+    "CQ8": {
+      "description": "Is “c”, with respect to “v”, “alpha”, or “s”, consistent with A's knowledge, experience, and personality?"
+    }
+  }
+}

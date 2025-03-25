@@ -261,7 +261,9 @@ class TagManager {
         conclusionButton = button
       }
     }
-    this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
+    if (conclusionButton && conclusionTagGroup) {
+      this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
+    }
   }
 
   static createButton ({name, color = 'grey', description, handler, role, tagGroup}) {
@@ -389,8 +391,8 @@ class TagManager {
           })
           let tagButton = this.tagsContainer.evidencing.querySelector('.tagButton[data-mark="' + tagGroup.config.name + '"]')
           tagButton.dataset.chosen = 'true'
-          // tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
-          tagButton.innerText = tagGroup.config.name
+          tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
+          // tagButton.innerText = tagGroup.config.name
           // Change to a darker color
           tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
         }

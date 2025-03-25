@@ -58,6 +58,53 @@ class Alerts {
     }
   }
 
+  static createGroupAlert ({ text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'How do you want to create the schema?', callbackCreateEmpty, callbackImportJSON, callbackImportStandard }) {
+    Alerts.tryToLoadSwal()
+
+    if (_.isNull(swal)) {
+      if (_.isFunction(callbackCreateEmpty)) {
+        callbackCreateEmpty(new Error('Unable to load swal'))
+      }
+    } else {
+      swal.fire({
+        icon: Alerts.alertType.info,
+        title: title,
+        showConfirmButton: false,
+        html: `
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button id="btn-empty-schema" class="swal2-confirm swal2-styled">Create Empty Schema</button>
+          <button id="btn-import-json" class="swal2-confirm swal2-styled">Import Schema from JSON</button>
+          <button id="btn-import-standard" class="swal2-confirm swal2-styled">Import Standard Schema</button>
+        </div>
+        <div style="margin-top: 15px; font-size: 0.9em; color: #666;">${text}</div>
+      `,
+        didOpen: () => {
+          const btnEmpty = document.getElementById('btn-empty-schema')
+          const btnJSON = document.getElementById('btn-import-json')
+          const btnStandard = document.getElementById('btn-import-standard')
+
+          if (btnEmpty) {
+            btnEmpty.addEventListener('click', () => {
+              if (_.isFunction(callbackCreateEmpty)) callbackCreateEmpty()
+            })
+          }
+
+          if (btnJSON) {
+            btnJSON.addEventListener('click', () => {
+              if (_.isFunction(callbackImportJSON)) callbackImportJSON()
+            })
+          }
+
+          if (btnStandard) {
+            btnStandard.addEventListener('click', () => {
+              if (_.isFunction(callbackImportStandard)) callbackImportStandard()
+            })
+          }
+        }
+      })
+    }
+  }
+
   static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {

@@ -80,9 +80,10 @@ class ExportSchema {
 
   static exportConfigurationSchemaToJSONFile (schemeAnnotations) {
     let object = ExportSchema.exportConfigurationSchemeToJSObject(schemeAnnotations)
-    if (_.isObject(object)) {
+    let adaptedObject = ExportSchema.transformCriteriaToGroupedFormat(object)
+    if (_.isObject(adaptedObject)) {
       // Stringify JS object
-      let stringifyObject = JSON.stringify(object, null, 2)
+      let stringifyObject = JSON.stringify(adaptedObject, null, 2)
       // Download the file
       let blob = new window.Blob([stringifyObject], {
         type: 'text/plain;charset=utf-8'
@@ -91,6 +92,31 @@ class ExportSchema {
     } else {
       Alerts.errorAlert({text: 'An unexpected error happened when trying to retrieve review model configuration. Reload webpage and try again.'})
     }
+  }
+
+  static transformCriteriaToGroupedFormat (inputJson) {
+    // Parse the input JSON if it's a string
+    const criteriaData = typeof inputJson === 'string'
+      ? JSON.parse(inputJson)
+      : inputJson
+
+    // Create the result object
+    const transformedData = {}
+
+    // Group criteria by their group
+    criteriaData.criteria.forEach(criteria => {
+      // Initialize the group if it doesn't exist
+      if (!transformedData[criteria.group]) {
+        transformedData[criteria.group] = {}
+      }
+
+      // Add the criteria to its group
+      transformedData[criteria.group][criteria.name] = {
+        description: criteria.description
+      }
+    })
+
+    return transformedData
   }
 }
 

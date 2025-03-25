@@ -33,11 +33,42 @@ class Review extends AnnotationGuide {
     }
   }
 
-  static fromCriterias (criterias) {
+  static fromCriterias2 (criterias) {
     let review = new Review({reviewId: ''})
     for (let i = 0; i < criterias.length; i++) {
       let criteria = new Criteria({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
       review.criterias.push(criteria)
+    }
+    return review
+  }
+
+  static fromCriterias (criteriaJSON) {
+    let review = new Review({ reviewId: '' })
+
+    // Iterate over top-level groups: "Premises", "CriticalQuestions"
+    for (const group in criteriaJSON) {
+      if (criteriaJSON.hasOwnProperty(group)) {
+        const criteriaGroup = criteriaJSON[group]
+
+        // Iterate over individual criteria inside each group
+        for (const name in criteriaGroup) {
+          if (criteriaGroup.hasOwnProperty(name)) {
+            const description = criteriaGroup[name].description
+
+            let criteria = new Criteria({
+              name: name,
+              description: description,
+              custom: true,
+              group: group,
+              resume: '',
+              alternative: '',
+              review: review
+            })
+
+            review.criterias.push(criteria)
+          }
+        }
+      }
     }
     return review
   }

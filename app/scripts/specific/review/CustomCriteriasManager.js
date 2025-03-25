@@ -295,10 +295,12 @@ class CustomCriteriasManager {
     this.initContextMenuForCriteriaGroups()
   }
 
-  initContextMenuForCriteriaGroups () {
+  /* initContextMenuForCriteriaGroups () {
     let items = {}
     // Modify menu element
     items['annotate'] = { name: 'Annotate all in one go' }
+    items['addTheme'] = { name: 'New Premise' }
+    items['addTheme'] = { name: 'New Question' }
     // If custom criteria, it is also possible to delete it
     $.contextMenu({
       selector: '.tagGroup[data-group-name]',
@@ -319,6 +321,49 @@ class CustomCriteriasManager {
         }
       }
     })
+  } */
+
+  initContextMenuForCriteriaGroups () {
+    $.contextMenu({
+      selector: '.tagGroup[data-group-name]',
+      build: (trigger) => {
+        let criteriaGroupName = trigger.attr('data-group-name')
+
+        // Dynamically create items based on the specific group
+        let items = {}
+
+        if (criteriaGroupName === 'Premises') {
+          items = {
+            'annotate': { name: 'Annotate all Premises' },
+            'addTheme': { name: 'New Premise' }
+          }
+        } else if (criteriaGroupName === 'Critical questions') {
+          items = {
+            'annotate': { name: 'Formulate all Critical Questions' },
+            'addTheme': { name: 'New Critical Question' }
+          }
+        }
+
+        return {
+          callback: (key, ev) => {
+            if (key === 'annotate') {
+              if (criteriaGroupName === 'Premises') {
+                this.annotateAllPremises(criteriaGroupName)
+              } else if (criteriaGroupName === 'Critical questions') {
+                this.formulateAllCriticalQuestions(criteriaGroupName)
+              }
+            } else if (key === 'addTheme') {
+              if (criteriaGroupName === 'Premises') {
+                // this.addNewPremise(criteriaGroupName)
+              } else if (criteriaGroupName === 'Critical questions') {
+                // this.addNewQuestion(criteriaGroupName)
+              }
+            }
+          },
+          items: items
+        }
+      }
+    })
   }
 
   initContextMenuForCriteria () {
@@ -331,13 +376,13 @@ class CustomCriteriasManager {
       let items = {}
       if (tagGroup.config.options.group === 'Premises') {
         // Highlight criterion by LLM
-        items['annotatePremise'] = { name: 'State premise with annotation' }
+        // items['annotatePremise'] = { name: 'State premise with annotation' }
         // Find alternative viewpoints by LLM
         items['recap'] = { name: 'Show analysis' }
       } else if (tagGroup.config.options.group === 'Critical questions') {
         // Highlight criterion by LLM
-        items['annotateCriticalQuestion'] = { name: 'Formulate question' }
-        items['arguments'] = { name: 'Arguments & Counter-Arguments' }
+        // items['annotateCriticalQuestion'] = { name: 'Formulate question' }
+        // items['arguments'] = { name: 'Arguments & Counter-Arguments' }
         items['recap'] = { name: 'Show analysis' }
       }
       $.contextMenu({
@@ -1100,9 +1145,16 @@ class CustomCriteriasManager {
                     if (tagAnnotation.text) {
                       data = jsYaml.load(tagAnnotation.text)
                       // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                      data.compile = []
-                      // Now that we're sure data.resume is an array, push the new object into it.
-                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement })
+                      if (!Array.isArray(data.compile)) {
+                        data.compile = []
+                      }
+                      let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                      if (!foundCompile) {
+                        // If not, create and add it to the array
+                        data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                      } else {
+                        foundCompile.answer = answer
+                      }
                     }
                     tagAnnotation.text = jsYaml.dump(data)
                     tagAnnotations.push(tagAnnotation)
@@ -1134,8 +1186,10 @@ class CustomCriteriasManager {
                         scheme += premise.config.options.description + '\n'
                       }
                     }
-                    scheme += conclusion.config.name.toUpperCase() + ': '
-                    scheme += conclusion.config.options.description + '\n'
+                    if (conclusion) {
+                      scheme += conclusion.config.name.toUpperCase() + ': '
+                      scheme += conclusion.config.options.description + '\n'
+                    }
                     // FORMAT
                     format += '{\n' + '"items": ['
                     for (let i = 0; i < premises.length; i++) {
@@ -1626,11 +1680,13 @@ class CustomCriteriasManager {
                         }
                       }
                     }
-                    scheme += conclusion.config.name.toUpperCase() + ': '
-                    if (conclusion.config.options.compile.answer) {
-                      scheme += conclusion.config.options.compile.answer + '\n'
-                    } else {
-                      scheme += conclusion.config.options.description + '\n'
+                    if (conclusion) {
+                      scheme += conclusion.config.name.toUpperCase() + ': '
+                      if (conclusion.config.options.compile.answer) {
+                        scheme += conclusion.config.options.compile.answer + '\n'
+                      } else {
+                        scheme += conclusion.config.options.description + '\n'
+                      }
                     }
                     // Retrieve CRITICAL QUESTIONS
                     let criticalQuestions = currentTags.filter(tag => {

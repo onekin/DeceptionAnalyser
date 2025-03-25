@@ -95,7 +95,18 @@ class GroupSelector {
             Alerts.infoAlert(
               {text: 'There is not any group. Please create a new schema to start reviewing.',
                 callback: () => {
-                  this.importStandardModelConfiguration()
+                  // this.importStandardModelConfiguration()
+                  Alerts.createGroupAlert({
+                    callbackCreateEmpty: () => {
+                      this.importEmptyConfiguration()
+                    },
+                    callbackImportJSON: () => {
+                      this.importCriteriaConfiguration()
+                    },
+                    callbackImportStandard: () => {
+                      this.importStandardModelConfiguration()
+                    }
+                  })
                 }
               })
           } else { // If group was found in extension storage
@@ -216,6 +227,7 @@ class GroupSelector {
       groupSelectorItem.querySelector('.exportGroup').addEventListener('click', this.createGroupSelectorExportOptionEventHandler(group))
       groupSelectorItem.querySelector('.deleteGroup').addEventListener('click', this.createGroupSelectorDeleteOptionEventHandler(group))
     }
+    /*
     // New group button
     let newGroupButton = document.createElement('div')
     newGroupButton.innerText = 'Create review model'
@@ -224,20 +236,20 @@ class GroupSelector {
     newGroupButton.title = 'Create a new review model'
     newGroupButton.addEventListener('click', this.createNewReviewModelEventHandler())
     groupsContainer.appendChild(newGroupButton)
-    // Import button
-    // let importGroupButton = document.createElement('div')
-    // importGroupButton.className = 'groupSelectorButton'
-    // importGroupButton.innerText = 'Import review model'
-    // importGroupButton.id = 'importReviewModelButton'
-    // importGroupButton.addEventListener('click', this.createImportGroupButtonEventHandler())
-    // groupsContainer.appendChild(importGroupButton)
-    // Import button
+
     let importStandardGroupButton = document.createElement('div')
     importStandardGroupButton.className = 'groupSelectorButton'
     importStandardGroupButton.innerText = 'Import Analysis Schema'
     importStandardGroupButton.id = 'importStandardModelButton'
     importStandardGroupButton.addEventListener('click', this.createImportStandardGroupButtonEventHandler())
     groupsContainer.appendChild(importStandardGroupButton)
+    let importJSONButton = document.createElement('div')
+    importJSONButton.className = 'importJSONButton'
+    importJSONButton.innerText = 'Import from Schema JSON'
+    importJSONButton.id = 'importJSONButton'
+    importJSONButton.addEventListener('click', this.createImportGroupButtonEventHandler())
+    groupsContainer.appendChild(importJSONButton)
+    */
   }
 
   createGroupSelectorRenameOptionEventHandler (group) {
@@ -484,7 +496,7 @@ class GroupSelector {
                 if (err) {
                   Alerts.errorAlert({text: 'Unable to create a new annotation group. Error: ' + err.message})
                 } else {
-                  let review = ReviewSchema.fromCriterias(jsonObject.criteria)
+                  let review = ReviewSchema.fromCriterias(jsonObject)
                   review.storageGroup = newGroup
                   Alerts.loadingAlert({title: 'Configuration in progress', text: 'We are configuring everything to start reviewing.', position: Alerts.position.center})
                   ImportSchema.createConfigurationAnnotationsFromReview({
@@ -568,6 +580,63 @@ class GroupSelector {
             }
           }
         })
+      }
+    })
+  }
+
+  importEmptyConfiguration () {
+    let jsonObject = ImportSchema.retrieveEmptySchema()
+    Alerts.inputTextAlert({
+      alertType: Alerts.alertType.warning,
+      title: 'Give a name to your imported review model',
+      text: 'When the configuration is imported a new highlighter is created. You can return to your other review models using the sidebar.',
+      inputPlaceholder: 'Type here the name of your schema...',
+      preConfirm: (groupName) => {
+        if (_.isString(groupName)) {
+          if (groupName.length <= 0) {
+            const swal = require('sweetalert2')
+            swal.showValidationMessage('Name cannot be empty.')
+          } else if (groupName.length > 25) {
+            const swal = require('sweetalert2')
+            swal.showValidationMessage('The schema name cannot be higher than 25 characters.')
+          } else {
+            return groupName
+          }
+        }
+      },
+      callback: (err, reviewName) => {
+        if (err) {
+          window.alert('Unable to load alert. Unexpected error, please contact developer.')
+        } else {
+          window.abwa.storageManager.client.createNewGroup({name: reviewName}, (err, newGroup) => {
+            if (err) {
+              Alerts.errorAlert({text: 'Unable to create a new annotation group. Error: ' + err.message})
+            } else {
+              let review = ReviewSchema.fromCriterias(jsonObject)
+              review.storageGroup = newGroup
+              Alerts.loadingAlert({title: 'Configuration in progress', text: 'We are configuring everything to start reviewing.', position: Alerts.position.center})
+              ImportSchema.createConfigurationAnnotationsFromReview({
+                review,
+                callback: (err, annotations) => {
+                  if (err) {
+                    Alerts.errorAlert({ text: 'There was an error when configuring Review&Go highlighter' })
+                  } else {
+                    Alerts.closeAlert()
+                    // Update groups from storage
+                    this.retrieveGroups(() => {
+                      this.setCurrentGroup(review.storageGroup.id, false)
+                      LanguageUtils.dispatchCustomEvent(Events.groupChanged, {
+                        group: this.currentGroup,
+                        time: new Date(),
+                        isNew: true
+                      })
+                    })
+                  }
+                }
+              })
+            }
+          })
+        }
       }
     })
   }

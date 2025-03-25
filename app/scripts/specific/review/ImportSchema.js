@@ -2,6 +2,8 @@ import Alerts from '../../utils/Alerts'
 import FileUtils from '../../utils/FileUtils'
 import general from './criteriaTemplate/general.json'
 import value from './criteriaTemplate/value.json'
+import empty from './criteriaTemplate/empty.json'
+// import ReviewModels from './criteriaTemplate/ReviewModels'
 
 class ImportSchema {
   static createConfigurationAnnotationsFromReview ({review, callback}) {
@@ -101,6 +103,10 @@ class ImportSchema {
       })
     }
     showForm()
+  }
+
+  static retrieveEmptySchema () {
+    return empty
   }
 }
 

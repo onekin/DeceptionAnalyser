@@ -3,6 +3,9 @@
 import Config from '../../Config'
 import Alerts from '../../utils/Alerts'
 import AnnotationUtils from '../../utils/AnnotationUtils'
+import LocalStorageManager from '../../storage/local/LocalStorageManager'
+import jsYaml from 'js-yaml'
+
 
 const axios = require('axios')
 const _ = require('lodash')
@@ -52,6 +55,16 @@ class ReviewGenerator {
       this.configurationImage.src = configurationImageURL
       this.configurationImage.addEventListener('click', () => {
         this.configurationButtonHandler()
+      })
+      if (_.isFunction(callback)) {
+        callback()
+      }
+      // New schema button
+      // let newSchemaImageURL = chrome.runtime.getURL('/images/add.png')
+      this.newSchemaImage = this.container.querySelector('#newSchemaButton')
+      // this.newSchemaImage.src = newSchemaImageURL
+      this.newSchemaImage.addEventListener('click', () => {
+        this.newSchemaButtonHandler()
       })
       if (_.isFunction(callback)) {
         callback()
@@ -181,7 +194,156 @@ class ReviewGenerator {
   }
 
   generateCategoryReviewButtonHandler () {
-    this.generateReviewByCategory()
+    // Create context menu
+    $.contextMenu({
+      selector: '#categoryReviewGeneratorButton',
+      trigger: 'left',
+      build: () => {
+        // Create items for context menu
+        let items = {}
+        items['html'] = {name: 'Export as HTML'}
+        items['excel'] = {name: 'Export as Excel'}
+        return {
+          callback: (key, opt) => {
+            if (key === 'html') {
+              this.generateReviewByCategory()
+            } else if (key === 'excel') {
+              this.generateExcel()
+            }
+          },
+          items: items
+        }
+      }
+    })
+  }
+
+  newSchemaButtonHandler () {
+    Alerts.createGroupAlert({
+      callbackCreateEmpty: () => {
+        window.abwa.groupSelector.importEmptyConfiguration()
+      },
+      callbackImportJSON: () => {
+        window.abwa.groupSelector.importCriteriaConfiguration()
+      },
+      callbackImportStandard: () => {
+        window.abwa.groupSelector.importStandardModelConfiguration()
+      }
+    })
+  }
+
+  generateExcel () {
+    let db = window.abwa.storageManager.annotationsDatabase
+    let annotations = this.getReviewCriteriaAnnotations(db, window.abwa.groupSelector.currentGroup.id)
+    console.log(annotations)
+    let result = []
+    annotations.forEach(annotation => {
+      const criteriaTag = annotation.tags.find(tag => tag.startsWith("review:criteria:"))
+      const criteria = criteriaTag ? criteriaTag.replace("review:criteria:", "") : null
+
+      // Parse the text (YAML-like)
+      let parsed;
+      try {
+        parsed = jsYaml.load(annotation.text)
+      } catch (e) {
+        console.warn("Failed to parse annotation text as YAML", annotation.text)
+        return
+      }
+
+      const description = parsed.description || ''
+
+      if (Array.isArray(parsed.compile)) {
+        parsed.compile.forEach(entry => {
+          result.push({
+            criteria,
+            description,
+            document: entry.document,
+            answer: entry.answer
+          })
+        })
+      }
+    })
+
+    console.log(result)
+    const grouped = this.groupByCriteria(result) // assuming your array is called `data`
+
+    console.log(grouped)
+    const csv = this.generateCriteriaMatrixCSV(grouped) // `grouped` is your input object
+    console.log(csv)
+
+    // Optional: download as a .csv file
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement("a")
+    link.href = URL.createObjectURL(blob)
+    link.download = "criteria_matrix.csv"
+    link.click();
+  }
+
+  groupByCriteria(entries) {
+    return entries.reduce((groups, entry) => {
+      const key = entry.criteria
+
+      if (!groups[key]) {
+        groups[key] = []
+      }
+      groups[key].push(entry)
+      return groups
+    }, {})
+  }
+
+  generateCriteriaMatrixCSV (groupedData) {
+    const documentsSet = new Set()
+    const criteriaList = Object.keys(groupedData)
+
+    // Step 1: Collect all unique documents
+    for (const criteria of criteriaList) {
+      for (const entry of groupedData[criteria]) {
+        documentsSet.add(entry.document)
+      }
+    }
+
+    const documents = Array.from(documentsSet)
+
+    // Step 2: Create header with criteria and their descriptions
+    const header = ['DOCUMENT']
+    for (const criteria of criteriaList) {
+      const firstEntry = groupedData[criteria][0]
+      const description = firstEntry.description || ''
+      const label = `${criteria}: ${description.replace(/"/g, '""')}`
+      header.push(`"${label}"`);
+    }
+
+    // Step 3: Build rows
+    const rows = [header]
+
+    for (const doc of documents) {
+      const row = [doc]
+      for (const criteria of criteriaList) {
+        const entry = groupedData[criteria].find(e => e.document === doc)
+        if (!entry) {
+          row.push('')
+        } else {
+          const answer = typeof entry.answer === 'string'
+            ? entry.answer
+            : entry.answer.statement || ''
+          row.push(`"${answer.replace(/"/g, '""')}"`)
+        }
+      }
+      rows.push(row)
+    }
+
+    // Step 4: Convert to CSV
+    const csv = rows.map(row => row.join(',')).join('\n')
+    return csv
+  }
+
+  getReviewCriteriaAnnotations(data, groupId) {
+    return data.annotations.filter(annotation => {
+      return (
+        annotation.group === groupId &&
+        annotation.tags &&
+        annotation.tags.some(tag => tag.startsWith("review:criteria:"))
+      );
+    })
   }
 
   configurationButtonHandler () {

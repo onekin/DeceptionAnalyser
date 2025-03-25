@@ -18,6 +18,7 @@ class ContentScriptManager {
   }
 
   init () {
+    this.initListenerForGroupChange()
     this.status = ContentScriptManager.status.initializing
     this.loadContentTypeManager(() => {
       this.loadStorage(() => {
@@ -29,7 +30,6 @@ class ContentScriptManager {
             window.abwa.groupSelector.init(() => {
               this.reloadContentByGroup(() => {
                 // Initialize listener for group change to reload the content
-                this.initListenerForGroupChange()
                 // Set status as initialized
                 this.status = ContentScriptManager.status.initialized
               })
