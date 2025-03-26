@@ -88,7 +88,8 @@ class ExportSchema {
       let blob = new window.Blob([stringifyObject], {
         type: 'text/plain;charset=utf-8'
       })
-      FileSaver.saveAs(blob, 'reviewModel.json')
+      let name = window.abwa.groupSelector.currentGroup.name + '.json'
+      FileSaver.saveAs(blob, name)
     } else {
       Alerts.errorAlert({text: 'An unexpected error happened when trying to retrieve review model configuration. Reload webpage and try again.'})
     }

@@ -202,7 +202,7 @@ class ReviewGenerator {
         // Create items for context menu
         let items = {}
         items['html'] = {name: 'Export as HTML'}
-        items['excel'] = {name: 'Export as Excel'}
+        items['excel'] = {name: 'Export as .csv'}
         return {
           callback: (key, opt) => {
             if (key === 'html') {
@@ -235,6 +235,19 @@ class ReviewGenerator {
     let db = window.abwa.storageManager.annotationsDatabase
     let annotations = this.getReviewCriteriaAnnotations(db, window.abwa.groupSelector.currentGroup.id)
     console.log(annotations)
+
+    // STEP 1: Build document ID → local file URL mapping
+    let documentIdToLocalFileMap = {}
+    db.annotations.forEach(annotation => {
+      if (annotation.document && Array.isArray(annotation.document.link)) {
+        const docId = annotation.document.documentFingerprint
+        const localFile = annotation.document.link.find(link => link.type === "localfile")
+        if (docId && localFile) {
+          documentIdToLocalFileMap[docId] = localFile.href
+        }
+      }
+    })
+
     let result = []
     annotations.forEach(annotation => {
       const criteriaTag = annotation.tags.find(tag => tag.startsWith("review:criteria:"))
@@ -267,14 +280,15 @@ class ReviewGenerator {
     const grouped = this.groupByCriteria(result) // assuming your array is called `data`
 
     console.log(grouped)
-    const csv = this.generateCriteriaMatrixCSV(grouped) // `grouped` is your input object
+    const csv = this.generateCriteriaMatrixCSV(grouped, documentIdToLocalFileMap) // `grouped` is your input object
     console.log(csv)
 
     // Optional: download as a .csv file
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement("a")
     link.href = URL.createObjectURL(blob)
-    link.download = "criteria_matrix.csv"
+    let name = window.abwa.groupSelector.currentGroup.name + '.csv'
+    link.download = name
     link.click();
   }
 
@@ -290,7 +304,7 @@ class ReviewGenerator {
     }, {})
   }
 
-  generateCriteriaMatrixCSV (groupedData) {
+  generateCriteriaMatrixCSV (groupedData, documentIdToLocalFileMap) {
     const documentsSet = new Set()
     const criteriaList = Object.keys(groupedData)
 
@@ -316,7 +330,19 @@ class ReviewGenerator {
     const rows = [header]
 
     for (const doc of documents) {
-      const row = [doc]
+      const fileUrl = documentIdToLocalFileMap[doc] || 'N/A'
+
+      // Extract just the filename from the file URL
+      let filename = 'N/A'
+      if (fileUrl !== 'N/A') {
+        try {
+          filename = decodeURIComponent(new URL(fileUrl).pathname.split("/").pop())
+        } catch (e) {
+          console.warn("Failed to parse file URL:", fileUrl)
+        }
+      }
+
+      const row = [filename]  // Use filename here instead of full path
       for (const criteria of criteriaList) {
         const entry = groupedData[criteria].find(e => e.document === doc)
         if (!entry) {

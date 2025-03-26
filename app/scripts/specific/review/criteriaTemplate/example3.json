@@ -1,0 +1,42 @@
+{
+  "Premises": {
+    "Contextual Trigger": {
+      "description": "Speaker A presents a message 'c' aimed at shaping Listener B’s understanding or behavior."
+    },
+    "Content Nature": {
+      "description": "The message 'c' involves a normative value 'v', a recommended action 'alpha', or a factual condition 's'."
+    },
+    "Motivational Stake": {
+      "description": "Speaker A has something to gain if Listener B accepts or acts on message 'c'."
+    },
+    "Analytical Inference": {
+      "description": "Message 'c' requires critical assessment for potential bias, manipulation, or deception."
+    }
+  },
+  "Critical questions": {
+    "Value Alignment": {
+      "description": "What principles or values of Listener B are being appealed to, challenged, or manipulated by message 'c'?"
+    },
+    "Impact Assessment": {
+      "description": "What concrete shifts in B’s decisions, beliefs, or behaviors are likely if 'c' is accepted?"
+    },
+    "Source Credibility": {
+      "description": "Has Speaker A demonstrated reliability and honesty in previous claims or interactions?"
+    },
+    "Benefit Analysis": {
+      "description": "What direct or indirect benefits might A obtain if B endorses or follows 'c'?"
+    },
+    "Risk Exposure": {
+      "description": "What potential consequences, if any, could A suffer if B acts on 'c'?"
+    },
+    "Internal Coherence": {
+      "description": "Does message 'c', and its associated value 'v', action 'alpha', or state 's', contain contradictions or lack clarity?"
+    },
+    "External Validation": {
+      "description": "Are there independent confirmations or credible challenges to the accuracy of 'c' and its components?"
+    },
+    "Speaker Consistency": {
+      "description": "Is message 'c' congruent with what is known about A’s usual beliefs, knowledge, or character?"
+    }
+  }
+}

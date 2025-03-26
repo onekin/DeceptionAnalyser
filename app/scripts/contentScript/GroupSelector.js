@@ -92,23 +92,17 @@ class GroupSelector {
           // If group does not exist, create a new one
           if (_.isEmpty(this.currentGroup)) {
             // Is empty, create a new group
-            Alerts.infoAlert(
-              {text: 'There is not any group. Please create a new schema to start reviewing.',
-                callback: () => {
-                  // this.importStandardModelConfiguration()
-                  Alerts.createGroupAlert({
-                    callbackCreateEmpty: () => {
-                      this.importEmptyConfiguration()
-                    },
-                    callbackImportJSON: () => {
-                      this.importCriteriaConfiguration()
-                    },
-                    callbackImportStandard: () => {
-                      this.importStandardModelConfiguration()
-                    }
-                  })
-                }
-              })
+            Alerts.createGroupAlert({
+              callbackCreateEmpty: () => {
+                this.importEmptyConfiguration()
+              },
+              callbackImportJSON: () => {
+                this.importCriteriaConfiguration()
+              },
+              callbackImportStandard: () => {
+                this.importStandardModelConfiguration()
+              }
+            })
           } else { // If group was found in extension storage
             if (_.isFunction(callback)) {
               callback()

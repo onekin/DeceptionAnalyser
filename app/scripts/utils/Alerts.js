@@ -76,7 +76,7 @@ class Alerts {
           <button id="btn-import-json" class="swal2-confirm swal2-styled">Import Schema from JSON</button>
           <button id="btn-import-standard" class="swal2-confirm swal2-styled">Import Standard Schema</button>
         </div>
-        <div style="margin-top: 15px; font-size: 0.9em; color: #666;">${text}</div>
+        <!--<div style="margin-top: 15px; font-size: 0.9em; color: #666;">${text}</div>->
       `,
         didOpen: () => {
           const btnEmpty = document.getElementById('btn-empty-schema')

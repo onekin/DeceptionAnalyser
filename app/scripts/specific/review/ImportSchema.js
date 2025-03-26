@@ -39,7 +39,7 @@ class ImportSchema {
     // Ask user to upload the file
     Alerts.inputTextAlert({
       title: 'Upload your configuration file',
-      html: 'Here you can upload your json file with the configuration for the CoReviewer highlighter.',
+      html: 'Here you can upload your json file with the configuration for the Deception Analyzer highlighter.',
       input: 'file',
       callback: (err, file) => {
         if (err) {

@@ -6,10 +6,10 @@
     "Minor I": {
       "description": "Claim “c” consists of information regarding some value “v”, action “alpha”, or state “s”."
     },
-    "PEPITO": {
+    "Minor II": {
       "description": "Agent A stands to benefit from Agent B accepting “c”"
     },
-    "mandarina": {
+    "Conclusion": {
       "description": "Agent A's claim “c” should be scrutinised for deception"
     }
   },
