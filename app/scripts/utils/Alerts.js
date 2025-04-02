@@ -31,7 +31,7 @@ class Alerts {
           }
         } else {
           if (_.isFunction(callback)) {
-            callback(null, result.value)
+            // callback(null, result.value)
           }
         }
       })

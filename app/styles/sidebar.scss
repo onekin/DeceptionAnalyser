@@ -114,6 +114,17 @@
   min-width: calc( #{$sideBarWidth} - 0.5rem - 0.2rem);
 }
 
+.bodyContainerButtons {
+  background-color: $sidebarBackgroundColor;
+  min-width: calc( #{$sideBarWidth} - 0.5rem - 0.2rem);
+}
+
+.toolButton {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+}
+
 .bodyContainer[aria-hidden="true"]{
   display: none;
 }

@@ -262,7 +262,13 @@ class TagManager {
       }
     }
     if (conclusionButton && conclusionTagGroup) {
-      this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
+      // this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
+      // document.querySelector('[data-group-name="Premises"]').append(conclusionButton)
+      const premisesElement = document.querySelector('[data-group-name="Premises"]')
+      if (premisesElement && premisesElement.parentNode) {
+        conclusionButton.classList.add('conclusionButton')
+        premisesElement.parentNode.insertBefore(conclusionButton, premisesElement)
+      }
     }
   }
 
@@ -316,20 +322,86 @@ class TagManager {
     groupNameSpan.innerText = name
     groupNameSpan.title = name
     // Create event handler for tag group
-    groupNameSpan.addEventListener('click', groupHandler)
+    // groupNameSpan.addEventListener
+    // === Create the tools container dynamically === //
+    let toolsContainer = document.createElement('div')
+    toolsContainer.id = `${name}_tools_container`
+    toolsContainer.className = 'bodyContainerButtons'
+
+    // Create a wrapper div JUST for the tool buttons
+    let toolButtonGroup = document.createElement('div')
+    toolButtonGroup.style.display = 'flex'
+    toolButtonGroup.style.flexDirection = 'row'
+    toolButtonGroup.style.justifyContent = 'center'
+    toolButtonGroup.style.alignItems = 'center'
+    toolButtonGroup.style.gap = '6px'
+    toolButtonGroup.style.margin = '4px 0'
+
+    // Ask GPT button
+    let askGptButton = document.createElement('img')
+    askGptButton.id = 'askGptButton'
+    askGptButton.className = 'toolButton'
+    if (name === 'Premises') {
+      askGptButton.alt = 'Annotate all premises'
+      askGptButton.title = 'Annotate all premises'
+    } else if (name === 'Critical questions') {
+      askGptButton.alt = 'Formulate all critical questions'
+      askGptButton.title = 'Formulate all critical questions'
+    }
+    let askGptButtonURL = chrome.runtime.getURL('/images/fraudDetection.png')
+    askGptButton.src = askGptButtonURL // You can set a proper icon URL here
+    askGptButton.addEventListener('click', () => {
+      if (name === 'Premises') {
+        window.abwa.specific.customCriteriasManager.annotateAllPremises(name)
+      } else if (name === 'Critical questions') {
+        window.abwa.specific.customCriteriasManager.formulateAllCriticalQuestions(name)
+      }
+    })
+
+    // Create New Button
+    let createNewButton = document.createElement('img')
+    createNewButton.id = 'createNewButton'
+    createNewButton.className = 'toolButton'
+    if (name === 'Premises') {
+      createNewButton.alt = 'Create new premise'
+      createNewButton.title = 'Create new premise'
+    } else if (name === 'Critical questions') {
+      createNewButton.alt = 'Create new critical question'
+      createNewButton.title = 'Create new critical question'
+    }
+    createNewButton.alt = 'Create New Button'
+    createNewButton.title = 'Create New Button'
+    let createNewButtonURL = chrome.runtime.getURL('/images/add.png')
+    createNewButton.src = createNewButtonURL // You can set a proper icon URL here
+    createNewButton.addEventListener('click', () => {
+      // TODO: Implement the logic for creating a new tag
+    })
+
+    // Append buttons to the group
+    toolButtonGroup.appendChild(askGptButton)
+    toolButtonGroup.appendChild(createNewButton)
+
+    // Add the group to the container
+    toolsContainer.appendChild(toolButtonGroup)
+
+    // Insert the tools container before the tagButtonContainer
+    tagButtonContainer[0].parentNode.insertBefore(toolsContainer, tagButtonContainer[0])
+
     // Create buttons and add to the container
     if (_.isArray(elements) && elements.length > 0) { // Only create group containers for groups which have elements
       for (let i = 0; i < elements.length; i++) {
         let element = elements[i]
-        let button = TagManager.createButton({
-          name: element.name,
-          color: element.getColor(),
-          description: (element.options.description || null),
-          handler: buttonHandler,
-          tagGroup: tagGroup,
-          role: 'marking'
-        })
-        tagButtonContainer.append(button)
+        if (element.name !== 'Conclusion') {
+          let button = TagManager.createButton({
+            name: element.name,
+            color: element.getColor(),
+            description: (element.options.description || null),
+            handler: buttonHandler,
+            tagGroup: tagGroup,
+            role: 'marking'
+          })
+          tagButtonContainer.append(button)
+        }
       }
     }
     return tagGroup
