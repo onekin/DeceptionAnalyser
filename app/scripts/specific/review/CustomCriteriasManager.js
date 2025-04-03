@@ -1205,6 +1205,7 @@ class CustomCriteriasManager {
                           '}'
                       }
                     }
+                    console.log(format)
                     //
                   }
                   prompt = prompt.replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)

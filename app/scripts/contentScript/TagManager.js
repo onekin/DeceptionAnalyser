@@ -262,13 +262,21 @@ class TagManager {
       }
     }
     if (conclusionButton && conclusionTagGroup) {
+      const targetContainer = this.tagsContainer.evidencing
+        .querySelector('[title="' + conclusionTagGroup.config.options.group + '"]')
+        .nextElementSibling
+
+      targetContainer.append(document.createElement('br'))
+      targetContainer.append(document.createElement('hr'))
+      targetContainer.append(document.createElement('br'))
+      targetContainer.append(conclusionButton)
       // this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
       // document.querySelector('[data-group-name="Premises"]').append(conclusionButton)
-      const premisesElement = document.querySelector('[data-group-name="Premises"]')
+      /* const premisesElement = document.querySelector('[data-group-name="Premises"]')
       if (premisesElement && premisesElement.parentNode) {
         conclusionButton.classList.add('conclusionButton')
         premisesElement.parentNode.insertBefore(conclusionButton, premisesElement)
-      }
+      } */
     }
   }
 
