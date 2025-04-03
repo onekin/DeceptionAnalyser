@@ -15,14 +15,28 @@ const Config = {
   prompts: {
     annotatePremisePrompt: 'STORY: [The story is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
-      'Premise that I want to analyze: [C_NAME] premise\n' + 'Premise Description I want you to retrieve: [C_DESCRIPTION]\n' +
+      'Premise that I want to analyze: [C_NAME] premise\n' + 'Premise Description I want you to retrieve this statement: [C_DESCRIPTION]\n' +
       'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state only the [C_NAME] premise based on the description. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story, as it is written in the story, that is associated with the statement of the premise. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
-      '"name": "[Premise Name]",\n' +
+      '"name": "[C_NAME]",\n' +
       '"statement": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise, you have to write it as it is in the story]",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
+    resolveConclusion: 'STORY: [The story is provided above]\n' +
+      'Argument Scheme:\n' + '[C_SCHEME]' +
+      'Premise Assessments:\n[C_PREMISES]\n\n' +
+      'TASK:\n' +
+      'You are to analyze the conclusion based on the argument scheme and the assessments of the premises.\n\n' +
+      '[C_DESCRIPTION]\n\n' +
+      'Please analyze the entire story and produce a structured JSON response. Your analysis should be aligned with the argument scheme and focused solely on the [C_NAME].\n\n' +
+      'The JSON output must follow this format:\n' +
+      '{\n' +
+      '  "name": "Conclusion",\n' +
+      '  "statement": "[Clearly rewritten conclusion specific to the story context, including concrete values for v, alpha, s, Agents, and claims as applicable]",\n' +
+      '  "sentiment": "[A traffic light color: return \'red\' if the conclusion is highly deceptive and should be scrutinized, \'yellow\' if partially deceptive or uncertain, and \'green\' if there is no sign of deception]"\n' +
+      '}\n\n' +
+      'Only return the JSON object in your response. Replace all placeholders with specific details from the story and your analysis.',
     annotateAllPremisesPrompt: 'Story: [The story is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'Based on the above, i want you to analyse the provided story according to the argument scheme provided.  You must state all the premises based on the schema, with the premises and their descriptions. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story for each premises that is associated with the statement of the premise or conlusion. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +

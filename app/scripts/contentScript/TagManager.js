@@ -241,9 +241,21 @@ class TagManager {
     let conclusionButton, conclusionTagGroup
     for (let i = 0; i < arrayOfTagGroups.length; i++) {
       let tagGroup = arrayOfTagGroups[i]
+      let color
+      if (tagGroup.config.name === 'Conclusion') {
+        color = 'grey'
+        if (tagGroup.config.options.compile) {
+          let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (foundCompile && foundCompile.sentiment) {
+            color = foundCompile.sentiment
+          }
+        }
+      } else {
+        color = ColorUtils.setAlphaToColor(tagGroup.config.color, 0.45)
+      }
       let button = TagManager.createButton({
         name: tagGroup.config.name,
-        color: ColorUtils.setAlphaToColor(tagGroup.config.color, 0.45),
+        color: color,
         description: tagGroup.config.options.description,
         tagGroup: tagGroup,
         handler: (event) => {
@@ -299,9 +311,11 @@ class TagManager {
     tagButton.addEventListener('click', handler)
     // Tag button background color change
     // TODO It should be better to set it as a CSS property, but currently there is not an option for that
+    /*
     tagButton.addEventListener('mouseenter', () => {
-      tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.6)
+      tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(color), 0.6)
     })
+    */
     // Add a double-click event listener to the button
     tagButton.addEventListener('dblclick', function () {
       if (tagGroup) {
@@ -310,13 +324,15 @@ class TagManager {
         // console.log('this.modifyCriteriaHandler(currentTagGroup)')
       }
     })
+    /*
     tagButton.addEventListener('mouseleave', () => {
       if (tagButton.dataset.chosen === 'true') {
-        tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.dataset.baseColor), 0.45)
+        tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(color), 0.45)
       } else {
-        tagButton.style.backgroundColor = tagButton.dataset.baseColor
+        tagButton.style.backgroundColor = color
       }
     })
+    */
     return tagButton
   }
 
@@ -450,7 +466,9 @@ class TagManager {
       let tagButton = tagButtons[i]
       tagButton.innerText = tagButton.innerText.replace(/\([^)]*\)|^\s/, '')
       tagButton.dataset.chosen = 'false'
-      tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
+      if (!tagButton.innerText.includes('Conclusion')) {
+        tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
+      }
     }
     // Retrieve annotated tags
     if (window.abwa.contentAnnotator) {

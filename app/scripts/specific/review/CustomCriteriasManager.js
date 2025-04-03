@@ -1111,7 +1111,7 @@ class CustomCriteriasManager {
               cmd: 'getAPIKEY',
               data: selectedLLM
             }, ({ apiKey }) => {
-              let callback = (json) => {
+              /* let callback = (json) => {
                 let answers = this.parseAllPremisesAnswer(json)
                 let tagAnnotations = []
                 if (answers.length > 0) {
@@ -1162,61 +1162,149 @@ class CustomCriteriasManager {
                 }
                 LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
                 Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
-              }
+              } */
               if (apiKey && apiKey !== '') {
                 chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
                   if (!prompt) {
-                    prompt = Config.prompts.annotateAllPremisesPrompt
+                    prompt = Config.prompts.annotatePremisePrompt
                   }
                   let scheme = ''
-                  let format = ''
+                  let schemeObjects = []
+                  let conclusion = {}
+                  let conclusionElement
                   if (window.abwa.tagManager) {
                     let currentTags = window.abwa.tagManager.currentTags
                     // Retrieve Premises
                     let premises = currentTags.filter(tag => {
                       return tag.config.options.group === 'Premises'
                     })
-                    let conclusion
                     for (let i = 0; i < premises.length; i++) {
                       const premise = premises[i]
                       if (premise.config.name === 'Conclusion') {
-                        conclusion = premise
+                        conclusionElement = premise
                       } else {
+                        let schemaElement = {}
                         scheme += premise.config.name.toUpperCase() + ' PREMISE: '
                         scheme += premise.config.options.description + '\n'
+                        schemaElement.name = premise.config.name
+                        schemaElement.description = premise.config.options.description
+                        schemeObjects.push(schemaElement)
                       }
                     }
-                    if (conclusion) {
-                      scheme += conclusion.config.name.toUpperCase() + ': '
-                      scheme += conclusion.config.options.description + '\n'
+                    if (conclusionElement) {
+                      scheme += conclusionElement.config.name.toUpperCase() + ': '
+                      scheme += conclusionElement.config.options.description
+                      conclusion.name = 'Conclusion'
+                      conclusion.description = conclusionElement.config.options.description
                     }
-                    // FORMAT
-                    format += '{\n' + '"items": ['
-                    for (let i = 0; i < premises.length; i++) {
-                      if (i === 0) {
-                        format += '{"name":"' + premises[i].config.name + '",' +
-                          '"statement": "Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the statement of the premise",\n' +
-                          '}'
-                      } else {
-                        format += ',{"name":"' + premises[i].config.name + '",' +
-                          '"statement": "Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the statement of the premise",\n' +
-                          '}'
-                      }
-                    }
-                    console.log(format)
-                    //
+                    console.log('schemeObjects', schemeObjects)
+                    console.log('conclusion', conclusion)
+                    console.log('scheme', scheme)
                   }
-                  prompt = prompt.replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
-                  let params = {
+                  const promises = schemeObjects.map((schemeElem) => this.askPremisesLLM(prompt, scheme, schemeElem, llm, apiKey, documents))
+                  Promise.all(promises)
+                    .then((responses) => {
+                      // console.log('✅ All responses:', responses)
+                      const stringifiedResponses = JSON.stringify(responses, null, 2)
+                      console.log(stringifiedResponses)
+                      let conclusionPrompt = Config.prompts.resolveConclusion
+                      conclusionPrompt = conclusionPrompt.replaceAll('[C_SCHEME]', scheme)
+                      conclusionPrompt = conclusionPrompt.replaceAll('[C_NAME]', conclusion.name)
+                      conclusionPrompt = conclusionPrompt.replaceAll('[C_DESCRIPTION]', conclusion.description)
+                      conclusionPrompt = conclusionPrompt.replaceAll('[C_PREMISES]', stringifiedResponses)
+                      const params = {
+                        prompt: conclusionPrompt,
+                        llm: llm,
+                        apiKey: apiKey,
+                        documents: documents,
+                        callback: (json) => {
+                          // let answers = this.parseAllPremisesAnswer(responses)
+                          let tagAnnotations = []
+                          if (responses.length > 0) {
+                            responses.forEach(answer => {
+                              let excerpt = answer.excerpt
+                              let statement = answer.statement
+                              let selectors = this.getSelectorsFromLLM(excerpt, documents)
+                              if (selectors.length > 0) {
+                                let commentData = {
+                                  comment: '',
+                                  statement: statement,
+                                  llm: llm,
+                                  paragraph: excerpt
+                                }
+                                let model = window.abwa.tagManager.model
+                                let tag = [
+                                  model.namespace + ':' + model.config.grouped.relation + ':' + answer.name
+                                ]
+                                CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                                  LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
+                                    tags: tag,
+                                    selectors: selectors,
+                                    commentData: commentData
+                                  })
+                                })
+                              }
+                              // retrieve tag annotation
+                              let data
+                              let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === answer.name)
+                              let tagAnnotation = currentTagGroup.config.annotation
+                              if (tagAnnotation.text) {
+                                data = jsYaml.load(tagAnnotation.text)
+                                // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                                if (!Array.isArray(data.compile)) {
+                                  data.compile = []
+                                }
+                                let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                                if (!foundCompile) {
+                                  // If not, create and add it to the array
+                                  data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                                } else {
+                                  foundCompile.answer = answer
+                                }
+                              }
+                              tagAnnotation.text = jsYaml.dump(data)
+                              tagAnnotations.push(tagAnnotation)
+                            })
+                          }
+                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
+                          // Conclusion
+                          let conclusionData
+                          let conclusionTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === conclusion.name)
+                          let conclusionAnnotation = conclusionTagGroup.config.annotation
+                          if (conclusionAnnotation.text) {
+                            conclusionData = jsYaml.load(conclusionAnnotation.text)
+                            // Check if data.resume exists and is an array. If not, initialize it as an empty array.
+                            if (!Array.isArray(conclusionData.compile)) {
+                              conclusionData.compile = []
+                            }
+                            let foundCompile = conclusionData.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                            if (!foundCompile) {
+                              // If not, create and add it to the array
+                              conclusionData.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: json.statement, sentiment: json.sentiment })
+                            } else {
+                              foundCompile.answer = conclusion.statement
+                              foundCompile.sentiment = json.sentiment
+                            }
+                          }
+                          conclusionAnnotation.text = jsYaml.dump(conclusionData)
+                          tagAnnotations.push(conclusionAnnotation)
+                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: conclusionAnnotation})
+                          Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
+                        }
+                      }
+                      LLMClient.pdfBasedQuestion(params)
+                    })
+                    .catch((error) => {
+                      console.error('❌ Error with one of the LLM calls:', error)
+                    })
+                  /* let params = {
                     prompt: prompt,
                     llm: llm,
                     apiKey: apiKey,
                     documents: documents,
                     callback: callback
                   }
-                  LLMClient.pdfBasedQuestion(params)
+                  LLMClient.pdfBasedQuestion(params) */
                 })
               } else {
                 let callback = () => {
@@ -1231,6 +1319,31 @@ class CustomCriteriasManager {
             })
           }
         })
+      }
+    })
+  }
+
+  askPremisesLLM (prompt, scheme, schemeElem, llm, apiKey, documents) {
+    return new Promise((resolve, reject) => {
+      const promptInstance = prompt
+        .replaceAll('[C_SCHEME]', scheme)
+        .replaceAll('[C_NAME]', schemeElem.name)
+        .replaceAll('[C_DESCRIPTION]', schemeElem.description)
+
+      const params = {
+        prompt: promptInstance,
+        llm: llm,
+        apiKey: apiKey,
+        documents: documents,
+        callback: (response) => {
+          resolve(response)
+        }
+      }
+
+      try {
+        LLMClient.pdfBasedQuestion(params)
+      } catch (err) {
+        reject(err)
       }
     })
   }
@@ -1996,6 +2109,12 @@ class CustomCriteriasManager {
         feedback = findFeedback.comment + ' - ' + findFeedback.rate
       }
     }
+    let statement = ''
+    if (compile && compile.answer && compile.answer.statement) {
+      statement = compile.answer.statement
+    } else {
+      statement = compile.answer
+    }
     if (compile || alternative || paragraphs.length > 0) {
       let html = '<div width=900px style="text-align: justify;text-justify: inter-word">'
       if (compile) {
@@ -2004,8 +2123,8 @@ class CustomCriteriasManager {
       if (currentTagGroup.config.options.fullQuestion) {
         html += '<h3>Question:</h3><div width=800px>' + fullQuestion + '</div></br>'
       }
-      if (compile) {
-        html += '<h3>Statement:</h3><div width=800px>' + compile.answer + '</div></br>'
+      if (compile.answer) {
+        html += '<h3>Statement:</h3><div width=800px>' + statement + '</div></br>'
       }
       if (alternative) {
         html += '<h3>Arguments:</h3><div width=800px>' + alternative + '</div></br>'
