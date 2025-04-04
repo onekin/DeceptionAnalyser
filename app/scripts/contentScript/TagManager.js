@@ -378,7 +378,18 @@ class TagManager {
       if (name === 'Premises') {
         window.abwa.specific.customCriteriasManager.annotateAllPremises(name)
       } else if (name === 'Critical questions') {
-        window.abwa.specific.customCriteriasManager.formulateAllCriticalQuestions(name)
+        let conclusionTagGroup = _.find(window.abwa.tagManager.currentTags, tagGroup => tagGroup.config.name === 'Conclusion')
+        if (conclusionTagGroup && conclusionTagGroup.config.options.compile) {
+          // check if it has the sentiment
+          let foundCompile = conclusionTagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (foundCompile && foundCompile.sentiment) {
+            window.abwa.specific.customCriteriasManager.formulateAllCriticalQuestions(name)
+          } else {
+            Alerts.errorAlert({ title: 'Please draw the conclusions first' })
+          }
+        } else {
+          Alerts.errorAlert({ title: 'Wait!', text: 'You have to draw the conclusions first in order to formulate the critical questions.' })
+        }
       }
     })
 

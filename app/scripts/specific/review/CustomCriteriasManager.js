@@ -1165,6 +1165,7 @@ class CustomCriteriasManager {
                         llm: llm,
                         apiKey: apiKey,
                         documents: documents,
+                        message: 'Resolving the conclusion based on the premises...',
                         callback: (json) => {
                           // let answers = this.parseAllPremisesAnswer(responses)
                           let tagAnnotations = []
@@ -1209,6 +1210,16 @@ class CustomCriteriasManager {
                                 } else {
                                   foundCompile.answer = answer
                                 }
+                                if (!Array.isArray(data.llmExcerpt)) {
+                                  data.llmExcerpt = []
+                                }
+                                let foundLLMExcerpt = data.llmExcerpt.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                                if (!foundLLMExcerpt) {
+                                  // If not, create and add it to the array
+                                  data.llmExcerpt.push({ document: window.abwa.contentTypeManager.pdfFingerprint, excerpt: excerpt })
+                                } else {
+                                  foundLLMExcerpt.excerpt = excerpt
+                                }
                               }
                               tagAnnotation.text = jsYaml.dump(data)
                               tagAnnotations.push(tagAnnotation)
@@ -1245,14 +1256,6 @@ class CustomCriteriasManager {
                     .catch((error) => {
                       console.error('❌ Error with one of the LLM calls:', error)
                     })
-                  /* let params = {
-                    prompt: prompt,
-                    llm: llm,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback
-                  }
-                  LLMClient.pdfBasedQuestion(params) */
                 })
               } else {
                 let callback = () => {
@@ -1283,6 +1286,7 @@ class CustomCriteriasManager {
         llm: llm,
         apiKey: apiKey,
         documents: documents,
+        message: 'Asking for resolving premises...',
         callback: (response) => {
           resolve(response)
         }
@@ -1301,12 +1305,14 @@ class CustomCriteriasManager {
       const promptInstance = prompt
         .replaceAll('[C_SCHEME]', scheme)
         .replaceAll('[C_DESCRIPTION]', questionElem.description)
+        .replaceAll('[C_NAME]', questionElem.name)
 
       const params = {
         prompt: promptInstance,
         llm: llm,
         apiKey: apiKey,
         documents: documents,
+        message: 'Asking for resolving critical questions...',
         callback: (response) => {
           resolve(response)
         }
@@ -1455,6 +1461,7 @@ class CustomCriteriasManager {
                       llm: llm,
                       apiKey: apiKey,
                       documents: documents,
+                      message: 'Asking for resolving critical questions...',
                       callback: callback
                     }
                     LLMClient.pdfBasedQuestion(params)
@@ -1851,7 +1858,7 @@ class CustomCriteriasManager {
               if (apiKey && apiKey !== '') {
                 chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
                   if (!prompt) {
-                    prompt = Config.prompts.allCriticalQuestionPrompt
+                    prompt = Config.prompts.criticalQuestionPrompt
                   }
                   let scheme = ''
                   let questionsObjects = []
@@ -1957,18 +1964,28 @@ class CustomCriteriasManager {
                               } else {
                                 foundFullQuestion.fullQuestion = question
                               }
-                              if (!Array.isArray(data.alternatives)) {
-                                data.alternatives = []
+                              if (!Array.isArray(data.alternative)) {
+                                data.alternative = []
                               }
                               let foundArguments = data.alternative.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                               if (!foundArguments) {
                                 // If not, create and add it to the array
-                                data.alternatives.push({
+                                data.alternative.push({
                                   document: window.abwa.contentTypeManager.pdfFingerprint,
-                                  alternatives: alternatives
+                                  alternative: alternatives
                                 })
                               } else {
-                                foundArguments.alternatives = alternatives
+                                foundArguments.alternative = alternatives
+                              }
+                              if (!Array.isArray(data.llmExcerpt)) {
+                                data.llmExcerpt = []
+                              }
+                              let foundLLMExcerpt = data.llmExcerpt.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                              if (!foundLLMExcerpt) {
+                                // If not, create and add it to the array
+                                data.llmExcerpt.push({ document: window.abwa.contentTypeManager.pdfFingerprint, excerpt: excerpt })
+                              } else {
+                                foundLLMExcerpt.excerpt = excerpt
                               }
                               tagAnnotation.text = jsYaml.dump(data)
                               tagAnnotations.push(tagAnnotation)
@@ -1982,180 +1999,6 @@ class CustomCriteriasManager {
                     .catch((error) => {
                       console.error('❌ Error with one of the LLM calls:', error)
                     })
-                })
-              } else {
-                let callback = () => {
-                  window.open(chrome.runtime.getURL('pages/options.html'))
-                }
-                Alerts.infoAlert({
-                  text: 'Please, configure your LLM.',
-                  title: 'Please select a LLM and provide your API key',
-                  callback: callback()
-                })
-              }
-            })
-          }
-        })
-      }
-    })
-    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-      if (llm === '') {
-        llm = Config.review.defaultLLM
-      }
-      if (llm && llm !== '') {
-        let selectedLLM = llm.modelType
-        Alerts.confirmAlert({
-          title: 'Find annotations for critical questions',
-          text: 'Do you want to perform the critical questions using LLM?',
-          cancelButtonText: 'Cancel',
-          callback: async () => {
-            let documents = []
-            documents = await LLMTextUtils.loadDocument()
-            chrome.runtime.sendMessage({
-              scope: 'llm',
-              cmd: 'getAPIKEY',
-              data: selectedLLM
-            }, ({ apiKey }) => {
-              let callback = (json) => {
-                let answers = this.parseAllCriticalQuestionsAnswer(json)
-                let tagAnnotations = []
-                if (answers.length > 0) {
-                  answers.forEach(llmAnswer => {
-                    let excerpt = llmAnswer.excerpt
-                    let question = llmAnswer.adaptedQuestion
-                    let answer = llmAnswer.answer
-                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
-                    if (selectors.length > 0) {
-                      let commentData = {
-                        comment: '',
-                        statement: answer,
-                        llm: llm,
-                        paragraph: excerpt
-                      }
-                      let model = window.abwa.tagManager.model
-                      let tag = [
-                        model.namespace + ':' + model.config.grouped.relation + ':' + llmAnswer.name
-                      ]
-                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
-                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
-                          tags: tag,
-                          selectors: selectors,
-                          commentData: commentData
-                        })
-                      })
-                    }
-                    // retrieve tag annotation
-                    let data
-                    let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === llmAnswer.name)
-                    if (currentTagGroup) {
-                      let tagAnnotation = currentTagGroup.config.annotation
-                      if (tagAnnotation.text) {
-                        data = jsYaml.load(tagAnnotation.text)
-                        // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                        if (!Array.isArray(data.compile)) {
-                          data.compile = []
-                        }
-                        let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                        if (!foundCompile) {
-                          // If not, create and add it to the array
-                          data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
-                        } else {
-                          foundCompile.answer = answer
-                        }
-                        if (!Array.isArray(data.fullQuestion)) {
-                          data.fullQuestion = []
-                        }
-                        let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                        if (!foundFullQuestion) {
-                          // If not, create and add it to the array
-                          data.fullQuestion.push({
-                            document: window.abwa.contentTypeManager.pdfFingerprint,
-                            fullQuestion: question
-                          })
-                        } else {
-                          foundFullQuestion.fullQuestion = question
-                        }
-                        tagAnnotation.text = jsYaml.dump(data)
-                        tagAnnotations.push(tagAnnotation)
-                      }
-                    }
-                  })
-                }
-                LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
-                Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
-              }
-              if (apiKey && apiKey !== '') {
-                chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
-                  if (!prompt) {
-                    prompt = Config.prompts.allCriticalQuestionPrompt
-                  }
-                  let scheme = ''
-                  let format = ''
-                  let questions = ''
-                  if (window.abwa.tagManager) {
-                    let currentTags = window.abwa.tagManager.currentTags
-                    // Retrieve Premises
-                    let premises = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Premises'
-                    })
-                    let conclusion
-                    for (let i = 0; i < premises.length; i++) {
-                      const premise = premises[i]
-                      if (premise.config.name === 'Conclusion') {
-                        conclusion = premise
-                      } else {
-                        scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                        if (premise.config.options.compile.answer) {
-                          scheme += premise.config.options.compile.answer + '\n'
-                        } else {
-                          scheme += premise.config.options.description + '\n'
-                        }
-                      }
-                    }
-                    if (conclusion) {
-                      scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
-                      } else {
-                        scheme += conclusion.config.options.description + '\n'
-                      }
-                    }
-                    // Retrieve CRITICAL QUESTIONS
-                    let criticalQuestions = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Critical questions'
-                    })
-                    for (let i = 0; i < criticalQuestions.length; i++) {
-                      const criticalQuestion = criticalQuestions[i]
-                      questions += criticalQuestion.config.name.toUpperCase() + ': '
-                      questions += criticalQuestion.config.options.description + '\n'
-                    }
-                    // FORMAT
-                    format += '{\n' + '"items": ['
-                    for (let i = 0; i < criticalQuestions.length; i++) {
-                      if (i === 0) {
-                        format += '{"name":"' + criticalQuestions[i].config.name + '",' +
-                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
-                          '}'
-                      } else {
-                        format += ',{"name":"' + criticalQuestions[i].config.name + '",' +
-                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
-                          '}'
-                      }
-                    }
-                  }
-                  prompt = prompt.replaceAll('[C_QUESTIONS]', questions).replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
-                  let params = {
-                    prompt: prompt,
-                    llm: llm,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback
-                  }
-                  LLMClient.pdfBasedQuestion(params)
                 })
               } else {
                 let callback = () => {
@@ -2393,7 +2236,16 @@ class CustomCriteriasManager {
         return alternative.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findAlternative) {
-        alternative = findAlternative.answer
+        alternative = findAlternative.alternative
+      }
+    }
+    let excerpt = ''
+    if (currentTagGroup.config.options.llmExcerpt) {
+      const findLLMExcerpt = currentTagGroup.config.options.llmExcerpt.find((excerpt) => {
+        return excerpt.document === window.abwa.contentTypeManager.pdfFingerprint
+      })
+      if (findLLMExcerpt) {
+        excerpt = findLLMExcerpt.excerpt
       }
     }
     let fullQuestion = ''
@@ -2444,6 +2296,8 @@ class CustomCriteriasManager {
           html += `<div style="margin-left: 30px"><li>${item}</li></div></br>`
         }
         html += '</ul></div>'
+      } else if (excerpt) {
+        html += '<h3>Excerpt:</h3><div width=800px>' + excerpt + '</div></br>'
       }
       html += '</div>'
       let cancelButtonText

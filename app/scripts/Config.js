@@ -60,6 +60,7 @@ const Config = {
       'I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.\'' +
       'Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answer for the question. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
+      '"name": "[C_NAME]",\n' +
       '"adaptedQuestion": "the question [C_DESCRIPTION}, but rewritten with the values of the story",\n' +
       '"answer": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +

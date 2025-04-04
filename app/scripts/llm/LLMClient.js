@@ -6,10 +6,10 @@ if (document && document.head) {
 }
 
 class LLMClient {
-  static async pdfBasedQuestion ({apiKey, documents, callback, prompt, llm}) {
+  static async pdfBasedQuestion ({apiKey, documents, callback, prompt, llm, message = 'Please wait to the response'}) {
     Swal.fire({
       title: 'Asking ' + llm.modelType,
-      text: 'Please wait to the response',
+      text: message,
       allowEscapeKey: false,
       allowOutsideClick: false,
       onOpen: async () => {
@@ -24,7 +24,7 @@ class LLMClient {
             Swal.close()
             Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + response.res.error })
           } else {
-            Swal.close()
+            // Swal.close()
             const jsonString = response.res.text
             console.log('ANSWER: ' + jsonString)
             let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)
