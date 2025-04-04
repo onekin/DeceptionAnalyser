@@ -56,11 +56,14 @@ const Config = {
     criticalQuestionPrompt: 'Story: [The story is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'Now I want to answer a critical question for Argument deception. The critical question is: [C_DESCRIPTION]\n' +
-      'Based on the above, i want you to analyse the provided story, then instantiate the question with the values from the story and answer the question. Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answer for the question. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
+      'Based on the above, I want you to analyse the provided story, then instantiate the question with the values from the story and answer the question. ' +
+      'I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.\'' +
+      'Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answer for the question. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
       '"adaptedQuestion": "the question [C_DESCRIPTION}, but rewritten with the values of the story",\n' +
       '"answer": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise]",\n' +
+      '"arguments": "[Provide an argument and counterargument for the critical question, you have to put a "</br>" before each dash like "</br>-". You have to provide the evidence after the argument and counter-argument reasoning between paranthesis and in italic (<i>)",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     allCriticalQuestionPrompt: 'Story: [The story is provided above]\n' +
