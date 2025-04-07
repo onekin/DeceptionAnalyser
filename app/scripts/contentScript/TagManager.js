@@ -410,6 +410,7 @@ class TagManager {
     createNewButton.src = createNewButtonURL // You can set a proper icon URL here
     createNewButton.addEventListener('click', () => {
       // TODO: Implement the logic for creating a new tag
+      CustomCriteriasManager.createAddCustomCriteriaButtonHandler(name)
     })
 
     // Append buttons to the group

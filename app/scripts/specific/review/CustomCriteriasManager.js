@@ -20,15 +20,13 @@ class CustomCriteriasManager {
   }
 
   init (callback) {
-    this.createAddCustomCriteriaButtons(() => {
-      // Initialize event handlers
-      this.initEventHandler()
-      // Init context menu for buttons
-      this.initContextMenu()
-      if (_.isFunction(callback)) {
-        callback()
-      }
-    })
+    // Initialize event handlers
+    this.initEventHandler()
+    // Init context menu for buttons
+    this.initContextMenu()
+    if (_.isFunction(callback)) {
+      callback()
+    }
   }
 
   initEventHandler () {
@@ -43,67 +41,52 @@ class CustomCriteriasManager {
     this.events.tagsUpdated.element.addEventListener(this.events.tagsUpdated.event, this.events.tagsUpdated.handler, false)
   }
 
-  createAddCustomCriteriaButtons (callback) {
-    // this.createAddCustomThemeButton()
-    let groups = _.map(document.querySelectorAll('.tagGroup'), (tagGroupElement) => {
-      return tagGroupElement.dataset.groupName
-    })
-    for (let i = 0; i < groups.length; i++) {
-      // this.createAddCustomCriteriaButton(groups[i])
-    }
-    if (_.isFunction(callback)) {
-      callback()
-    }
-  }
-
-  createAddCustomThemeButton () {
-    let addCustomThemeButton = document.querySelector('#addCustomThemeElement')
-    if (!_.isElement(addCustomThemeButton)) {
-      let criteriaHeader = document.querySelector('#groupSelectorContainerHeader')
-      let addCustomThemeElement = document.createElement('span')
-      addCustomThemeElement.id = 'addCustomThemeElement'
-      addCustomThemeElement.classList.add('addCustomCriteriaWhite')
-      criteriaHeader.insertAdjacentElement('afterbegin', addCustomThemeElement)
-      addCustomThemeElement.addEventListener('click', this.createCustomTheme())
-    }
-  }
-
-  createCustomTheme () {
-    return () => {
-      Alerts.inputTextAlert({
-        title: 'Creating new review category',
-        text: 'You can give a name to the factor that you want to review.',
-        input: 'text',
-        preConfirm: (themeName) => {
-          let themeElement = document.querySelector('.tagGroup[data-group-name="' + themeName + '"')
-          if (_.isElement(themeElement)) {
-            const swal = require('sweetalert2')
-            swal.showValidationMessage('A criteria group with that name already exists.')
-            window.abwa.sidebar.openSidebar()
-          } else {
-            return themeName
-          }
-        },
-        callback: (err, result) => {
-          if (err) {
-            window.alert('Unable to show form to add custom factor. Contact developer.')
-          } else {
-            let tagName = LanguageUtils.normalizeStringToValidID(result)
-            this.createNewCustomCriteria({
-              name: tagName,
-              description: '',
-              group: tagName,
+  static createAddCustomCriteriaButtonHandler (groupName) {
+    let criteriaName
+    let criteriaDescription
+    let elementName = groupName.toLowerCase().replace(/s$/, '')
+    Alerts.multipleInputAlert({
+      title: 'Creating a new criterion for category ' + groupName,
+      html: '<div>' +
+        '<input id="criteriaName" class="swal2-input customizeInput" placeholder="Type your ' + elementName + ' name..."/>' +
+        '</div>' +
+        '<div>' +
+        '<textarea id="criteriaDescription" class="swal2-input customizeInput" placeholder="Type your ' + elementName + ' description..."></textarea>' +
+        '</div>',
+      preConfirm: () => {
+        // Retrieve values from inputs
+        criteriaName = document.getElementById('criteriaName').value
+        criteriaDescription = document.getElementById('criteriaDescription').value
+        // Find if criteria name already exists
+        let currentTags = _.map(window.abwa.tagManager.currentTags, tag => tag.config.name)
+        let criteriaExists = _.find(currentTags, tag => tag === criteriaName)
+        if (_.isString(criteriaExists)) {
+          const swal = require('sweetalert2')
+          swal.showValidationMessage('A criteria with that name already exists.')
+          window.abwa.sidebar.openSidebar()
+        }
+      },
+      callback: (err) => {
+        if (err) {
+          Alerts.errorAlert({ text: 'Unable to create this custom criteria, try it again.' })
+        } else {
+          // Check if not selected cancel or esc
+          if (criteriaName) {
+            CustomCriteriasManager.createNewCustomCriteria({
+              name: criteriaName,
+              description: criteriaDescription,
+              group: groupName,
               callback: () => {
                 window.abwa.sidebar.openSidebar()
               }
             })
           }
         }
-      })
-    }
+      }
+    })
   }
 
-  createNewCustomCriteria ({ name, description = 'Custom criteria', group, callback }) {
+  static createNewCustomCriteria ({ name, description = 'Custom criteria', group, callback }) {
     let review = new Review({ reviewId: '' })
     review.storageGroup = window.abwa.groupSelector.currentGroup
     let criteria = new Criteria({ name, description, review, group: group, custom: true })
@@ -379,11 +362,13 @@ class CustomCriteriasManager {
         // items['annotatePremise'] = { name: 'State premise with annotation' }
         // Find alternative viewpoints by LLM
         items['recap'] = { name: 'Show analysis' }
+        items['delete'] = { name: 'Delete Premise' }
       } else if (tagGroup.config.options.group === 'Critical questions') {
         // Highlight criterion by LLM
         // items['annotateCriticalQuestion'] = { name: 'Formulate question' }
         // items['arguments'] = { name: 'Arguments & Counter-Arguments' }
         items['recap'] = { name: 'Show analysis' }
+        items['delete'] = { name: 'Delete Critical Question' }
       }
       $.contextMenu({
         selector: '[data-mark="' + tagGroup.config.name + '"]',
@@ -416,6 +401,9 @@ class CustomCriteriasManager {
                 })
               } else if (key === 'recap') {
                 CustomCriteriasManager.recap(currentTagGroup)
+              } else if (key === 'delete') {
+                // Delete the tag
+                CustomCriteriasManager.deleteCriteriaHandler(tagGroup)
               } else if (key === 'annotatePremise') {
                 if (currentTagGroup.config.name === 'Conclusion') {
                   // Find conclusion tag and if it has a statement
@@ -1657,184 +1645,6 @@ class CustomCriteriasManager {
     })
   }
 
-  formulateAllCriticalQuestions2 (groupName) {
-    // this.modifyCriteriaHandler(currentTagGroup)
-    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
-      if (llm === '') {
-        llm = Config.review.defaultLLM
-      }
-      if (llm && llm !== '') {
-        let selectedLLM = llm.modelType
-        Alerts.confirmAlert({
-          title: 'Find annotations for critical questions',
-          text: 'Do you want to perform the critical questions using LLM?',
-          cancelButtonText: 'Cancel',
-          callback: async () => {
-            let documents = []
-            documents = await LLMTextUtils.loadDocument()
-            chrome.runtime.sendMessage({
-              scope: 'llm',
-              cmd: 'getAPIKEY',
-              data: selectedLLM
-            }, ({ apiKey }) => {
-              let callback = (json) => {
-                let answers = this.parseAllCriticalQuestionsAnswer(json)
-                let tagAnnotations = []
-                if (answers.length > 0) {
-                  answers.forEach(llmAnswer => {
-                    let excerpt = llmAnswer.excerpt
-                    let question = llmAnswer.adaptedQuestion
-                    let answer = llmAnswer.answer
-                    let selectors = this.getSelectorsFromLLM(excerpt, documents)
-                    if (selectors.length > 0) {
-                      let commentData = {
-                        comment: '',
-                        statement: answer,
-                        llm: llm,
-                        paragraph: excerpt
-                      }
-                      let model = window.abwa.tagManager.model
-                      let tag = [
-                        model.namespace + ':' + model.config.grouped.relation + ':' + llmAnswer.name
-                      ]
-                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
-                        LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
-                          tags: tag,
-                          selectors: selectors,
-                          commentData: commentData
-                        })
-                      })
-                    }
-                    // retrieve tag annotation
-                    let data
-                    let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === llmAnswer.name)
-                    if (currentTagGroup) {
-                      let tagAnnotation = currentTagGroup.config.annotation
-                      if (tagAnnotation.text) {
-                        data = jsYaml.load(tagAnnotation.text)
-                        // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                        if (!Array.isArray(data.compile)) {
-                          data.compile = []
-                        }
-                        let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                        if (!foundCompile) {
-                          // If not, create and add it to the array
-                          data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
-                        } else {
-                          foundCompile.answer = answer
-                        }
-                        if (!Array.isArray(data.fullQuestion)) {
-                          data.fullQuestion = []
-                        }
-                        let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                        if (!foundFullQuestion) {
-                          // If not, create and add it to the array
-                          data.fullQuestion.push({
-                            document: window.abwa.contentTypeManager.pdfFingerprint,
-                            fullQuestion: question
-                          })
-                        } else {
-                          foundFullQuestion.fullQuestion = question
-                        }
-                        tagAnnotation.text = jsYaml.dump(data)
-                        tagAnnotations.push(tagAnnotation)
-                      }
-                    }
-                  })
-                }
-                LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
-                Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
-              }
-              if (apiKey && apiKey !== '') {
-                chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
-                  if (!prompt) {
-                    prompt = Config.prompts.allCriticalQuestionPrompt
-                  }
-                  let scheme = ''
-                  let format = ''
-                  let questions = ''
-                  if (window.abwa.tagManager) {
-                    let currentTags = window.abwa.tagManager.currentTags
-                    // Retrieve Premises
-                    let premises = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Premises'
-                    })
-                    let conclusion
-                    for (let i = 0; i < premises.length; i++) {
-                      const premise = premises[i]
-                      if (premise.config.name === 'Conclusion') {
-                        conclusion = premise
-                      } else {
-                        scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                        if (premise.config.options.compile.answer) {
-                          scheme += premise.config.options.compile.answer + '\n'
-                        } else {
-                          scheme += premise.config.options.description + '\n'
-                        }
-                      }
-                    }
-                    if (conclusion) {
-                      scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
-                      } else {
-                        scheme += conclusion.config.options.description + '\n'
-                      }
-                    }
-                    // Retrieve CRITICAL QUESTIONS
-                    let criticalQuestions = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Critical questions'
-                    })
-                    for (let i = 0; i < criticalQuestions.length; i++) {
-                      const criticalQuestion = criticalQuestions[i]
-                      questions += criticalQuestion.config.name.toUpperCase() + ': '
-                      questions += criticalQuestion.config.options.description + '\n'
-                    }
-                    // FORMAT
-                    format += '{\n' + '"items": ['
-                    for (let i = 0; i < criticalQuestions.length; i++) {
-                      if (i === 0) {
-                        format += '{"name":"' + criticalQuestions[i].config.name + '",' +
-                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
-                          '}'
-                      } else {
-                        format += ',{"name":"' + criticalQuestions[i].config.name + '",' +
-                          '"adaptedQuestion": "the question, but rewritten with the values of the story, for example you have to provide the values for the v, alpha, s, Agents and claims",\n' +
-                          '"answer": "Answer of the question based on the story and the adapted question",\n' +
-                          '"excerpt": "Excerpt from the story that justifies the answer for the critical questions",\n' +
-                          '}'
-                      }
-                    }
-                  }
-                  prompt = prompt.replaceAll('[C_QUESTIONS]', questions).replaceAll('[C_SCHEME]', scheme).replaceAll('[C_FORMAT]', format)
-                  let params = {
-                    prompt: prompt,
-                    llm: llm,
-                    apiKey: apiKey,
-                    documents: documents,
-                    callback: callback
-                  }
-                  LLMClient.pdfBasedQuestion(params)
-                })
-              } else {
-                let callback = () => {
-                  window.open(chrome.runtime.getURL('pages/options.html'))
-                }
-                Alerts.infoAlert({
-                  text: 'Please, configure your LLM.',
-                  title: 'Please select a LLM and provide your API key',
-                  callback: callback()
-                })
-              }
-            })
-          }
-        })
-      }
-    })
-  }
-
   formulateAllCriticalQuestions (groupName) {
     // this.modifyCriteriaHandler
     chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
@@ -2015,18 +1825,6 @@ class CustomCriteriasManager {
         })
       }
     })
-  }
-
-  parseAllCriticalQuestionsAnswer (json, excerpts = false) {
-    let gptItems
-    gptItems = Array.from(Object.values(json)[0]).filter(item =>
-      Object.keys(item).some(key => key.startsWith('name'))
-    )
-    let gptItemsNodes = []
-    gptItems.forEach((item) => {
-      gptItemsNodes.push({name: item.name, adaptedQuestion: item.adaptedQuestion, excerpt: item.excerpt, answer: item.answer})
-    })
-    return gptItemsNodes
   }
 
   static arguments (criterion, description, paragraphs, annotation) {
