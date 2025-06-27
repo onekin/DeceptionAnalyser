@@ -1,6 +1,6 @@
 const Config = {
   review: {
-    groupName: 'AnnotatorGPT',
+    groupName: 'DeceptionAnalyser',
     namespace: 'review',
     urlParamName: 'rag',
     defaultLLM: 'anthropic',
