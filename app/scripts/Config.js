@@ -21,6 +21,7 @@ const Config = {
       '"name": "[C_NAME]",\n' +
       '"statement": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
       '"excerpt": "[Excerpt from the story that justifies the statement of the premise, you have to write it as it is in the story]",\n' +
+      '"sentiment": "[A traffic light color: return \'green\' if the premise is fulfilled and supported, \'yellow\' if undecided, and \'red\' if is unsupported]"\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer.\n',
     resolveConclusion: 'STORY: [The story is provided above]\n' +
@@ -34,7 +35,7 @@ const Config = {
       '{\n' +
       '  "name": "Conclusion",\n' +
       '  "statement": "[Clearly rewritten conclusion specific to the story context, including concrete values for v, alpha, s, Agents, and claims as applicable]",\n' +
-      '  "sentiment": "[A traffic light color: return \'red\' if the conclusion is highly deceptive and should be scrutinized, \'yellow\' if partially deceptive or uncertain, and \'green\' if there is no sign of deception]"\n' +
+      '  "sentiment": "[A traffic light color: return \'green\' if the conclusion is highly deceptive and should be scrutinized, \'yellow\' if undecided or uncertain, and \'red\' if there is no sign of deception]"\n' +
       '}\n\n' +
       'Only return the JSON object in your response. Replace all placeholders with specific details from the story and your analysis.',
     annotateAllPremisesPrompt: 'Story: [The story is provided above]\n' +

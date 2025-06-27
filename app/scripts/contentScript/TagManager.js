@@ -473,6 +473,9 @@ class TagManager {
 
   reloadTagsChosen () {
     // Uncheck all the tags
+    const green = chrome.runtime.getURL('/images/green.png')
+    const yellow = chrome.runtime.getURL('/images/yellow.png')
+    const red = chrome.runtime.getURL('/images/red.png')
     let tagButtons = document.querySelectorAll('.tagButton')
     for (let i = 0; i < tagButtons.length; i++) {
       let tagButton = tagButtons[i]
@@ -480,6 +483,42 @@ class TagManager {
       tagButton.dataset.chosen = 'false'
       if (!tagButton.innerText.includes('Conclusion')) {
         tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
+      } else {
+        // If it is the conclusion tag, set the background color to grey
+        let arrayOfTagGroups = _.values(this.currentTags)
+        let conclusionSentiment
+        let conclusionTag = _.find(arrayOfTagGroups, (tagGroup) => { return tagGroup.config.name === 'Conclusion' })
+        if (conclusionTag.config.options.compile) {
+          let foundCompile = conclusionTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (foundCompile && foundCompile.sentiment) {
+            conclusionSentiment = foundCompile.sentiment
+          }
+          // Change to a darker color
+          if (conclusionSentiment) {
+            // Create <img> element
+            let img = document.createElement('img')
+            switch (conclusionSentiment) {
+              case 'green':
+                img.src = green
+                img.alt = 'Thumbs up'
+                break
+              case 'yellow':
+                img.src = yellow
+                img.alt = 'Thumbs down'
+                break
+              case 'red':
+                img.src = red
+                img.alt = 'Thumbs down'
+                break
+            }
+            img.alt = 'Thumbs up'
+            img.style.height = '16px'
+            img.style.verticalAlign = 'middle'
+            img.style.marginRight = '4px'
+            // Add <img> to button
+            tagButton.appendChild(img)
+          }
+        }
       }
     }
     // Retrieve annotated tags
@@ -503,44 +542,41 @@ class TagManager {
           tagButton.dataset.chosen = 'true'
           tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
           // tagButton.innerText = tagGroup.config.name
+          let sentiment
+          if (tagGroup.config.options.compile) {
+            let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+            if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
+              sentiment = foundCompile.answer.sentiment
+            }
+          }
           // Change to a darker color
+          if (sentiment) {
+            // Create <img> element
+            let img = document.createElement('img')
+            switch (sentiment) {
+              case 'green':
+                img.src = green
+                img.alt = 'Thumbs up'
+                break
+              case 'yellow':
+                img.src = yellow
+                img.alt = 'Thumbs down'
+                break
+              case 'red':
+                img.src = red
+                img.alt = 'Thumbs down'
+                break
+            }
+            img.alt = 'Thumbs up'
+            img.style.height = '16px'
+            img.style.verticalAlign = 'middle'
+            img.style.marginRight = '4px'
+            // Add <img> to button
+            tagButton.appendChild(img)
+          }
           tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
         }
       }
-    }
-  }
-
-  showEvidencingTagsContainer () {
-    $(this.tagsContainer.evidencing).attr('aria-hidden', 'false')
-  }
-
-  /**
-   * Given a no grouped tag container reorder giving a specific order for that
-   * @param order
-   * @param container
-   */
-  reorderNoGroupedTagContainer (order, container) {
-    // Reorder marking container
-    for (let i = order.length - 1; i >= 0; i--) {
-      let criteria = order[i]
-      let tagButton = _.find(container.querySelectorAll('.tagButton'), (elem) => { return elem.title === criteria })
-      let elem = $(tagButton).detach()
-      $(container).prepend(elem)
-    }
-  }
-
-  /**
-   * Given a grouped tag container reorder the groups giving a specific order
-   * @param order
-   * @param container
-   */
-  reorderGroupedTagContainer (order, container) {
-    // Reorder marking container
-    for (let i = order.length - 1; i >= 0; i--) {
-      let criteria = order[i]
-      let tagGroup = _.find(container.querySelectorAll('.tagGroup'), (elem) => { return elem.children[0].title === criteria })
-      let elem = $(tagGroup).detach()
-      $(container).prepend(elem)
     }
   }
 

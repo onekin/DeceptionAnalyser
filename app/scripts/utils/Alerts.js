@@ -105,7 +105,7 @@ class Alerts {
     }
   }
 
-  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null}) {
+  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null, currentTagGroup = null}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -123,6 +123,19 @@ class Alerts {
         onBeforeOpen: () => {
           let element = document.querySelector('.swal2-popup')
           element.style.width = '900px'
+        },
+        didOpen: () => {
+          // Attach listeners here after modal content is in DOM
+          const container = document.querySelector('#sentiment-container')
+          if (!container) return
+          container.querySelectorAll('img[data-sentiment]').forEach(img => {
+            img.addEventListener('click', () => {
+              const selected = img.getAttribute('data-sentiment')
+              // Store your sentiment value however you want
+              CustomCriteriasManager.attachSentimentListeners(currentTagGroup, selected)
+              // Optionally close modal or re-render it
+            })
+          })
         }
       }).then((result) => {
         /* Read more about isConfirmed, isDenied below */

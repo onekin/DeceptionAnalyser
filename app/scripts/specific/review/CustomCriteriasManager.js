@@ -278,34 +278,6 @@ class CustomCriteriasManager {
     this.initContextMenuForCriteriaGroups()
   }
 
-  /* initContextMenuForCriteriaGroups () {
-    let items = {}
-    // Modify menu element
-    items['annotate'] = { name: 'Annotate all in one go' }
-    items['addTheme'] = { name: 'New Premise' }
-    items['addTheme'] = { name: 'New Question' }
-    // If custom criteria, it is also possible to delete it
-    $.contextMenu({
-      selector: '.tagGroup[data-group-name]',
-      build: () => {
-        return {
-          callback: (key, ev) => {
-            let criteriaGroupName = ev.$trigger.attr('data-group-name')
-            if (key === 'annotate') {
-              // TODO
-              if (criteriaGroupName === 'Premises') {
-                this.annotateAllPremises(criteriaGroupName)
-              } else {
-                this.formulateAllCriticalQuestions(criteriaGroupName)
-              }
-            }
-          },
-          items: items
-        }
-      }
-    })
-  } */
-
   initContextMenuForCriteriaGroups () {
     $.contextMenu({
       selector: '.tagGroup[data-group-name]',
@@ -2071,8 +2043,25 @@ class CustomCriteriasManager {
     } else {
       statement = compile.answer
     }
+    let sentiment = ''
+    if (compile && compile.answer && compile.answer.sentiment) {
+      sentiment = compile.answer.sentiment
+    }
     if (compile || alternative || paragraphs.length > 0) {
+      const redFace = chrome.runtime.getURL('/images/red.png')
+      const yellowFace = chrome.runtime.getURL('/images/yellow.png')
+      const greenFace = chrome.runtime.getURL('/images/green.png')
       let html = '<div width=900px style="text-align: justify;text-justify: inter-word">'
+      if (sentiment) {
+        html += `
+        <h3>Sentiment:</h3>
+        <div id="sentiment-container" style="width:800px; display:flex; gap:20px; align-items:center;">
+          <img src="${redFace}" data-sentiment="red" style="height:50px; cursor:pointer; ${sentiment === 'red' ? 'border:4px solid red; border-radius:8px;' : ''}">
+          <img src="${yellowFace}" data-sentiment="yellow" style="height:50px; cursor:pointer; ${sentiment === 'yellow' ? 'border:4px solid orange; border-radius:8px;' : ''}">
+          <img src="${greenFace}" data-sentiment="green" style="height:50px; cursor:pointer; ${sentiment === 'green' ? 'border:4px solid green; border-radius:8px;' : ''}">
+        </div><br/>
+      `
+      }
       if (compile) {
         html += '<h3>Description:</h3><div width=800px>' + currentTagGroup.config.options.description + '</div></br>'
       }
@@ -2110,6 +2099,7 @@ class CustomCriteriasManager {
         cancelButtonText: cancelButtonText,
         showCancelButton: true,
         cancelButtonColor: '#d2371d',
+        currentTagGroup: currentTagGroup,
         cancelCallback: () => {
           CustomCriteriasManager.provideFeedback(currentTagGroup, findFeedback)
         }
@@ -2120,6 +2110,47 @@ class CustomCriteriasManager {
         text: 'You must assess this criteria. Highlight, resume or find alternatives for the criterion.'
       })
     }
+  }
+
+  static attachSentimentListeners (currentTagGroup, selected) {
+    console.log('Attaching sentiment listeners: ' + selected)
+    // Get all the images in the container
+    const images = document.querySelectorAll('img[data-sentiment]')
+
+    images.forEach(img => {
+      img.addEventListener('click', () => {
+        const chosen = img.getAttribute('data-sentiment')
+        console.log('Sentiment chosen:', chosen)
+
+        // 1️⃣ Visually update borders
+        images.forEach(i => {
+          i.style.border = ''
+        })
+        if (chosen === 'red') {
+          img.style.border = '4px solid red'
+          img.style.borderRadius = '8px'
+        } else if (chosen === 'yellow') {
+          img.style.border = '4px solid orange'
+          img.style.borderRadius = '8px'
+        } else if (chosen === 'green') {
+          img.style.border = '4px solid green'
+          img.style.borderRadius = '8px'
+        }
+      })
+    })
+    let compile = ''
+    if (currentTagGroup.config.options.compile !== '') {
+      const findResume = currentTagGroup.config.options.compile.find((resume) => {
+        return resume.document === window.abwa.contentTypeManager.pdfFingerprint
+      })
+      if (findResume) {
+        compile = findResume
+      }
+    }
+    if (compile && compile.answer && compile.answer.sentiment) {
+      compile.answer.sentiment = selected
+    }
+    // todo update tag annotation
   }
 
   getParagraphs (criterion, callback) {

@@ -91,7 +91,11 @@ export class Review {
           } else if (assessedCriteria.description) {
             htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.description + "</div>";
           }
-          htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+          if (assessedCriteria.compile.answer.statement) {
+            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer.statement + "</div>";
+          } else {
+            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+          }
           htmlContent += "<div class='editable'><h3>Evidence: </h3>"
           const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
           if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {

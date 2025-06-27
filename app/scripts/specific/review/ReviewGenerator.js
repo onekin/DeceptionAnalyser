@@ -204,7 +204,7 @@ class ReviewGenerator {
             } else if (key === 'excel') {
               this.generateExcel()
             } else if (key === 'pdf') {
-              this.generateExcel()
+              // this.generatePDF()
             }
           },
           items: items
@@ -406,6 +406,51 @@ class ReviewGenerator {
     if(title!=='') docTitle += ' for '+title
     FileSaver.saveAs(blob, docTitle+'.html')
     Alerts.closeAlert()
+  }
+
+  generatePDF () {
+    // 1️⃣ Create a very simple test div
+    const container = document.createElement('div');
+    container.innerHTML = `
+    <h1 style="color: navy;">Hello PDF!</h1>
+    <p>This is a test to check html2pdf integration.</p>
+    <ul>
+      <li>Point one</li>
+      <li>Point two</li>
+    </ul>
+  `;
+
+    // 2️⃣ Make sure it's visible for rendering
+    container.style.position = 'fixed';
+    container.style.top = '20px';
+    container.style.left = '20px';
+    container.style.width = '600px';
+    container.style.padding = '20px';
+    container.style.background = 'white';
+    container.style.border = '1px solid black';
+    document.body.appendChild(container);
+
+    // 3️⃣ Wait a moment for render
+    setTimeout(() => {
+      html2pdf()
+        .set({
+          margin: 10,
+          filename: 'TestReport.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        })
+        .from(container)
+        .save()
+        .then(() => {
+          console.log('✅ PDF generated successfully!');
+          document.body.removeChild(container);
+        })
+        .catch(err => {
+          console.error('❌ Error generating PDF', err);
+          document.body.removeChild(container);
+        });
+    }, 300);
   }
 
   deleteAnnotations () {

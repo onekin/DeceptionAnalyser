@@ -62,7 +62,6 @@
   background-color: rgba(200,200,200,0.7);
 }
 
-
 .addCustomCriteriaWhite {
   float:left;
   height: 15px;
@@ -108,7 +107,6 @@
 .tagButton {
   cursor: pointer;
   margin-bottom: 5px;
-  display: block;
   border: 1px solid black;
   background-color: rgba(200,200,200,0.8);
   margin-left: auto;
@@ -122,6 +120,11 @@
   min-width: calc( #{$sideBarWidth} - 0.6rem - 10px);
   text-overflow: ellipsis;
   font-size: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 4px 8px;
 }
 
 .tagButton[data-chosen="true"] {
