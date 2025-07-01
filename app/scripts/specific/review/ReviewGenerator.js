@@ -67,8 +67,6 @@ class ReviewGenerator {
   parseAnnotations (annotations){
     let currentTags = window.abwa.tagManager.currentTags
     const criterionTag = Config.review.namespace + ':' + Config.review.tags.grouped.relation + ':'
-    const levelTag = Config.review.namespace + ':' + Config.review.tags.grouped.subgroup + ':'
-
 
     let r = new Review()
 
@@ -78,7 +76,6 @@ class ReviewGenerator {
       let group = null
       for (let t in annotations[a].tags) {
         if (annotations[a].tags[t].indexOf(criterionTag) != -1) criterion = annotations[a].tags[t].replace(criterionTag, '').trim()
-        if (annotations[a].tags[t].indexOf(levelTag) != -1) level = annotations[a].tags[t].replace(levelTag, '').trim()
       }
       if(criterion!=null){
         let g = window.abwa.tagManager.currentTags.find((el) => {return el.config.name === criterion})
@@ -196,15 +193,12 @@ class ReviewGenerator {
         let items = {}
         items['html'] = {name: 'Export as HTML'}
         items['excel'] = {name: 'Export as .csv'}
-        items['pdf'] = {name: 'Export as PDF'}
         return {
           callback: (key, opt) => {
             if (key === 'html') {
               this.generateReviewByCategory()
             } else if (key === 'excel') {
               this.generateExcel()
-            } else if (key === 'pdf') {
-              // this.generatePDF()
             }
           },
           items: items

@@ -2072,7 +2072,7 @@ class CustomCriteriasManager {
         html += '<h3>Statement:</h3><div width=800px>' + statement + '</div></br>'
       }
       if (alternative) {
-        html += '<h3>Arguments:</h3><div width=800px>' + alternative + '</div></br>'
+        html += '<h3>Arguments:</h3><div width=800px>' + alternative.replaceAll('</br>-', '</br></br>-') + '</div></br>'
       }
       if (feedback) {
         html += '<h3>Feedback:</h3><div width=800px>' + feedback + '</div></br>'

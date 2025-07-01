@@ -78,14 +78,19 @@ export class Review {
     <body>
     `;
     // Adding date at the top
-    htmlContent += "<h1>Report of the analysis </h1><p>Date: "+ new Date().toLocaleDateString() + "</p>";
+    htmlContent += "<h1>Report of the analysis </h1><p>Date: "+ new Date().toLocaleDateString() + "</p>"
 
     // Premises
     this._assessedCriteria.forEach( (assessedCriteria) => {
       if (assessedCriteria.group === 'Premises') {
-        htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + "</h2>";
-
+        if (assessedCriteria.compile.sentiment || assessedCriteria.compile.answer.sentiment) {
+          let sentiment = assessedCriteria.compile.sentiment || assessedCriteria.compile.answer.sentiment
+          htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + " " + this.getSentimentImageHTML(sentiment) + "</h2>"
+        } else {
+          htmlContent += "<div class='criterion'><h2>"+ assessedCriteria.criterion.toUpperCase() + "</h2>"
+        }
         if (assessedCriteria.compile) {
+
           if (assessedCriteria.fullQuestion && assessedCriteria.fullQuestion.fullQuestion) {
             htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.fullQuestion.fullQuestion + "</div>";
           } else if (assessedCriteria.description) {
@@ -135,6 +140,31 @@ export class Review {
     htmlContent += "</body></html>";
 
     return htmlContent;
+  }
+
+  // Function to get sentiment image HTML
+  getSentimentImageHTML(sentiment) {
+    const green = chrome.runtime.getURL('/images/green.png')
+    const yellow = chrome.runtime.getURL('/images/yellow.png')
+    const red = chrome.runtime.getURL('/images/red.png')
+    let imgSrc, altText;
+    switch (sentiment) {
+      case 'green':
+        imgSrc = green
+        altText = 'Positive'
+        break;
+      case 'yellow':
+        imgSrc = yellow
+        altText = 'Neutral'
+        break;
+      case 'red':
+        imgSrc = red
+        altText = 'Negative'
+        break;
+      default:
+        return ''
+    }
+    return `<img src="${imgSrc}" alt="${altText}" style="height: 16px; margin-right: 4px; vertical-align: middle;">`;
   }
 
 // Function to format unsorted annotations

@@ -483,6 +483,42 @@ class TagManager {
       tagButton.dataset.chosen = 'false'
       if (!tagButton.innerText.includes('Conclusion')) {
         tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
+        // Add image for Premises buttons that have sentiment but no annotations
+        let tagName = tagButton.dataset.mark
+        let tagGroup = _.find(_.values(this.currentTags), (tg) => { return tg.config.name === tagName })
+        if (tagGroup && tagGroup.config.options.compile) {
+          let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let sentiment
+          if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
+            sentiment = foundCompile.answer.sentiment
+          } else if (foundCompile && foundCompile.sentiment) {
+            sentiment = foundCompile.sentiment
+          }
+
+          if (sentiment) {
+            // Create <img> element
+            let img = document.createElement('img')
+            switch (sentiment) {
+              case 'green':
+                img.src = green
+                img.alt = 'Positive'
+                break
+              case 'yellow':
+                img.src = yellow
+                img.alt = 'Neutral'
+                break
+              case 'red':
+                img.src = red
+                img.alt = 'Negative'
+                break
+            }
+            img.style.height = '16px'
+            img.style.verticalAlign = 'middle'
+            img.style.marginRight = '4px'
+            // Add <img> to button
+            tagButton.appendChild(img)
+          }
+        }
       } else {
         // If it is the conclusion tag, set the background color to grey
         let arrayOfTagGroups = _.values(this.currentTags)
@@ -512,9 +548,8 @@ class TagManager {
                 break
             }
             img.alt = 'Thumbs up'
-            img.style.height = '16px'
-            img.style.verticalAlign = 'middle'
-            img.style.marginRight = '4px'
+            img.style.height = '30px'
+            img.style.verticalAlign = 'bottom'
             // Add <img> to button
             tagButton.appendChild(img)
           }
