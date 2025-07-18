@@ -64,6 +64,8 @@ Once you create a schema, you have to provide the name and it will be rendered a
 <img width="825" height="669" alt="Screenshot 2025-07-18 at 12 58 08" src="https://github.com/user-attachments/assets/483f47c3-1dda-4ae9-8345-b08c26d695df" />
 
 
+# DEVELOPER MANUAL
+https://deepwiki.com/onekin/DeceptionAnalyser/2.2-llm-integration-system
 
 
 
