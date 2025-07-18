@@ -8,7 +8,7 @@ The tool offers a dual approach to schema selection. User-created schemas enable
 # END-USERS MANUAL
 DeceptionAnalyser supports LLM assisted deception analysis using argument schemas and conducted in a two-stage approach (premises followed by critical questions). After the analysis the tool includes HTML report generation and a Comma-Separated values (CSV) export with all the analysis performed over a set of documents for comparative analysis.
 
-## Installation and Setup
+## INSTALLATION AND SETUP
 You can follow these steps to get DeceptionAnalysis up and running
 
 ### Step 1: Requirements
@@ -47,3 +47,25 @@ The next step is to configure your OpenAI's or Anthropic's API key to connect th
 Once you access the Options menu, you can provide and "Save" the API key.
 
 <img width="1341" height="876" alt="Screenshot 2025-07-18 at 11 07 46" src="https://github.com/user-attachments/assets/fa851fa4-4edc-48c1-b280-256a6ee96a46" />
+
+## GETTING STARTED
+
+### Create First Schema
+To start using the tool you can open a PDF file in the web browser. Once the document is opened, you can activate the extension by clicking the pinned icon. When it is activated for the first time, the tool provide different options for creating the argument schema
+
+<img width="859" height="296" alt="Screenshot 2025-07-18 at 11 24 39" src="https://github.com/user-attachments/assets/e70606ad-a413-4225-a346-1b2805a0f526" />
+
+- Create Empty Schema: Allows to create and define the own premises and critical questions. 
+- Import Schema from JSON: Allows to import a well-formed JSON exported previously by the tool
+- Import Standard Schema: Allows to create a new schema based on the ones integrated in the tool.
+
+Once you create a schema, you have to provide the name and it will be rendered as a highlighter. If it is an empty schema you have to the possibility to add the premises and critical questions dinamically.
+ 
+<img width="825" height="856" alt="Screenshot 2025-07-18 at 12 57 27" src="https://github.com/user-attachments/assets/c599c949-ba9b-45b3-92ab-57dca1a28f1f" />
+
+
+
+
+
+
+
