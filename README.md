@@ -63,6 +63,50 @@ Once you create a schema, you have to provide the name and it will be rendered a
  
 <img width="825" height="669" alt="Screenshot 2025-07-18 at 12 58 08" src="https://github.com/user-attachments/assets/483f47c3-1dda-4ae9-8345-b08c26d695df" />
 
+### Start analyzing Premises
+
+The sidebar gather two different spaces for Premises and Critical Questions. Each one contains two different buttons: one for running the analysis and other for creating new premises (or critical questions).
+
+Start by analyzing the Premises. When executed, the tool uses a language model (LLM) to assess the premises and infer a conclusion. The output includes annotations and highlights the most relevant text excerpts from the document. The elements inside the Premises also display a face based on the analysis: green if premises are fulfill and red if not.
+
+<img width="776" height="486" alt="Screenshot 2025-07-18 at 15 29 17" src="https://github.com/user-attachments/assets/6c7202fe-7162-4a0c-9e2d-e0dc8fed03bb" />
+
+If you want to consult the assessment deeply, you can check the answer clicking the right-click in the Premise button and click to show the analysis. 
+
+<img width="558" height="486" alt="Screenshot 2025-07-18 at 15 37 05" src="https://github.com/user-attachments/assets/dc562f81-989e-4760-839c-70fbb0fef768" />
+
+Then, it will display the answer:
+
+<img width="1000" height="858" alt="image" src="https://github.com/user-attachments/assets/35c21a3f-b6da-4872-b013-770a7c744c92" />
+
+The answer will display the following information. 
+- Sentiment: Visual icons (negative, neutral, positive) with one selected to represent the emotional tone or intent of the statement.
+- Description: A general definition or explanation of the rhetorical or communicative pattern being identified.
+- Statement: A specific instance of the described pattern, identifying the agents involved and the nature of the influence or claim.
+- Excerpts: A quoted example from the source material illustrating the identified pattern in context.
+
+### Start analyzing Critical Questions
+
+Once the premises have been stated and the conclusion can be scrutenized for deception, it is possible to analyze the critical questions. In this case, the answers include also the arguments and counter arguments to support the answer of the question.
+
+<img width="1479" height="826" alt="image" src="https://github.com/user-attachments/assets/71d3a25a-a2d6-46a2-85df-a085633fffd8" />
+
+### Export analysis
+
+The tool provide different functionalities in top part of the sidebar:
+
+<img width="529" height="334" alt="Screenshot 2025-07-18 at 17 50 16" src="https://github.com/user-attachments/assets/e69f9a24-f51f-43e5-acdd-93c2091cdf63" />
+
+- Generate Report: It allows to generate a report of the current PDF in HTML style and also a csv file with the content of the analisys of all the PDFs.
+- Delete All Annotations: Deletes all the annotations of the current PDF.
+- Configuration: It gathers the link for the documentation and the LLM configuration.
+
+HTML report:
+<img width="1084" height="928" alt="image" src="https://github.com/user-attachments/assets/6b6134fb-677f-4ba5-8459-2225b65dab00" />
+
+CSV document for three documents:
+<img width="844" height="289" alt="image" src="https://github.com/user-attachments/assets/f0a0d166-ca64-4629-bb0a-9df4496e8c48" />
+
 
 # DEVELOPER MANUAL
 https://deepwiki.com/onekin/DeceptionAnalyser/2.2-llm-integration-system
