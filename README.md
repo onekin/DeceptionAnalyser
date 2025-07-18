@@ -1,18 +1,40 @@
 # DeceptionAnalyser
-
-DeceptionAnalyser is a web browser extension that represents a novel solution that leverages large language models to detect markers of deception in PDF documents. It is based on argument schemas made up of premises and critical questions. Premises are a logical framework aimed to conclude whether there is deception. After that, if the premise analysis indicates potential deception, critical questions (CQ) function as diagnostic tools. Large Language Models (LLMs) support this process by making a first assessment and providing pieces of evidence from the documents that support their assessment. For CQs, it instantiates the questions proposed in the argument schema for the target document and answers them providing also pieces of evidence and arguments and counter-arguments.
-
-The arguments schemas can be provided/created by the user or they can be the ones proposed by the authors of the tool. The schemas help to systematize the analysis prooviding a consistent analytical framework
-
 DeceptionAnalyser is a web browser extension that represents a novel solution that leverages large language models to detect markers of deception in PDF documents. It is based on argument schemas made up of premises and critical questions. Premises are a logical framework aimed to conclude whether there is deception. After that, if the premise analysis indicates potential deception, critical questions (CQ) function as diagnostic tools. Large Language Models (LLMs) support this process by making a first assessment and providing pieces of evidence from the documents that support their assessment. For CQs, it instantiates the questions proposed in the argument schema for the target document and answers them providing also pieces of evidence and arguments and counter-arguments.
 
 ## Schema-Driven Analysis Framework
-The foundation of DeceptionAnalyser's analytical approach lies in its flexible argument schema system, which serves as the crucial first step that determines the entire analytical framework. Schema selection directly influences what the LLM evaluates, guiding it to focus on different aspects of potential deception based on the specific context and requirements of the analysis.
-The tool offers a dual approach to schema selection that maximizes both analytical rigor and contextual relevance. User-created schemas enable domain-specific customization, allowing analysts to tailor the evaluation framework to their particular field of expertise. For instance, legal document analysis might emphasize precedent consistency and statutory compliance, while scientific paper verification would focus on methodological soundness and data integrity. This customization ensures that the analysis remains contextually appropriate and addresses the specific deception markers most relevant to each domain.
-Conversely, author-proposed schemas provide validated frameworks that have been tested across multiple contexts and document types. These schemas offer methodological reliability and serve as benchmarks for consistent analysis, particularly valuable for users who require standardized evaluation criteria or lack specialized domain knowledge to create custom frameworks.
-This schema-driven systematization creates consistent analytical frameworks by defining specific premises to evaluate—such as logical consistency, evidence quality, source credibility, and argumentative coherence—along with corresponding critical questions that probe deeper when deception markers are detected. The systematization process ensures reproducible results across different documents and analysts while reducing analytical bias through structured evaluation criteria.
-The chosen schema directly impacts both premise evaluation and critical question generation, making the LLM's analysis more targeted and contextually appropriate. Different schemas guide the LLM to examine different facets of potential deception, from stylistic inconsistencies and logical fallacies to factual inaccuracies and source manipulation, depending on what the selected framework prioritizes as most indicative of deceptive content.
+The foundation of DeceptionAnalyser's analytical approach lies in its flexible argument schema system. Schema selection influences what the LLM evaluates, guiding it to focus on different aspects of potential deception based on the specific context and requirements of the analysis.
+The tool offers a dual approach to schema selection. User-created schemas enable domain-specific customization, allowing analysts to tailor the evaluation framework. Conversely, author-proposed schemas offer methodological reliability and serve as benchmarks for consistent analysis. This schema-driven systematization creates analytical frameworks by defining specific premises to evaluate along with corresponding critical questions that probe deeper when deception markers are deteted. 
 
 # END-USERS MANUAL
 DeceptionAnalyser supports LLM assisted deception analysis using argument schemas and conducted in a two-stage approach (premises followed by critical questions). After the analysis the tool includes HTML report generation and a Comma-Separated values (CSV) export with all the analysis performed over a set of documents for comparative analysis.
+
+## Installation and Setup
+You can follow these steps to get DeceptionAnalysis up and running
+
+### Step 1: Requirements
+- Google Chrome browser.
+- An OpenAI API key ([You can obtain one here](https://platform.openai.com/api-keys)).
+
+### Step 2: Install the Concept&Go Extension
+You can install the extension in your browser from the following link: 
+- Open your web browser and navigate to the DeceptionAnalyser extension page on the [[Browser Extension Store/Marketplace](https://chromewebstore.google.com/detail/deceptionanalyser/aejfobdbjdepinlndhecaeahbdbcpjcg?hl=en)].
+- Click the "Add to Browser" or "Install" button to begin the installation process.
+- Once the installation is complete, you will see a DeceptionAnalyser icon appear in your browser’s toolbar. This indicates that DeceptionAnalyser is successfully installed.
+
+### Step 3: Setup
+Once you have installed it, you have to follow these steps:
+
+#### Access to local files
+
+Once you have installed DeceptionAnalyser, you will find the web extension icon in the right part at the top of the toolbar. We recommend pining it in the toolbar to facilitate the use of the tool.
+
+![Screenshot 2022-09-05 at 16 23 01](https://user-images.githubusercontent.com/31988855/188472900-ce49ec6a-9687-4224-93cd-94a633733d92.png)
+
+The next step is to prepare the setup to prepare the application before using it. First, in the “Manage extension” menu you have to activate the permission to allow access to local files.
+
+![Screenshot 2022-09-05 at 16 23 13](https://user-images.githubusercontent.com/31988855/188472979-eeff314f-08b7-41d0-b324-2ff833eec036.png)
+
+In order to do that, you have to activate the “Allow access to file URLs” option.
+
+![Screenshot 2022-09-05 at 16 23 23](https://user-images.githubusercontent.com/31988855/188473227-b89d284d-e853-499a-89f7-b29eea011873.png)
 
