@@ -27,6 +27,7 @@ Once you have installed it, you have to follow these steps:
 #### Access to local files
 
 Once you have installed DeceptionAnalyser, you will find the web extension icon in the right part at the top of the toolbar. We recommend pining it in the toolbar to facilitate the use of the tool.
+
 ![Screenshot 2022-09-05 at 16 23 01](https://github.com/user-attachments/assets/3f95aedd-50cc-4f71-b14c-6303a309b4d6)
 
 The next step is to prepare the setup to prepare the application before using it. First, in the “Manage extension” menu you have to activate the permission to allow access to local files.
@@ -39,8 +40,10 @@ In order to do that, you have to activate the “Allow access to file URLs” op
 
 #### Configure API key
 
-The next step is to configure your OpenAI's or Anthropic's API key to connect the extension with the LLM models. First, you have to access the options panel
+The next step is to configure your OpenAI's or Anthropic's API key to connect the extension with the LLM models. First, you have to access the options panel.
+
 <img width="489" height="544" alt="Screenshot 2025-07-18 at 11 06 05" src="https://github.com/user-attachments/assets/dd726c5c-617e-4666-9b1a-ed2ab3c9373a" />
 
-Once you access the Options menu, you can provide and "Save" the API key
+Once you access the Options menu, you can provide and "Save" the API key.
+
 <img width="1341" height="876" alt="Screenshot 2025-07-18 at 11 07 46" src="https://github.com/user-attachments/assets/fa851fa4-4edc-48c1-b280-256a6ee96a46" />
