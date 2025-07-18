@@ -35,4 +35,12 @@ The next step is to prepare the setup to prepare the application before using it
 
 In order to do that, you have to activate the “Allow access to file URLs” option.
 
-<img src="https://github.com/user-attachments/assets/01c8332d-d5c1-43f0-8a9f-37373be2aa3f" alt="Screenshot" width="50%">
+<img src="https://github.com/user-attachments/assets/47075f15-c6b9-4ea7-ae0e-66e2c0f8f96b" alt="Screenshot" width="60%">
+
+#### Configure API key
+
+The next step is to configure your OpenAI's or Anthropic's API key to connect the extension with the LLM models. First, you have to access the options panel
+<img width="489" height="544" alt="Screenshot 2025-07-18 at 11 06 05" src="https://github.com/user-attachments/assets/dd726c5c-617e-4666-9b1a-ed2ab3c9373a" />
+
+Once you access the Options menu, you can provide and "Save" the API key
+<img width="1341" height="876" alt="Screenshot 2025-07-18 at 11 07 46" src="https://github.com/user-attachments/assets/fa851fa4-4edc-48c1-b280-256a6ee96a46" />
