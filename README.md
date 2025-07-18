@@ -61,7 +61,7 @@ To start using the tool you can open a PDF file in the web browser. Once the doc
 
 Once you create a schema, you have to provide the name and it will be rendered as a highlighter. If it is an empty schema you have to the possibility to add the premises and critical questions dinamically.
  
-<img width="825" height="856" alt="Screenshot 2025-07-18 at 12 57 27" src="https://github.com/user-attachments/assets/c599c949-ba9b-45b3-92ab-57dca1a28f1f" />
+<img width="825" height="669" alt="Screenshot 2025-07-18 at 12 58 08" src="https://github.com/user-attachments/assets/483f47c3-1dda-4ae9-8345-b08c26d695df" />
 
 
 
