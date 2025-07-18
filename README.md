@@ -35,5 +35,5 @@ The next step is to prepare the setup to prepare the application before using it
 
 In order to do that, you have to activate the “Allow access to file URLs” option.
 
-<img src="https://github.com/user-attachments/assets/3f95aedd-50cc-4f71-b14c-6303a309b4d6" alt="Screenshot 2022-09-05 at 16 23 23" width="50%">
+<img src="https://user-images.githubusercontent.com/31988855/188473407-59b9b560-20ec-42fb-9043-8aa480495a9d.png" alt="Screenshot 2022-09-05 at 16 23 23" width="50%">
 
