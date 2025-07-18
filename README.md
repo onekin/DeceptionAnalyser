@@ -31,9 +31,9 @@ Once you have installed DeceptionAnalyser, you will find the web extension icon 
 
 The next step is to prepare the setup to prepare the application before using it. First, in the “Manage extension” menu you have to activate the permission to allow access to local files.
 
-![Screenshot 2022-09-05 at 16 23 13](https://github.com/user-attachments/assets/3f95aedd-50cc-4f71-b14c-6303a309b4d6)
+![Screenshot 2022-09-05 at 16 23 13](https://github.com/user-attachments/assets/503f1341-c75d-41f3-89c7-49155e8d617b)
 
 In order to do that, you have to activate the “Allow access to file URLs” option.
 
-![Screenshot 2022-09-05 at 16 23 23](https://github.com/user-attachments/assets/3f95aedd-50cc-4f71-b14c-6303a309b4d6)
+<img src="https://github.com/user-attachments/assets/3f95aedd-50cc-4f71-b14c-6303a309b4d6" alt="Screenshot 2022-09-05 at 16 23 23" width="50%">
 
