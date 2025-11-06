@@ -1,23 +1,106 @@
-import Alerts from '../utils/Alerts'
-import FileUtils from '../utils/FileUtils'
-import LocalStorageManager from '../storage/local/LocalStorageManager'
-import FileSaver from 'file-saver'
 import _ from 'lodash'
 
 class Options {
   init () {
     if (window.location.href.includes('pages/options.html')) {
-      const defaultLLM = { modelType: 'openAI', model: 'gpt-4' }
+      const defaultLLM = {
+        modelType: 'openAI',
+        model: 'gpt-4'
+      }
       const openAIModels = [
-        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-        { value: 'gpt-4-turbo-2024-04-09', label: 'GPT-4 Turbo' },
+        // Current GPT-4o family
         { value: 'gpt-4o', label: 'GPT-4o' },
-        { value: 'gpt-4-1106-preview', label: 'GPT-4-1106-Preview' }
+        { value: 'gpt-4o-2024-11-20', label: 'GPT-4o (Nov 2024)' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+
+        // Latest GPT-4.1 family (January 2025)
+        { value: 'gpt-4.1', label: 'GPT-4.1' },
+        { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+        { value: 'gpt-4.1-nano', label: 'GPT-4.1 Nano' },
+
+        // O-series reasoning models
+        { value: 'o3', label: 'o3 (Reasoning)' },
+        { value: 'o3-pro', label: 'o3-pro (Advanced Reasoning)' },
+        { value: 'o4-mini', label: 'o4-mini (Reasoning)' },
+        { value: 'o4-mini-high', label: 'o4-mini-high (Enhanced Reasoning)' },
+
+        // Research preview models
+        { value: 'gpt-4.5', label: 'GPT-4.5 (Preview - Deprecated July 2025)' },
+
+        // Image generation
+        { value: 'gpt-image-1', label: 'GPT Image 1' },
+
+        // Legacy models (still available but not recommended)
+        { value: 'gpt-4', label: 'GPT-4 (Legacy)' },
+        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo (Legacy)' },
+        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo (Legacy)' }
       ]
 
       const anthropicModels = [
-        { value: 'claude-v1', label: 'Claude v1' },
-        { value: 'claude-v2', label: 'Claude v2' }
+        // Latest Claude 4 family (May 2025)
+        { value: 'claude-4-opus-20250514', label: 'Claude 4 Opus' },
+        { value: 'claude-4-sonnet-20250514', label: 'Claude 4 Sonnet' },
+
+        // Claude 3.7 family (current generation before Claude 4)
+        { value: 'claude-3-7-sonnet-20241022', label: 'Claude 3.7 Sonnet' },
+
+        // Claude 3.5 family
+        { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet (New)' },
+        { value: 'claude-3-5-sonnet-20240620', label: 'Claude 3.5 Sonnet (Original)' },
+        { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+
+        // Claude 3 family (legacy but still available)
+        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus (Legacy)' },
+        { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet (Legacy)' },
+        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku (Legacy)' }
+      ]
+
+      const groqModels = [
+        // Alibaba Cloud
+        { value: 'qwen-qwq-32b', label: 'Qwen QWQ 32B' },
+        { value: 'qwen/qwen3-32b', label: 'Qwen3 32B' },
+
+        // DeepSeek / Meta
+        { value: 'deepseek-r1-distill-llama-70b', label: 'DeepSeek R1 Distill Llama 70B' },
+
+        // Google
+        { value: 'gemma2-9b-it', label: 'Gemma2 9B IT' },
+
+        // Groq
+        { value: 'compound-beta', label: 'Compound Beta' },
+        { value: 'compound-beta-mini', label: 'Compound Beta Mini' },
+
+        // Hugging Face
+        { value: 'distil-whisper-large-v3-en', label: 'Distil Whisper Large v3 EN' },
+
+        // Meta
+        { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant' },
+        { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile' },
+        { value: 'llama3-70b-8192', label: 'Llama3 70B 8192' },
+        { value: 'llama3-8b-8192', label: 'Llama3 8B 8192' },
+        { value: 'meta-llama/llama-4-maverick-17b-128e-instruct', label: 'Llama 4 Maverick 17B 128E Instruct' },
+        { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B 16E Instruct' },
+        { value: 'meta-llama/llama-guard-4-12b', label: 'Llama Guard 4 12B' },
+        { value: 'meta-llama/llama-prompt-guard-2-22m', label: 'Llama Prompt Guard 2 22M' },
+        { value: 'meta-llama/llama-prompt-guard-2-86m', label: 'Llama Prompt Guard 2 86M' },
+
+        // Mistral AI
+        { value: 'mistral-saba-24b', label: 'Mistral Saba 24B' },
+
+        // OpenAI
+        { value: 'whisper-large-v3', label: 'Whisper Large v3' },
+        { value: 'whisper-large-v3-turbo', label: 'Whisper Large v3 Turbo' },
+
+        // PlayAI
+        { value: 'playai-tts', label: 'PlayAI TTS' },
+        { value: 'playai-tts-arabic', label: 'PlayAI TTS Arabic' }
+      ]
+
+      const geminiModels = [
+        { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Free)' },
+        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Free)' },
+        { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Free)' },
+        { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Free)' }
       ]
 
       const LLMDropdown = document.getElementById('LLMDropdown')
@@ -26,9 +109,25 @@ class Options {
 
       const openAIApiContainer = document.getElementById('openAI-ApiKeyContainer')
       const anthropicApiContainer = document.getElementById('anthropic-ApiKeyContainer')
-      // Hide OpenAI and Anthropic API key inputs initially
+      const groqApiContainer = document.getElementById('groq-ApiKeyContainer')
+      const geminiApiContainer = document.getElementById('gemini-ApiKeyContainer')
+
+      const openAIModelInfoContainer = document.getElementById('openAI-models')
+      const anthropicModelInfoContainer = document.getElementById('anthropic-models')
+      const groqModelInfoContainer = document.getElementById('groq-models')
+      const geminiModelInfoContainer = document.getElementById('gemini-models')
+
+      // Hide models info
+      openAIModelInfoContainer.style.display = 'none'
+      anthropicModelInfoContainer.style.display = 'none'
+      groqModelInfoContainer.style.display = 'none'
+      geminiModelInfoContainer.style.display = 'none'
+
+      // Hide API key inputs initially
       openAIApiContainer.style.display = 'none'
       anthropicApiContainer.style.display = 'none'
+      groqApiContainer.style.display = 'none'
+      geminiApiContainer.style.display = 'none'
 
       // Handle LLM dropdown change
       document.querySelector('#LLMDropdown').addEventListener('change', (event) => {
@@ -39,6 +138,10 @@ class Options {
           populateModelDropdown(openAIModels) // Populate the OpenAI models
         } else if (selectedLLM === 'anthropic') {
           populateModelDropdown(anthropicModels) // Populate the Anthropic models
+        } else if (selectedLLM === 'groq') {
+          populateModelDropdown(groqModels) // Populate the Groq models
+        } else if (selectedLLM === 'gemini') {
+          populateModelDropdown(geminiModels) // Populate the Gemini models
         }
 
         // Ensure the selectedModel is correctly set
@@ -59,7 +162,12 @@ class Options {
         setLLM(selectedLLM, selectedModel) // Update LLM with new model
       })
 
-      chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, ({ llm = defaultLLM }) => {
+      chrome.runtime.sendMessage({
+        scope: 'llm',
+        cmd: 'getSelectedLLM'
+      }, ({
+        llm = defaultLLM
+      }) => {
         document.querySelector('#LLMDropdown').value = llm.modelType || defaultLLM.modelType
         handleLLMChange(llm.modelType || defaultLLM.modelType) // Ensure the model dropdown gets populated
         modelDropdown.value = llm.model || defaultLLM.model
@@ -68,15 +176,23 @@ class Options {
 
       // Update LLM (both provider and model)
       // eslint-disable-next-line no-inner-declarations
-      function setLLM (llmProvider, model) {
+      function setLLM(llmProvider, model) {
         chrome.runtime.sendMessage({
           scope: 'llm',
           cmd: 'setSelectedLLM',
-          data: { llm: { modelType: llmProvider, model: model } }
-        }, ({ llm }) => {
+          data: {
+            llm: {
+              modelType: llmProvider,
+              model: model
+            }
+          }
+        }, ({
+          llm
+        }) => {
           console.debug('LLM selected ' + llm)
         })
         console.log('Selected LLM Provider: ' + llmProvider + ' Model: ' + model)
+        updateTokenUsage(model)
       }
 
       // Handle changes in the LLM provider (like openAI or Anthropic)
@@ -87,12 +203,50 @@ class Options {
           modelSelectionContainer.style.display = 'block'
           openAIApiContainer.style.display = 'block'
           anthropicApiContainer.style.display = 'none'
+          groqApiContainer.style.display = 'none'
+          geminiApiContainer.style.display = 'none'
+          // Hide models info
+          openAIModelInfoContainer.style.display = 'block'
+          anthropicModelInfoContainer.style.display = 'none'
+          groqModelInfoContainer.style.display = 'none'
+          geminiModelInfoContainer.style.display = 'none'
           populateModelDropdown(openAIModels)
         } else if (selectedLLM === 'anthropic') {
           modelSelectionContainer.style.display = 'block'
           openAIApiContainer.style.display = 'none'
           anthropicApiContainer.style.display = 'block'
+          groqApiContainer.style.display = 'none'
+          geminiApiContainer.style.display = 'none'
+          // Hide models info
+          openAIModelInfoContainer.style.display = 'none'
+          anthropicModelInfoContainer.style.display = 'block'
+          groqModelInfoContainer.style.display = 'none'
+          geminiModelInfoContainer.style.display = 'none'
           populateModelDropdown(anthropicModels)
+        } else if (selectedLLM === 'groq') {
+          modelSelectionContainer.style.display = 'block'
+          openAIApiContainer.style.display = 'none'
+          anthropicApiContainer.style.display = 'none'
+          groqApiContainer.style.display = 'block'
+          geminiApiContainer.style.display = 'none'
+          // Hide models info
+          openAIModelInfoContainer.style.display = 'none'
+          anthropicModelInfoContainer.style.display = 'none'
+          groqModelInfoContainer.style.display = 'block'
+          geminiModelInfoContainer.style.display = 'none'
+          populateModelDropdown(groqModels)
+        } else if (selectedLLM === 'gemini') {
+          modelSelectionContainer.style.display = 'block'
+          openAIApiContainer.style.display = 'none'
+          anthropicApiContainer.style.display = 'none'
+          groqApiContainer.style.display = 'none'
+          geminiApiContainer.style.display = 'block'
+          // Hide models info
+          openAIModelInfoContainer.style.display = 'none'
+          anthropicModelInfoContainer.style.display = 'none'
+          groqModelInfoContainer.style.display = 'none'
+          geminiModelInfoContainer.style.display = 'block'
+          populateModelDropdown(geminiModels)
         } else {
           modelSelectionContainer.style.display = 'none'
           openAIApiContainer.style.display = 'none'
@@ -105,7 +259,13 @@ class Options {
         })
         // Show corresponding selected LLM configuration card
         let selectedLLMConfiguration = document.querySelector('#' + selectedLLM + '-ApiKeyContainer')
-        chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getAPIKEY', data: selectedLLM }, ({ apiKey }) => {
+        chrome.runtime.sendMessage({
+          scope: 'llm',
+          cmd: 'getAPIKEY',
+          data: selectedLLM
+        }, ({
+          apiKey
+        }) => {
           if (apiKey && apiKey !== '') {
             console.log('Retrieved API Key' + apiKey)
             let input = document.querySelector('#' + selectedLLM + '-APIKey')
@@ -125,11 +285,36 @@ class Options {
       }
 
       // eslint-disable-next-line no-inner-declarations
-      function populateModelDropdown (models) {
+      function updateTokenUsage(model) {
+        // Clear the dropdown before populating it
+        chrome.runtime.sendMessage({
+          scope: 'llm',
+          cmd: 'getTokenUsage',
+          data: {
+            model: model
+          }
+        }, ({
+          tokens
+        }) => {
+          if (tokens) {
+            document.getElementById('completionTokens').textContent = tokens.completionTokens
+            document.getElementById('promptTokens').textContent = tokens.promptTokens
+            document.getElementById('totalTokens').textContent = tokens.totalTokens
+          } else {
+            document.getElementById('completionTokens').textContent = '0'
+            document.getElementById('promptTokens').textContent = '0'
+            document.getElementById('totalTokens').textContent = '0'
+            console.warn('Token usage display element not found.')
+          }
+        })
+      }
+
+      // eslint-disable-next-line no-inner-declarations
+      function populateModelDropdown(models) {
         // Clear the dropdown before populating it
         modelDropdown.innerHTML = ''
 
-        models.forEach(function (model) {
+        models.forEach(function(model) {
           const option = document.createElement('option')
           option.value = model.value
           option.textContent = model.label
@@ -142,7 +327,7 @@ class Options {
       }
 
       // eslint-disable-next-line no-inner-declarations
-      function resetModelDropdown () {
+      function resetModelDropdown() {
         modelDropdown.innerHTML = '' // Reset by clearing all previous options
       }
 
@@ -170,8 +355,13 @@ class Options {
         chrome.runtime.sendMessage({
           scope: 'llm',
           cmd: 'setAPIKEY',
-          data: { llm: selectedLLM, apiKey: apiKey }
-        }, ({ apiKey }) => {
+          data: {
+            llm: selectedLLM,
+            apiKey: apiKey
+          }
+        }, ({
+          apiKey
+        }) => {
           console.log('APIKey stored ' + apiKey)
           let button = document.querySelector('#' + selectedLLM + '-APIKeyValidationButton')
           button.innerHTML = 'Change API Key value'
@@ -179,85 +369,7 @@ class Options {
           input.disabled = true
         })
       }
-
-      // Local storage restore
-      document.querySelector('#restoreDatabaseButton').addEventListener('click', () => {
-        Alerts.inputTextAlert({
-          title: 'Upload your database backup file',
-          html: 'Danger zone! <br/>This operation will override current local storage database, deleting all the annotations for all your documents. Please make a backup first.',
-          type: Alerts.alertType.warning,
-          input: 'file',
-          callback: (err, file) => {
-            if (err) {
-              window.alert('An unexpected error happened when trying to load the alert.')
-            } else {
-              // Read json file
-              FileUtils.readJSONFile(file, (err, jsonObject) => {
-                if (err) {
-                  Alerts.errorAlert({ text: 'Unable to read json file: ' + err.message })
-                } else {
-                  this.restoreDatabase(jsonObject, (err) => {
-                    if (err) {
-                      Alerts.errorAlert({ text: 'Something went wrong when trying to restore the database' })
-                    } else {
-                      Alerts.successAlert({ text: 'Database restored.' })
-                    }
-                  })
-                }
-              })
-            }
-          }
-        })
-      })
-      // Local storage backup
-      document.querySelector('#backupDatabaseButton').addEventListener('click', () => {
-        this.backupDatabase()
-      })
-      // Local storage delete
-      document.querySelector('#deleteDatabaseButton').addEventListener('click', () => {
-        Alerts.confirmAlert({
-          title: 'Deleting your database',
-          alertType: Alerts.alertType.warning,
-          text: 'Danger zone! <br/>This operation will override current local storage database, deleting all the annotations for all your documents. Please make a backup first.',
-          callback: () => {
-            this.deleteDatabase((err) => {
-              if (err) {
-                Alerts.errorAlert({ text: 'Error deleting the database, please try it again or contact developer.' })
-              } else {
-                Alerts.successAlert({ text: 'Local storage successfully deleted' })
-              }
-            })
-          }
-        })
-      })
     }
-  }
-
-  restoreDatabase (jsonObject, callback) {
-    window.options.localStorage = new LocalStorageManager()
-    window.options.localStorage.init(() => {
-      window.options.localStorage.saveDatabase(jsonObject, callback)
-    })
-  }
-
-  backupDatabase () {
-    window.options.localStorage = new LocalStorageManager()
-    window.options.localStorage.init(() => {
-      let stringifyObject = JSON.stringify(window.options.localStorage.annotationsDatabase, null, 2)
-      // Download the file
-      let blob = new window.Blob([stringifyObject], {
-        type: 'text/plain;charset=utf-8'
-      })
-      let dateString = (new Date()).toISOString()
-      FileSaver.saveAs(blob, 'reviewAndGo-databaseBackup' + dateString + '.json')
-    })
-  }
-
-  deleteDatabase (callback) {
-    window.options.localStorage = new LocalStorageManager()
-    window.options.localStorage.init(() => {
-      window.options.localStorage.cleanDatabase(callback)
-    })
   }
 }
 

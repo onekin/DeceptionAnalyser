@@ -6,6 +6,8 @@ import { TokenTextSplitter } from 'langchain/text_splitter'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
 import { MemoryVectorStore } from 'langchain/vectorstores/memory'
 import { PromptTemplate } from '@langchain/core/prompts'
+import { ChatGoogleGenerativeAI } from '@langchain/google-genai'
+
 
 class LLMManager {
   init () {
@@ -92,6 +94,14 @@ class LLMManager {
             )// Return the error inside the message handler
           } else {
             this.askLLMOpenAI(request).then(
+              res => sendResponse({ res: res }),
+              err => sendResponse({ err: err })
+            )// Return the error inside the message handler
+          }
+          return true // Return true inside the message handler
+        } else if (request.cmd === 'gemini') {
+          if (request.data.documents) {
+            this.askGeminiWithDocuments(request).then(
               res => sendResponse({ res: res }),
               err => sendResponse({ err: err })
             )// Return the error inside the message handler
@@ -212,6 +222,34 @@ class LLMManager {
         return { error: 'Incorrect API key provided.' }
       } else {
         return { error: 'An error has occurred trying first call.' }
+      }
+    })
+  }
+
+  async askGeminiWithDocuments (request) {
+    const apiKey = request.data.apiKey
+    const query = request.data.query
+    const documents = request.data.documents
+    const modelName = request.data.llm.model
+    const model = new ChatGoogleGenerativeAI({
+      temperature: 0.2,
+      apiKey: apiKey,
+      model: modelName
+    })
+
+    const promptTemplate = PromptTemplate.fromTemplate(
+      '{query}'
+    )
+    // Create QA chain
+    const chain = promptTemplate.pipe(model)
+    return chain.invoke({ query: query }).then(res => {
+      return res.text // Return the result so it can be used in the next .then()
+    }).catch(async err => {
+      console.log(err.toString())
+      if (err.toString().startsWith('Error: 401')) {
+        return { error: 'Incorrect API key provided.' }
+      } else {
+        return { error: err.toString() }
       }
     })
   }

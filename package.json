@@ -25,7 +25,9 @@
     ]
   },
   "dependencies": {
-    "@langchain/core": "^0.3.11",
+    "@langchain/core": "^0.3.61",
+    "@langchain/google-genai": "^0.2.14",
+    "@langchain/groq": "^0.2.3",
     "axios": "^0.21.1",
     "bootstrap": "^5.0.1",
     "circular-json-es6": "^2.0.2",
