@@ -8,16 +8,19 @@
 <body>
 <div class="jumbotron">
   <div class="container">
-    <div class="row">
-      <div class="col-sm-6 col-md-2">
-        <img class="logo" src="../images/fraudDetection.png">
-      </div>
-      <div class="col-sm-6 col-md-10">
-        <h2 class="title">DeceptionAnalyser configuration</h2>
-      </div>
+    <!-- Header -->
+    <div class="container">
+      <header class="d-flex flex-wrap align-items-center gap-3 py-3 mb-4 border-bottom
+                    justify-content-center justify-content-sm-start">
+        <img src="../images/fraudDetection.png" alt="DeceptionAnalyser"
+            class="img-fluid" style="width:56px;height:56px">
+        <div class="text-center text-sm-start">
+          <h1 class="h3 mb-0">DeceptionAnalyser configuration</h1>
+          <!-- optional subtitle -->
+          <!-- <small class="text-muted">Large Language Model configuration</small> -->
+        </div>
+      </header>
     </div>
-    <br/>
-    <br/>
     <div class="card">
       <div class="card-header card-header bg-dark text-white">Large Language Model configuration</div>
       <div class="form-check">
@@ -26,6 +29,7 @@
           <!-- Left Column - Model Selection -->
           <div class="col-md-6">
             <div class="mb-3">
+              <br/>
               <label for="LLMDropdown">Select your Large Language Model provider</label>
               <select class="form-control" id="LLMDropdown">
                 <option value="anthropic" selected="selected">Anthropic</option>
@@ -47,7 +51,7 @@
                 <button id="anthropic-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
               </div>
               <div id="openAI-ApiKeyContainer" class="APIKey-Configuration">
-                <label>Paste here your OpenAI API Plus key:</label>
+                <label>Paste here your OpenAI API key:</label>
                 <input type="text" id="openAI-APIKey" />
                 <button id="openAI-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
               </div>
@@ -153,24 +157,8 @@
             </div>
           </div>
         </div>
-        <div>
-          <label for="temperatureInput" class="form-label">Set model temperature</label>
-          <input
-                  type="number"
-                  class="form-control"
-                  id="temperatureInput"
-                  min="0"
-                  max="2"
-                  step="0.1"
-                  value="0.7"
-                  placeholder="Enter temperature (0-2)"
-          >
-          <div class="form-text">
-            Temperature controls randomness: 0 = deterministic, 2 = very creative
-          </div>
-        </div>
         <br>
-        <div class="mb-3">
+        <!--<div class="mb-3">
           <label class="form-label">Token Usage</label>
           <div class="card">
             <div class="card-body">
@@ -193,10 +181,44 @@
               </div>
             </div>
           </div>
-        </div>
+        </div>-->
       </div>
     </div>
     <br/>
+    <div class="card mt-4">
+      <div class="card-header bg-dark text-white">Resources</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6 class="mb-2">User Manual</h6>
+            <p class="text-muted small mb-2">Step-by-step guide to set up and use DeceptionAnalyser.</p>
+            <a class="btn btn-sm btn-primary" href="https://github.com/onekin/DeceptionAnalyser" target="_blank">User Manual</a>
+            <a class="btn btn-sm btn-outline-secondary" href="https://deepwiki.com/onekin/DeceptionAnalyser/2.2-llm-integration-system" target="_blank">Developer Manual</a>
+          </div>
+
+          <!--<div class="col-md-6">
+            <h6 class="mb-2">Tutorial Video</h6>
+            <p class="text-muted small mb-2">A quick walkthrough of the main features.</p>
+            <a class="btn btn-sm btn-danger" href="https://www.youtube.com/watch?v=YOUR_VIDEO_ID" target="_blank">
+              Watch on YouTube
+            </a>
+          </div>-->
+
+          <!--<div class="col-md-6">
+            <h6 class="mb-2">Release Notes</h6>
+            <p class="text-muted small mb-2">What’s new in the latest version.</p>
+            <a class="btn btn-sm btn-outline-primary" href="changelog.html" target="_blank">View Changelog</a>
+          </div>-->
+
+          <div class="col-md-6">
+            <h6 class="mb-2">Support</h6>
+            <p class="text-muted small mb-2">Questions, bugs, or feature requests.</p>
+            <a class="btn btn-sm btn-outline-success" href="mailto:xabier.garmendiad@ehu.eus">Contact Support</a>
+            <a class="btn btn-sm btn-outline-secondary" href="https://github.com/onekin/DeceptionAnalyser/issues" target="_blank">Report Issue</a>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 </div>

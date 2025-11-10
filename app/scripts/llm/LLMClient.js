@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import Alerts from '../utils/Alerts'
+import LanguageUtils from '../utils/LanguageUtils'
 let Swal = null
 if (document && document.head) {
   Swal = require('sweetalert2')
@@ -8,7 +9,7 @@ if (document && document.head) {
 class LLMClient {
   static async pdfBasedQuestion ({apiKey, documents, callback, prompt, llm, message = 'Please wait to the response'}) {
     Swal.fire({
-      title: 'Asking ' + llm.modelType,
+      title: 'Asking ' + LanguageUtils.ucFirst(llm.modelType),
       text: message,
       allowEscapeKey: false,
       allowOutsideClick: false,
@@ -25,12 +26,12 @@ class LLMClient {
             Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + response.res.error })
           } else {
             // Swal.close()
-            const jsonString = response.res.text
+            const jsonString = response.res
             console.log('ANSWER: ' + jsonString)
             let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)
             let lastIndex = retrievedJSON.lastIndexOf('}')
             retrievedJSON = retrievedJSON.substring(0, lastIndex)
-            retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '')
+            retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
             if (!retrievedJSON.startsWith('{')) {
               retrievedJSON = '{' + retrievedJSON
             }

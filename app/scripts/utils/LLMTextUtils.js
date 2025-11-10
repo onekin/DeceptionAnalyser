@@ -1,4 +1,4 @@
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 
 class LLMTextUtils {
   static async loadDocument (pdfFile) {

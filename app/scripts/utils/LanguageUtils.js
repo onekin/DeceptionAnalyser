@@ -76,6 +76,17 @@ class LanguageUtils {
   }
 
   /**
+   * Uppercase the first letter of a string
+   * @param str
+   * @returns {string}
+   */
+  static ucFirst (str = '') {
+    if (!str) return ''
+    const [first, ...rest] = [...String(str)] // maneja emojis/UTF-16
+    return first.toLocaleUpperCase() + rest.join('')
+  }
+
+  /**
    * Dispatches a custom event with the given name
    * @param eventName
    * @param metadata

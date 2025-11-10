@@ -17,8 +17,9 @@ class ContentTypeManager {
     this.fileMetadata = {}
   }
 
-  init (callback) {
-    if (document.querySelector('embed[type="application/pdf"]')) {
+  async init (callback) {
+    const url = window.location.href
+    if (/\.(pdf)(\?|#|$)/i.test(url) && !url.startsWith('chrome-extension://')) {
       window.location = chrome.runtime.getURL('content/pdfjs/web/viewer.html') + '?file=' + encodeURIComponent(window.location.href)
     } else {
       // Load publication metadata

@@ -1,5 +1,4 @@
 import ContentScriptManager from './contentScript/ContentScriptManager'
-import AnnotationBasedInitializer from './contentScript/AnnotationBasedInitializer'
 
 const _ = require('lodash')
 
@@ -23,24 +22,16 @@ if (_.isEmpty(window.abwa)) {
       }
     }
   })
-  // Check if uri contains annotation to initialize
-  let annotation = AnnotationBasedInitializer.getAnnotationHashParam()
-  if (annotation) {
-    // If extension is not activated, activate
-    chrome.runtime.sendMessage({scope: 'extension', cmd: 'activatePopup'}, () => {
-      console.debug('Activated popup by annotation')
-    })
-  } else {
-    // Check if button is activated for this tab
-    chrome.runtime.sendMessage({scope: 'extension', cmd: 'amIActivated'}, (response) => {
-      if (response.activated) {
-        if (_.isEmpty(window.abwa.contentScriptManager)) {
-          window.abwa.contentScriptManager = new ContentScriptManager()
-          if (window.abwa.contentScriptManager.status === ContentScriptManager.status.notInitialized) {
-            window.abwa.contentScriptManager.init()
-          }
+
+  // Check if button is activated for this tab
+  chrome.runtime.sendMessage({scope: 'extension', cmd: 'amIActivated'}, (response) => {
+    if (response.activated) {
+      if (_.isEmpty(window.abwa.contentScriptManager)) {
+        window.abwa.contentScriptManager = new ContentScriptManager()
+        if (window.abwa.contentScriptManager.status === ContentScriptManager.status.notInitialized) {
+          window.abwa.contentScriptManager.init()
         }
       }
-    })
-  }
+    }
+  })
 }
