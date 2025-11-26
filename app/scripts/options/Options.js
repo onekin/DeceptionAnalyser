@@ -11,7 +11,10 @@ class Options {
         // Current GPT-4o family
         { value: 'gpt-5', label: 'GPT-5' },
         { value: 'gpt-5-mini', label: 'GPT-5 mini' },
-        { value: 'gpt-4o', label: 'GPT-4o' }
+        { value: 'gpt-4o', label: 'GPT-4o' },
+        { value: 'gpt-4o-mini', label: 'GPT-4o mini' },
+        { value: 'gpt-4', label: 'GPT-4' },
+        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
       ]
 
       const anthropicModels = [
