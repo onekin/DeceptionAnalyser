@@ -16,7 +16,7 @@ class LLMClient {
       onOpen: async () => {
         Swal.showLoading()
         const b = document.getElementById('swal2-title')
-        b.innerText = 'Asking ' + llm.modelType
+        b.innerText = 'Asking ' + LanguageUtils.ucFirst(llm.modelType)
         chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm.modelType, data: {documents: documents, apiKey: apiKey, query: prompt, llm: llm} }, function (response) {
           if (chrome.runtime.lastError) {
             Swal.close()
