@@ -101,12 +101,14 @@ export class Review {
           } else {
             htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
           }
-          htmlContent += "<div class='editable'><h3>Evidence: </h3>"
-          const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
-          if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
-            htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
+          if (assessedCriteria.criterion !== 'Conclusion') {
+            htmlContent += "<div class='editable'><h3>Evidence: </h3>"
+            const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
+            if (criterionUnsortedAnnotations && criterionUnsortedAnnotations.length > 0) {
+              htmlContent += this.formatUnsortedAnnotations(criterionUnsortedAnnotations, assessedCriteria);
+            }
+            htmlContent += "</div>"
           }
-          htmlContent += "</div>"
         }
         htmlContent += "</div>"
       }
