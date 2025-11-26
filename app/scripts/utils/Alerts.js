@@ -72,9 +72,9 @@ class Alerts {
         showConfirmButton: false,
         html: `
         <div style="display: flex; flex-direction: column; gap: 10px;">
-          <button id="btn-empty-schema" class="swal2-confirm swal2-styled">Create Empty Schema</button>
-          <button id="btn-import-json" class="swal2-confirm swal2-styled">Import Schema from JSON</button>
-          <button id="btn-import-standard" class="swal2-confirm swal2-styled">Import Standard Schema</button>
+        <button id="btn-import-standard" class="swal2-confirm swal2-styled">Import Standard Schema</button>
+        <button id="btn-import-json" class="swal2-confirm swal2-styled">Import Schema from JSON</button>
+        <button id="btn-empty-schema" class="swal2-confirm swal2-styled">Create Empty Schema</button> 
         </div>
         <!--<div style="margin-top: 15px; font-size: 0.9em; color: #666;">${text}</div>->
       `,
