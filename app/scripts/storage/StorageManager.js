@@ -18,12 +18,6 @@ class StorageManager {
     }
   }
 
-  reloadClient (callback) {
-    if (_.isFunction(callback)) {
-      callback(null)
-    }
-  }
-
   destroy (callback) {
     if (_.isFunction(callback)) {
       callback(null)

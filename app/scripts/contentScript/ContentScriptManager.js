@@ -1,5 +1,4 @@
 import ReviewContentScript from '../specific/review/ReviewContentScript'
-import AnnotationBasedInitializer from './AnnotationBasedInitializer'
 import _ from 'lodash'
 import ContentTypeManager from './ContentTypeManager'
 import Sidebar from './Sidebar'
@@ -24,8 +23,6 @@ class ContentScriptManager {
       this.loadStorage(() => {
         window.abwa.sidebar = new Sidebar()
         window.abwa.sidebar.init(() => {
-          window.abwa.annotationBasedInitializer = new AnnotationBasedInitializer()
-          window.abwa.annotationBasedInitializer.init(() => {
             window.abwa.groupSelector = new GroupSelector()
             window.abwa.groupSelector.init(() => {
               this.reloadContentByGroup(() => {
@@ -34,7 +31,6 @@ class ContentScriptManager {
                 this.status = ContentScriptManager.status.initialized
               })
             })
-          })
         })
       })
     })

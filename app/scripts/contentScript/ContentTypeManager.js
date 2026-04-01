@@ -23,9 +23,7 @@ class ContentTypeManager {
       window.location = chrome.runtime.getURL('content/pdfjs/web/viewer.html') + '?file=' + encodeURIComponent(window.location.href)
     } else {
       // Load publication metadata
-      this.tryToLoadDoi()
       this.tryToLoadPublicationPDF()
-      this.tryToLoadURLParam()
       // TODO this.tryToLoadLocalFIleURL() from file metadata
       // If current web is pdf viewer.html, set document type as pdf
       if (window.location.pathname === '/content/pdfjs/web/viewer.html') {
@@ -116,31 +114,6 @@ class ContentTypeManager {
         }
       }
     }, 500)
-  }
-
-  tryToLoadDoi () {
-    // Try to load doi from hash param
-    let decodedUri = decodeURIComponent(window.location.href)
-    let params = URLUtils.extractHashParamsFromUrl(decodedUri)
-    if (!_.isEmpty(params) && !_.isEmpty(params.doi)) {
-      this.doi = params.doi
-    }
-    // Try to load doi from page metadata
-    if (_.isEmpty(this.doi)) {
-      try {
-        this.doi = document.querySelector('meta[name="citation_doi"]').content
-      } catch (e) {
-      }
-    }
-    // TODO Try to load doi from chrome tab storage
-  }
-
-  tryToLoadURLParam () {
-    let decodedUri = decodeURIComponent(window.location.href)
-    let params = URLUtils.extractHashParamsFromUrl(decodedUri, '::')
-    if (!_.isEmpty(params) && !_.isEmpty(params.url)) {
-      this.urlParam = params.url
-    }
   }
 
   tryToLoadPublicationPDF () {
