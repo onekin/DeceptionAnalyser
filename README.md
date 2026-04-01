@@ -111,7 +111,8 @@ CSV document for three documents:
 # DEVELOPER MANUAL
 https://deepwiki.com/onekin/DeceptionAnalyser/2.2-llm-integration-system
 
-
+### Node
+10.24.1
 
 
 
