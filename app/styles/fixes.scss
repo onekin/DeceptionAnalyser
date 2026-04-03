@@ -1,11 +1,6 @@
 @import "./variables";
 
-/* Fix small size sweetalert2 */
-.swal2-container {
-  zoom: 1.5 !important;
-  z-index: $sidebarZIndex - 1 !important;
-}
-
+/* Z-index fixes for context menus */
 #context-menu-layer {
   z-index: $sidebarZIndex + 1 !important;
 }

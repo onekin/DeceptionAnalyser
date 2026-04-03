@@ -1060,6 +1060,7 @@ class CustomCriteriasManager {
       if (llm && llm !== '') {
         let selectedLLM = llm.modelType
         Alerts.confirmAlert({
+          alertType: Alerts.alertType.question,
           title: 'Find annotations for premises',
           text: 'Do you want to state the premises using LLM?',
           cancelButtonText: 'Cancel',
@@ -1209,7 +1210,7 @@ class CustomCriteriasManager {
                           }
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
                           tagAnnotations.push(conclusionAnnotation)
-                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: conclusionAnnotation})
+                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: [conclusionAnnotation]})
                           Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
                         }
                       }
@@ -1630,6 +1631,7 @@ class CustomCriteriasManager {
       if (llm && llm !== '') {
         let selectedLLM = llm.modelType
         Alerts.confirmAlert({
+          alertType: Alerts.alertType.question,
           title: 'Find annotations for critical questions',
           text: 'Do you want to perform the critical questions using LLM?',
           cancelButtonText: 'Cancel',

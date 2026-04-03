@@ -29,10 +29,13 @@ class Alerts {
           if (_.isFunction(callback)) {
             callback(null, result.value)
           }
+          Alerts.clearSwal()
+
         } else {
           if (_.isFunction(callback)) {
             // callback(null, result.value)
           }
+          Alerts.clearSwal()
         }
       })
     }
@@ -46,7 +49,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.info,
+        icon: Alerts.alertType.info,
         title: title,
         confirmButtonText: confirmButtonText,
         html: text
@@ -54,6 +57,7 @@ class Alerts {
         if (_.isFunction(callback)) {
           callback(null)
         }
+        Alerts.clearSwal()
       })
     }
   }
@@ -113,7 +117,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.info,
+        icon: Alerts.alertType.info,
         title: title,
         confirmButtonText: confirmButtonText,
         html: text,
@@ -204,7 +208,7 @@ class Alerts {
       }
     } else {
       swal.fire({
-        type: Alerts.alertType.error,
+        icon: Alerts.alertType.error,
         title: title,
         html: text,
         onClose: onClose
@@ -216,7 +220,20 @@ class Alerts {
     }
   }
 
+  static clearSwal () {
+    Alerts.tryToLoadSwal()
+    if (!_.isNull(swal)) {
+      try {
+        swal.close()
+      } catch (err) {
+        console.warn('Unable to close existing Swal:', err)
+      }
+    }
+    document.querySelectorAll('.swal2-container').forEach(c => c.remove())
+  }
+
   static successAlert ({text = 'Your process is correctly done', title = 'Great!', callback}) {
+    Alerts.clearSwal()
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -226,7 +243,15 @@ class Alerts {
       swal.fire({
         icon: 'success',
         title: title,
-        html: text
+        html: text,
+        allowOutsideClick: true,
+        allowEscapeKey: true,
+        showConfirmButton: true
+      }).then((result) => {
+        if (_.isFunction(callback)) {
+          callback(null, result)
+        }
+        Alerts.clearSwal()
       })
     }
   }
@@ -273,7 +298,7 @@ class Alerts {
         inputPlaceholder: inputPlaceholder,
         inputValue: inputValue,
         html: html,
-        type: type,
+        icon: type,
         preConfirm: preConfirm,
         showCancelButton: showCancelButton
       }).then((result) => {
@@ -365,9 +390,14 @@ class Alerts {
         focusConfirm: false,
         preConfirm: preConfirm,
         showCancelButton: showCancelButton
-      }).then(() => {
+      }).then((result) => {
+        Alerts.clearSwal()
         if (_.isFunction(callback)) {
-          callback(null)
+          if (result.isConfirmed) {
+            callback(null, result.value)
+          } else {
+            callback(new Error('Cancel'), null)
+          }
         }
       })
     }

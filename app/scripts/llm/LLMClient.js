@@ -25,7 +25,7 @@ class LLMClient {
             Swal.close()
             Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + response.res.error })
           } else {
-            // Swal.close()
+            Swal.close()
             const jsonString = response.res
             console.log('ANSWER: ' + jsonString)
             let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)

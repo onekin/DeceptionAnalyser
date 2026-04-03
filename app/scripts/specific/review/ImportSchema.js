@@ -78,16 +78,21 @@ class ImportSchema {
         selectFrom.add(option)
       })
       html += 'Selected model:' + selectFrom.outerHTML + '<br>'
-      let reviewFile
       Alerts.multipleInputAlert({
         title: 'Please, select one of the review models',
         html: html,
         // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
         preConfirm: () => {
-          reviewFile = document.querySelector('#selectedReview').value
+          return document.querySelector('#selectedReview').value
         },
         showCancelButton: true,
-        callback: (err) => {
+        callback: (err, reviewFile) => {
+          if (err) {
+            if (_.isFunction(callback)) {
+              callback(err)
+            }
+            return
+          }
           let jsonObject
           if (reviewFile === 'General deception analysis') {
             jsonObject = general

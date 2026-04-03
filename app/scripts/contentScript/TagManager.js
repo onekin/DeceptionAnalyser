@@ -53,7 +53,9 @@ class TagManager {
    */
   reloadTags (callback) {
     // Remove tags buttons for each container (evidencing, viewing)
-    _.map(window.abwa.tagManager.tagsContainer).forEach((container) => { container.innerHTML = '' })
+    if (this.tagsContainer && this.tagsContainer.evidencing) {
+      this.tagsContainer.evidencing.innerHTML = ''
+    }
     // Init tags again and dispatch update event
     this.initAllTags(() => {
       LanguageUtils.dispatchCustomEvent(Events.tagsUpdated, {tags: this.currentTags})
@@ -511,13 +513,16 @@ class TagManager {
     const green = chrome.runtime.getURL('/images/green.png')
     const yellow = chrome.runtime.getURL('/images/yellow.png')
     const red = chrome.runtime.getURL('/images/red.png')
+    const checkmark = chrome.runtime.getURL('/images/check.png')
     let tagButtons = document.querySelectorAll('.tagButton')
     for (let i = 0; i < tagButtons.length; i++) {
       let tagButton = tagButtons[i]
       tagButton.innerText = tagButton.innerText.replace(/\([^)]*\)|^\s/, '')
       tagButton.dataset.chosen = 'false'
+      // Remove any existing analysis indicator
+      tagButton.classList.remove('hasAnalysis')
       if (!tagButton.innerText.includes('Conclusion')) {
-        tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.45)
+        tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.35)
         // Add image for Premises buttons that have sentiment but no annotations
         let tagName = tagButton.dataset.mark
         let tagGroup = _.find(_.values(this.currentTags), (tg) => { return tg.config.name === tagName })
@@ -644,7 +649,11 @@ class TagManager {
             // Add <img> to button
             tagButton.appendChild(img)
           }
-          tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.6)
+          // Mark button as having analysis with stronger visual cues
+          tagButton.classList.add('hasAnalysis')
+          tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.85)
+          tagButton.style.borderLeft = '4px solid ' + ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 1.0)
+          tagButton.style.fontWeight = '600'
         }
       }
     }

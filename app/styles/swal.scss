@@ -1,0 +1,319 @@
+@import "./variables";
+
+/* Modern SweetAlert2 Styling */
+
+/* Container backdrop with modern blur effect */
+.swal2-container {
+  zoom: 1.5 !important;
+  z-index: $sidebarZIndex - 1 !important;
+  backdrop-filter: blur(4px) !important;
+  
+  &.swal2-shown {
+    background-color: rgba(0, 0, 0, 0.5) !important;
+  }
+}
+
+/* Modern popup styling with gradients and shadows */
+.swal2-popup {
+  border-radius: 16px !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 
+              0 10px 20px rgba(0, 0, 0, 0.15) !important;
+  background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  padding: 2em !important;
+  animation: swalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@keyframes swalSlideIn {
+  from {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Modern header with gradient */
+.swal2-title {
+  color: #2c3e50 !important;
+  font-weight: 700 !important;
+  font-size: 1.5em !important;
+  margin-bottom: 0.5em !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none !important;
+}
+
+/* Content area */
+.swal2-html-container {
+  color: #495057 !important;
+  font-size: 1em !important;
+  line-height: 1.6 !important;
+  margin: 1em 0 !important;
+}
+
+/* Modern input fields */
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
+  border: 2px solid #e0e6ed !important;
+  border-radius: 8px !important;
+  padding: 0.75em 1em !important;
+  font-size: 0.95em !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: #ffffff !important;
+  color: #2c3e50 !important;
+  
+  &:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1),
+                0 2px 8px rgba(102, 126, 234, 0.15) !important;
+    outline: none !important;
+  }
+  
+  &::placeholder {
+    color: #adb5bd !important;
+  }
+}
+
+.swal2-textarea {
+  min-height: 100px !important;
+  resize: vertical !important;
+}
+
+/* Modern validation message */
+.swal2-validation-message {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 0.75em 1em !important;
+  margin-top: 0.5em !important;
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3) !important;
+  font-weight: 500 !important;
+}
+
+/* Modern buttons with gradients */
+.swal2-confirm,
+.swal2-cancel,
+.swal2-deny {
+  border-radius: 8px !important;
+  padding: 0.75em 2em !important;
+  font-weight: 600 !important;
+  font-size: 0.95em !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+  
+  &:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  }
+}
+
+/* Confirm button - purple gradient */
+.swal2-confirm {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #6a3f91 100%) !important;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.3),
+                0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* Cancel button - gray gradient */
+.swal2-cancel {
+  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+  color: white !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #545b62 100%) !important;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 4px rgba(108, 117, 125, 0.3),
+                0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* Deny button - red gradient */
+.swal2-deny {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+  color: white !important;
+  
+  &:hover {
+    background: linear-gradient(135deg, #dc82ea 0%, #e4465b 100%) !important;
+  }
+  
+  &:focus {
+    box-shadow: 0 0 0 4px rgba(245, 87, 108, 0.3),
+                0 6px 20px rgba(0, 0, 0, 0.25) !important;
+  }
+}
+
+/* Icon styling */
+.swal2-icon {
+  border: none !important;
+  margin: 1em auto 0.5em !important;
+  
+  &.swal2-success {
+    border-color: #10b981 !important;
+    
+    .swal2-success-ring {
+      border-color: rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    [class^='swal2-success-line'] {
+      background-color: #10b981 !important;
+    }
+  }
+  
+  &.swal2-error {
+    border-color: #ef4444 !important;
+    
+    [class^='swal2-x-mark-line'] {
+      background-color: #ef4444 !important;
+    }
+  }
+  
+  &.swal2-warning {
+    border-color: #f59e0b !important;
+    color: #f59e0b !important;
+  }
+  
+  &.swal2-info {
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+  }
+  
+  &.swal2-question {
+    border-color: #8b5cf6 !important;
+    color: #8b5cf6 !important;
+  }
+}
+
+/* Loading spinner */
+.swal2-loader {
+  border-color: #667eea transparent #667eea transparent !important;
+}
+
+/* Progress steps */
+.swal2-progress-steps {
+  .swal2-progress-step {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    
+    &.swal2-active-progress-step {
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    }
+  }
+  
+  .swal2-progress-step-line {
+    background: #e0e6ed !important;
+  }
+}
+
+/* Close button */
+.swal2-close {
+  color: #6c757d !important;
+  font-size: 2em !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  
+  &:hover {
+    color: #2c3e50 !important;
+    transform: rotate(90deg) !important;
+  }
+}
+
+/* Toast notification style */
+.swal2-toast {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95) !important;
+  
+  .swal2-title {
+    color: #2c3e50 !important;
+    background: none !important;
+    -webkit-text-fill-color: #2c3e50 !important;
+  }
+}
+
+/* Custom styling for specific elements */
+#swal-criterionQuestion {
+  width: 88%;
+}
+
+.swal2-content .highlightedAnnotation {
+  background-color: transparent !important;
+  color: #545454 !important;
+}
+
+/* Radio and checkbox styling */
+.swal2-radio,
+.swal2-checkbox {
+  label {
+    color: #495057 !important;
+    transition: all 0.2s ease !important;
+    
+    &:hover {
+      color: #667eea !important;
+    }
+  }
+  
+  input[type="radio"],
+  input[type="checkbox"] {
+    &:checked + label {
+      color: #667eea !important;
+      font-weight: 600 !important;
+    }
+  }
+}
+
+/* File input */
+.swal2-file {
+  border: 2px dashed #e0e6ed !important;
+  border-radius: 8px !important;
+  padding: 1em !important;
+  background: #f8f9fa !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    border-color: #667eea !important;
+    background: #ffffff !important;
+  }
+}
+
+/* Range input */
+.swal2-range {
+  input {
+    &::-webkit-slider-thumb {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+    
+    &::-moz-range-thumb {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    }
+  }
+}
+
+/* Footer */
+.swal2-footer {
+  border-top: 1px solid #e0e6ed !important;
+  color: #6c757d !important;
+  padding-top: 1em !important;
+  margin-top: 1em !important;
+}
