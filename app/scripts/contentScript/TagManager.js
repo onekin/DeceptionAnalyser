@@ -15,6 +15,11 @@ import Review from '../model/schema/Review'
 import CustomCriteriasManager from '../specific/review/CustomCriteriasManager'
 
 class TagManager {
+  /**
+   * TagManager handles sidebar tag groups for review criteria and evidencing.
+   * @param {string} namespace - annotation namespace for the current review schema
+   * @param {Object} config - grouped config values, e.g. group / subgroup labels
+   */
   constructor (namespace, config) {
     this.model = {
       documentAnnotations: [],
@@ -26,6 +31,10 @@ class TagManager {
     this.events = {}
   }
 
+  /**
+   * Initialize tag manager: structure, event handlers, and tags data.
+   * @param {Function} callback
+   */
   init (callback) {
     this.initTagsStructure(() => {
       this.initEventHandlers(() => {
@@ -38,10 +47,14 @@ class TagManager {
     })
   }
 
+  /**
+   * Rebuild tags UI and fire update event.
+   * Used when groups change or configuration is reloaded.
+   */
   reloadTags (callback) {
     // Remove tags buttons for each container (evidencing, viewing)
     _.map(window.abwa.tagManager.tagsContainer).forEach((container) => { container.innerHTML = '' })
-    // Init tags again
+    // Init tags again and dispatch update event
     this.initAllTags(() => {
       LanguageUtils.dispatchCustomEvent(Events.tagsUpdated, {tags: this.currentTags})
       if (_.isFunction(callback)) {
@@ -50,6 +63,11 @@ class TagManager {
     })
   }
 
+  /**
+   * Get all annotations for the current group that belong to this review namespace.
+   * @param {Object} group - current group object
+   * @param {Function} callback - function(err, annotations)
+   */
   static getGroupAnnotations (group, callback) {
     let groupUrl = group.links ? group.links.html : group.url
     window.abwa.storageManager.client.searchAnnotations({
@@ -61,7 +79,7 @@ class TagManager {
           callback(err)
         }
       } else {
-        // Retrieve tags which has the namespace
+        // Retrieve tags which have the review namespace prefix
         annotations = _.filter(annotations, (annotation) => {
           return AnnotationUtils.hasANamespace(annotation, Config.review.namespace)
         })
@@ -72,6 +90,10 @@ class TagManager {
     })
   }
 
+  /**
+   * Load sidebar tag wrapper HTML and bind DOM container references.
+   * @param {Function} callback
+   */
   initTagsStructure (callback) {
     let tagWrapperUrl = chrome.runtime.getURL('pages/sidebar/tagWrapper.html')
     $.get(tagWrapperUrl, (html) => {
@@ -83,20 +105,24 @@ class TagManager {
     })
   }
 
+  /**
+   * Initialize all tags for the current group.
+   * If no group annotations exist, generate default review schema annotations.
+   * @param {Function} callback
+   */
   initAllTags (callback) {
     TagManager.getGroupAnnotations(window.abwa.groupSelector.currentGroup, (err, annotations) => {
       if (err) {
         Alerts.errorAlert({text: 'Unable to construct the highlighter. Please reload webpage and try it again.'})
       } else {
-        // Check if there are tags in the group or it is needed to create the default ones
-        let promise = Promise.resolve(annotations) // TODO Check if it is okay
+        // If no tags exist yet, create default criteria schema in the group.
+        let promise = Promise.resolve(annotations)
         if (annotations.length === 0) {
           promise = new Promise((resolve) => {
             if (!Alerts.isVisible()) {
               Alerts.loadingAlert({title: 'Configuration in progress', text: 'We are configuring everything to start reviewing.', position: Alerts.position.center})
             }
-            // Create configuration into group
-            // Create review schema from default criterias
+            // Build default review model from built-in criteria
             let review = Review.fromCriterias(DefaultCriteria.criteria)
             review.storageGroup = window.abwa.groupSelector.currentGroup
             Alerts.loadingAlert({title: 'Configuration in progress', text: 'We are configuring everything to start reviewing.', position: Alerts.position.center})
@@ -107,7 +133,7 @@ class TagManager {
                   Alerts.errorAlert({ text: 'There was an error when configuring Review&Go highlighter' })
                 } else {
                   Alerts.closeAlert()
-                  window.abwa.sidebar.openSidebar() // Open sidebar to notify the user that the highlighter is created and ready to use
+                  window.abwa.sidebar.openSidebar() // Notify user configuration is ready
                   resolve(annotations)
                 }
               }
@@ -115,11 +141,11 @@ class TagManager {
           })
         }
         promise.then((annotations) => {
-          // Add to model
+          // Keep annotations in model
           this.model.groupAnnotations = annotations
-          // Create tags based on annotations
+          // Convert raw annotation objects into TagGroup/Tag items
           this.currentTags = this.createTagsBasedOnAnnotations()
-          // Populate tags containers for the modes
+          // Render evidencing buttons into sidebar
           this.createTagsButtonsForEvidencing()
           if (_.isFunction(callback)) {
             callback()
@@ -129,36 +155,45 @@ class TagManager {
     })
   }
 
+  /**
+   * Create TagGroup and Tag objects from group annotations.
+   * 1. Extract group-level annotations (group config metadata)
+   * 2. Assign colors to each group
+   * 3. Add subgroup elements (actual tags)
+   * 4. Sort groups and tags alphabetically / numerically
+   */
   createTagsBasedOnAnnotations () {
-    // Get groups
+    // Phase 1: Parse group annotations into TagGroup objects
     let tagGroupsAnnotations = {}
     for (let i = 0; i < this.model.groupAnnotations.length; i++) {
       let groupTag = this.retrieveTagNameByPrefix(this.model.groupAnnotations[i].tags, (this.model.namespace + ':' + this.model.config.grouped.group))
       if (groupTag) {
-        tagGroupsAnnotations[groupTag] = new TagGroup({name: groupTag, namespace: this.model.namespace, group: this.model.config.grouped.group, options: jsYaml.load(this.model.groupAnnotations[i].text), annotation: this.model.groupAnnotations[i]})
+        tagGroupsAnnotations[groupTag] = new TagGroup({
+          name: groupTag,
+          namespace: this.model.namespace,
+          group: this.model.config.grouped.group,
+          options: jsYaml.load(this.model.groupAnnotations[i].text),
+          annotation: this.model.groupAnnotations[i]
+        })
       }
     }
-    // Get groups names
-    // The list of colors to retrieve are 1 per group + 1 per groupTags in "Other" group
+    // Phase 2: Assign a distinct color per group
     let colorsList = ColorUtils.getDifferentColors(Object.keys(tagGroupsAnnotations).length)
-    // Set colors for each group
     let array = _.toArray(tagGroupsAnnotations)
     let colors = {}
     for (let i = 0; i < array.length; i++) {
       let tagGroup = tagGroupsAnnotations[array[i].config.name]
-      let color
-      color = colorsList[i]
+      let color = colorsList[i]
       colors[tagGroup.config.name] = color
       tagGroup.config.color = color
     }
-    // Get elements for each subgroup
+    // Phase 3: Add subgroup tags to their parent tag group.
     for (let i = 0; i < this.model.groupAnnotations.length; i++) {
       let tagAnnotation = this.model.groupAnnotations[i]
-      let tagName = this.retrieveTagNameByPrefix(this.model.groupAnnotations[i].tags, (this.model.namespace + ':' + this.model.config.grouped.subgroup))
-      let groupBelongedTo = this.retrieveTagNameByPrefix(this.model.groupAnnotations[i].tags, (this.model.namespace + ':' + this.model.config.grouped.relation))
+      let tagName = this.retrieveTagNameByPrefix(tagAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.subgroup))
+      let groupBelongedTo = this.retrieveTagNameByPrefix(tagAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.relation))
       if (tagName && groupBelongedTo) {
         if (_.isObject(tagGroupsAnnotations[groupBelongedTo]) && _.isArray(tagGroupsAnnotations[groupBelongedTo].tags)) {
-          // Load options from annotation text body
           let options = jsYaml.load(tagAnnotation.text)
           tagGroupsAnnotations[groupBelongedTo].tags.push(new Tag({
             name: tagName,
@@ -167,15 +202,14 @@ class TagManager {
             annotation: tagAnnotation,
             tags: [
               this.model.namespace + ':' + this.model.config.grouped.relation + ':' + groupBelongedTo,
-              this.model.namespace + ':' + this.model.config.grouped.subgroup + ':' + tagName]
+              this.model.namespace + ':' + this.model.config.grouped.subgroup + ':' + tagName
+            ]
           }, tagGroupsAnnotations[groupBelongedTo]))
         }
       }
     }
-    // Order elements from tag group
-    // TODO Check if in this case is important to order elements from group
+    // Phase 4: Sort tags belonging to each group and color them.
     tagGroupsAnnotations = _.map(tagGroupsAnnotations, (tagGroup) => {
-      // TODO Check all elements, not only tags[0]
       if (_.isArray(tagGroup.tags) && _.has(tagGroup.tags[0], 'name') && _.isNaN(_.parseInt(tagGroup.tags[0].name))) {
         tagGroup.tags = _.sortBy(tagGroup.tags, 'name')
       } else {
@@ -183,11 +217,9 @@ class TagManager {
       }
       return tagGroup
     })
-    // Set color for each code
     tagGroupsAnnotations = _.map(tagGroupsAnnotations, (tagGroup) => {
       if (tagGroup.tags.length > 0) {
-        tagGroup.tags = _.map(tagGroup.tags, (tag, index) => {
-          // let color = ColorUtils.setAlphaToColor(colors[tagGroup.config.name])
+        tagGroup.tags = _.map(tagGroup.tags, (tag) => {
           tag.options.color = colors[tagGroup.config.name]
           tag.color = colors[tagGroup.config.name]
           return tag
@@ -195,21 +227,31 @@ class TagManager {
       }
       return tagGroup
     })
-    // Hash to array
-    tagGroupsAnnotations = _.orderBy(tagGroupsAnnotations, ['config.name'], ['asc']) // 'asc' for ascending order
-    return _.sortBy(tagGroupsAnnotations, (tagGroupAnnotation) => { return _.get(tagGroupAnnotation, 'config.options.group').toLowerCase() })
+    // Phase 5: Return groups in ordered list by group name and group config label.
+    tagGroupsAnnotations = _.orderBy(tagGroupsAnnotations, ['config.name'], ['asc'])
+    return _.sortBy(tagGroupsAnnotations, (tagGroupAnnotation) => {
+      return _.get(tagGroupAnnotation, 'config.options.group').toLowerCase()
+    })
   }
 
+  /**
+   * Clean up DOM and event handlers.
+   */
   destroy () {
-    // Remove event listeners
     let events = _.values(this.events)
     for (let i = 0; i < events.length; i++) {
       events[i].element.removeEventListener(events[i].event, events[i].handler)
     }
-    // Remove tags wrapper
     $('#tagsWrapper').remove()
   }
 
+  /**
+   * Resolve a tag value by prefix in annotation tags.
+   * Example: 'review:grouped:subgroup:XYZ' with prefix 'review:grouped:subgroup' returns 'XYZ'.
+   * @param {string[]} annotationTags
+   * @param {string} prefix
+   * @returns {string|null}
+   */
   retrieveTagNameByPrefix (annotationTags, prefix) {
     for (let i = 0; i < annotationTags.length; i++) {
       if (_.startsWith(annotationTags[i].toLowerCase(), prefix.toLowerCase())) {
@@ -219,6 +261,10 @@ class TagManager {
     return null
   }
 
+  /**
+   * Expand or collapse a grouped button container in the sidebar.
+   * @param {Event} event
+   */
   collapseExpandGroupedButtonsHandler (event) {
     let tagGroup = event.target.parentElement
     if (tagGroup.getAttribute('aria-expanded') === 'true') {
@@ -228,12 +274,11 @@ class TagManager {
     }
   }
 
+  /**
+   * Render evidencing tag buttons grouped by type (Premises, Critical questions, etc.).
+   * Each group container can be expanded/collapsed and contains one button per tag group.
+   */
   createTagsButtonsForEvidencing () {
-    // let groups = _.map(_.uniqBy(_.values(this.currentTags), (criteria) => { return criteria.config.options.group }), 'config.options.group')
-    /* for (let i = 0; i < groups.length; i++) {
-      let group = groups[i]
-      this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: group, groupHandler: this.collapseExpandGroupedButtonsHandler}))
-    } */
     this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Premises', groupHandler: this.collapseExpandGroupedButtonsHandler}))
     this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Critical questions', groupHandler: this.collapseExpandGroupedButtonsHandler}))
     // Insert buttons in each of the groups
@@ -282,16 +327,14 @@ class TagManager {
       targetContainer.append(document.createElement('hr'))
       targetContainer.append(document.createElement('br'))
       targetContainer.append(conclusionButton)
-      // this.tagsContainer.evidencing.querySelector('[title="' + conclusionTagGroup.config.options.group + '"]').nextElementSibling.append(conclusionButton)
-      // document.querySelector('[data-group-name="Premises"]').append(conclusionButton)
-      /* const premisesElement = document.querySelector('[data-group-name="Premises"]')
-      if (premisesElement && premisesElement.parentNode) {
-        conclusionButton.classList.add('conclusionButton')
-        premisesElement.parentNode.insertBefore(conclusionButton, premisesElement)
-      } */
     }
   }
 
+  /**
+   * Create a button element for a tag group entry.
+   * @param {Object} params - name/color/description/click handler/role/tagGroup
+   * @returns {HTMLElement} button
+   */
   static createButton ({name, color = 'grey', description, handler, role, tagGroup}) {
     let tagButtonTemplate = document.querySelector('#tagButtonTemplate')
     let tagButton = $(tagButtonTemplate.content.firstElementChild).clone().get(0)
@@ -309,13 +352,6 @@ class TagManager {
     }
     // Set handler for button
     tagButton.addEventListener('click', handler)
-    // Tag button background color change
-    // TODO It should be better to set it as a CSS property, but currently there is not an option for that
-    /*
-    tagButton.addEventListener('mouseenter', () => {
-      tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(color), 0.6)
-    })
-    */
     // Add a double-click event listener to the button
     tagButton.addEventListener('dblclick', function () {
       if (tagGroup) {
@@ -324,18 +360,17 @@ class TagManager {
         // console.log('this.modifyCriteriaHandler(currentTagGroup)')
       }
     })
-    /*
-    tagButton.addEventListener('mouseleave', () => {
-      if (tagButton.dataset.chosen === 'true') {
-        tagButton.style.backgroundColor = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(color), 0.45)
-      } else {
-        tagButton.style.backgroundColor = color
-      }
-    })
-    */
+
+
     return tagButton
   }
 
+  /**
+   * Create the grouped button section template used by evidencing groups.
+   * Includes action buttons for multiple operations (e.g., annotate all premises).
+   * @param {Object} params - name/color/elements/groupHandler/buttonHandler
+   * @returns {HTMLElement} tagGroup container
+   */
   static createGroupedButtons ({name, color = 'white', elements, groupHandler, buttonHandler}) {
     // Create the container
     let tagGroupTemplate = document.querySelector('#tagGroupTemplate')

@@ -856,7 +856,7 @@ class CustomCriteriasManager {
                     // Check if data.resume exists and is an array. If not, initialize it as an empty array.
                     data.compile = []
                     // Now that we're sure data.resume is an array, push the new object into it.
-                    data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement })
+                    data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement, llm: llm.model })
                   }
                   tagAnnotation.text = jsYaml.dump(data)
                   LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
@@ -983,7 +983,7 @@ class CustomCriteriasManager {
                       // Check if data.resume exists and is an array. If not, initialize it as an empty array.
                       data.compile = []
                       // Now that we're sure data.resume is an array, push the new object into it.
-                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement })
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement, llm: llm.model })
                       data.feedback = ''
                     }
                     tagAnnotation.text = jsYaml.dump(data)
@@ -1163,6 +1163,7 @@ class CustomCriteriasManager {
                                 if (!Array.isArray(data.compile)) {
                                   data.compile = []
                                 }
+                                answer.llm = llm.model
                                 let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                                 if (!foundCompile) {
                                   // If not, create and add it to the array
@@ -1199,10 +1200,11 @@ class CustomCriteriasManager {
                             let foundCompile = conclusionData.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                             if (!foundCompile) {
                               // If not, create and add it to the array
-                              conclusionData.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: json.statement, sentiment: json.sentiment })
+                              conclusionData.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: json.statement, sentiment: json.sentiment, llm: llm.model })
                             } else {
-                              foundCompile.answer = conclusion.statement
+                              foundCompile.answer = json.statement
                               foundCompile.sentiment = json.sentiment
+                              foundCompile.llm = llm.model
                             }
                           }
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
@@ -1363,9 +1365,10 @@ class CustomCriteriasManager {
                     let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                     if (!foundCompile) {
                       // If not, create and add it to the array
-                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                      data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm.model })
                     } else {
                       foundCompile.answer = answer
+                      foundCompile.llm = llm.model
                     }
                     if (!Array.isArray(data.fullQuestion)) {
                       data.fullQuestion = []
@@ -1519,9 +1522,10 @@ class CustomCriteriasManager {
                       let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                       if (!foundCompile) {
                         // If not, create and add it to the array
-                        data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                        data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm.model })
                       } else {
                         foundCompile.answer = answer
+                        foundCompile.llm = llm.model
                       }
                       if (!Array.isArray(data.fullQuestion)) {
                         data.fullQuestion = []
@@ -1729,9 +1733,10 @@ class CustomCriteriasManager {
                               let foundCompile = data.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                               if (!foundCompile) {
                                 // If not, create and add it to the array
-                                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm.model })
                               } else {
                                 foundCompile.answer = answer
+                                foundCompile.llm = llm.model
                               }
                               if (!Array.isArray(data.fullQuestion)) {
                                 data.fullQuestion = []
@@ -1841,7 +1846,8 @@ class CustomCriteriasManager {
                     description: description,
                     criterion: question.fullQuestion,
                     annotation: annotation,
-                    type: 'alternative'
+                    type: 'alternative',
+                    llm: llm.model
                   })
                 }
                 if (apiKey && apiKey !== '') {
@@ -2047,6 +2053,12 @@ class CustomCriteriasManager {
     if (compile && compile.answer && compile.answer.sentiment) {
       sentiment = compile.answer.sentiment
     }
+    let llmModel = ''
+    if (compile && compile.answer && compile.answer.llm) {
+      llmModel = compile.answer.llm
+    } else if (compile && compile.llm) {
+      llmModel = compile.llm
+    }
     if (compile || alternative || paragraphs.length > 0) {
       const redFace = chrome.runtime.getURL('/images/red.png')
       const yellowFace = chrome.runtime.getURL('/images/yellow.png')
@@ -2070,6 +2082,9 @@ class CustomCriteriasManager {
       }
       if (compile.answer) {
         html += '<h3>Statement:</h3><div width=800px>' + statement + '</div></br>'
+      }
+      if (llmModel) {
+        html += '<h3>Model:</h3><div width=800px><em>' + llmModel + '</em></div></br>'
       }
       if (alternative) {
         html += '<h3>Arguments:</h3><div width=800px>' + alternative.replaceAll('</br>-', '</br></br>-') + '</div></br>'

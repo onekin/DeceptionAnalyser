@@ -23,14 +23,14 @@ class ContentScriptManager {
       this.loadStorage(() => {
         window.abwa.sidebar = new Sidebar()
         window.abwa.sidebar.init(() => {
-            window.abwa.groupSelector = new GroupSelector()
-            window.abwa.groupSelector.init(() => {
-              this.reloadContentByGroup(() => {
-                // Initialize listener for group change to reload the content
-                // Set status as initialized
-                this.status = ContentScriptManager.status.initialized
-              })
+          window.abwa.groupSelector = new GroupSelector()
+          window.abwa.groupSelector.init(() => {
+            this.reloadContentByGroup(() => {
+              // Initialize listener for group change to reload the content
+              // Set status as initialized
+              this.status = ContentScriptManager.status.initialized
             })
+          })
         })
       })
     })

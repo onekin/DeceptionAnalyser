@@ -96,11 +96,23 @@ export class Review {
           } else if (assessedCriteria.description) {
             htmlContent += "<div class='editable'><h3>Description: </h3>" + assessedCriteria.description + "</div>";
           }
-          if (assessedCriteria.compile.answer.statement) {
-            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer.statement + "</div>";
+          let compileLLM = assessedCriteria.compile.answer && assessedCriteria.compile.answer.llm
+            ? assessedCriteria.compile.answer.llm
+            : assessedCriteria.compile.llm || ''
+          if (assessedCriteria.compile.answer && assessedCriteria.compile.answer.statement) {
+            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer.statement
+            if (compileLLM) {
+              htmlContent += " (based on " + compileLLM + ")"
+            }
+            htmlContent += "</div>";
           } else {
-            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+            htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer
+            if (compileLLM) {
+              htmlContent += " (based on " + compileLLM + ")"
+            }
+            htmlContent += "</div>";
           }
+        
           if (assessedCriteria.criterion !== 'Conclusion') {
             htmlContent += "<div class='editable'><h3>Evidence: </h3>"
             const criterionUnsortedAnnotations = this.unsortedAnnotations.filter((e) => {return e.criterion === assessedCriteria.criterion})
@@ -124,7 +136,14 @@ export class Review {
           if (assessedCriteria.fullQuestion && assessedCriteria.fullQuestion.fullQuestion) {
             htmlContent += "<div class='editable'><h3>Question: </h3>" + assessedCriteria.fullQuestion.fullQuestion + "</div>";
           }
-          htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer + "</div>";
+          htmlContent += "<div class='editable'><h3>Analysis: </h3>" + assessedCriteria.compile.answer;
+          let compileLLM_cq = assessedCriteria.compile.answer && assessedCriteria.compile.answer.llm
+            ? assessedCriteria.compile.answer.llm
+            : assessedCriteria.compile.llm || ''
+          if (compileLLM_cq) {
+               htmlContent += " (based on " + compileLLM_cq + ")"
+            }
+            htmlContent += "</div>";
         }
         if (assessedCriteria.alternative) {
           htmlContent += "<div class='editable'><h3>Arguments: </h3>" + assessedCriteria.alternative + "</div>";

@@ -675,9 +675,9 @@ class TextAnnotator extends ContentAnnotator {
   }
 
   initAnnotatorByAnnotation (callback) {
-    // Check if init annotation exists
-    if (window.abwa.annotationBasedInitializer.initAnnotation) {
-      let initAnnotation = window.abwa.annotationBasedInitializer.initAnnotation
+    // Annotation-based initialization removed - feature not used
+    if (false) {
+      let initAnnotation = null
       // If document is pdf, the DOM is dynamic, we must scroll to annotation using PDF.js FindController
       if (window.abwa.contentTypeManager.documentType === ContentTypeManager.documentTypes.pdf) {
         let queryTextSelector = _.find(initAnnotation.target[0].selector, (selector) => { return selector.type === 'TextQuoteSelector' })

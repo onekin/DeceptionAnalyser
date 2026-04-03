@@ -290,7 +290,7 @@ class Alerts {
     }
   }
 
-  static answerCriterionAlert ({ title = 'This is the answer:', answer = '', paragraphs = '', description = '', annotation = '', type, criterion = '', compileSentiment = '' }) {
+  static answerCriterionAlert ({ title = 'This is the answer:', answer = '', paragraphs = '', description = '', annotation = '', type, criterion = '', compileSentiment = '', llm = '' }) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
 
@@ -332,14 +332,14 @@ class Alerts {
                   data.compile = []
                 }
                 // Now that we're sure data.resume is an array, push the new object into it.
-                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
               } else if (type === 'alternative') {
                 // Check if data.alternative exists and is an array. If not, initialize it as an empty array.
                 if (!Array.isArray(data.alternative)) {
                   data.alternative = []
                 }
                 // Now that we're sure data.alternative is an array, push the new object into it.
-                data.alternative.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer })
+                data.alternative.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
               }
             }
             annotation.text = jsYaml.dump(data)

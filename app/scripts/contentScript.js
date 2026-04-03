@@ -25,7 +25,12 @@ if (_.isEmpty(window.abwa)) {
 
   // Check if button is activated for this tab
   chrome.runtime.sendMessage({scope: 'extension', cmd: 'amIActivated'}, (response) => {
-    if (response.activated) {
+    // Check if the message was received (avoid "Could not establish connection" error)
+    if (chrome.runtime.lastError) {
+      console.debug('Background script not ready yet:', chrome.runtime.lastError.message)
+      return
+    }
+    if (response && response.activated) {
       if (_.isEmpty(window.abwa.contentScriptManager)) {
         window.abwa.contentScriptManager = new ContentScriptManager()
         if (window.abwa.contentScriptManager.status === ContentScriptManager.status.notInitialized) {
