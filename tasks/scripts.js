@@ -1,6 +1,7 @@
 import gulp from 'gulp'
 import gulpif from 'gulp-if'
-import { log, colors } from 'gulp-util'
+import colors from 'ansi-colors'
+import log from 'fancy-log'
 import named from 'vinyl-named'
 import webpack from 'webpack'
 import gulpWebpack from 'webpack-stream'
@@ -35,11 +36,6 @@ gulp.task('scripts', () => {
       ],
       module: {
         rules: [{
-          test: /\.js$/,
-          loader: 'eslint-loader',
-          exclude: /node_modules/,
-          enforce: 'pre'
-        }, {
           test: /\.js$/,
           loader: 'babel-loader'
         }]

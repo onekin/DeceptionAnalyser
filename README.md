@@ -112,7 +112,7 @@ CSV document for three documents:
 https://deepwiki.com/onekin/DeceptionAnalyser/2.2-llm-integration-system
 
 ### Node
-10.24.1
+20.x (tested with Node 20)
 
 
 
