@@ -48,7 +48,34 @@ class ColorUtils {
   }
 
   static getDifferentColors (number) {
-    return UniqueColors.unique_colors(number)
+    // Generate vibrant, distinct colors with better saturation and brightness
+    const vibrantColors = [
+      'rgba(236, 72, 153, 0.75)',    // Hot Pink
+      'rgba(59, 130, 246, 0.75)',    // Blue
+      'rgba(16, 185, 129, 0.75)',    // Emerald
+      'rgba(249, 115, 22, 0.75)',    // Orange
+      'rgba(168, 85, 247, 0.75)',    // Purple
+      'rgba(239, 68, 68, 0.75)',     // Red
+      'rgba(14, 165, 233, 0.75)',    // Sky Blue
+      'rgba(132, 204, 22, 0.75)',    // Lime
+      'rgba(251, 146, 60, 0.75)',    // Amber
+      'rgba(139, 92, 246, 0.75)',    // Violet
+      'rgba(245, 158, 11, 0.75)',    // Yellow
+      'rgba(6, 182, 212, 0.75)',     // Cyan
+      'rgba(244, 63, 94, 0.75)',     // Rose
+      'rgba(34, 197, 94, 0.75)',     // Green
+      'rgba(99, 102, 241, 0.75)'     // Indigo
+    ]
+    
+    if (number <= vibrantColors.length) {
+      return vibrantColors.slice(0, number)
+    }
+    
+    // If we need more colors, supplement with the unique-colors library
+    const baseColors = vibrantColors
+    const additionalNeeded = number - vibrantColors.length
+    const additionalColors = UniqueColors.unique_colors(additionalNeeded)
+    return [...baseColors, ...additionalColors]
   }
 }
 
