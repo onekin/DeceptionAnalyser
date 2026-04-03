@@ -213,6 +213,7 @@ class Alerts {
         html: text,
         onClose: onClose
       }).then(() => {
+        Alerts.clearSwal()
         if (_.isFunction(callback)) {
           callback(null)
         }
@@ -303,10 +304,12 @@ class Alerts {
         showCancelButton: showCancelButton
       }).then((result) => {
         if (result.value) {
+          Alerts.clearSwal()
           if (_.isFunction(callback)) {
             callback(null, result.value)
           }
         } else {
+          Alerts.clearSwal()
           if (_.isFunction(cancelCallback)) {
             cancelCallback()
           }
