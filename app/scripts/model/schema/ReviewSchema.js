@@ -1,8 +1,8 @@
-class AnnotationGuide {
-  constructor ({name, storageGroup, guideElements = []}) {
+class ReviewSchema {
+  constructor ({name, storageGroup, schemaElements = []}) {
     this.name = name.substr(0, 25)
     this.storageGroup = storageGroup
-    this.guideElements = guideElements
+    this.schemaElements = schemaElements
   }
 
   toAnnotations () {
@@ -22,4 +22,4 @@ class AnnotationGuide {
   }
 }
 
-module.exports = AnnotationGuide
+module.exports = ReviewSchema

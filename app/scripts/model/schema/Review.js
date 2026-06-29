@@ -1,12 +1,12 @@
-const AnnotationGuide = require('./AnnotationGuide')
-const Criteria = require('./Criteria')
+const ReviewSchema = require('./ReviewSchema')
+const SchemaCriterion = require('./SchemaCriterion')
 const LanguageUtils = require('../../utils/LanguageUtils')
-const DefaultCriteria = require('../../specific/review/DefaultCriteria')
+const DefaultCriteria = require('./DefaultCriteria')
 
-class Review extends AnnotationGuide {
+class Review extends ReviewSchema {
   constructor ({reviewId = '', storageGroup = ''}) {
     super({name: reviewId, storageGroup})
-    this.criterias = this.guideElements
+    this.criterias = this.schemaElements
   }
 
   toAnnotations () {
@@ -36,8 +36,8 @@ class Review extends AnnotationGuide {
   static fromCriterias2 (criterias) {
     let review = new Review({reviewId: ''})
     for (let i = 0; i < criterias.length; i++) {
-      let criteria = new Criteria({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
-      review.criterias.push(criteria)
+      let schemaCriterion = new SchemaCriterion({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
+      review.criterias.push(schemaCriterion)
     }
     return review
   }
@@ -55,7 +55,7 @@ class Review extends AnnotationGuide {
           if (criteriaGroup.hasOwnProperty(name)) {
             const description = criteriaGroup[name].description
 
-            let criteria = new Criteria({
+            let schemaCriterion = new SchemaCriterion({
               name: name,
               description: description,
               custom: true,
@@ -65,7 +65,7 @@ class Review extends AnnotationGuide {
               review: review
             })
 
-            review.criterias.push(criteria)
+            review.criterias.push(schemaCriterion)
           }
         }
       }
@@ -76,8 +76,8 @@ class Review extends AnnotationGuide {
   static fromDeceptionSchema (criterias) {
     let review = new Review({reviewId: ''})
     for (let i = 0; i < criterias.length; i++) {
-      let criteria = new Criteria({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
-      review.criterias.push(criteria)
+      let schemaCriterion = new SchemaCriterion({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
+      review.criterias.push(schemaCriterion)
     }
     return review
   }
@@ -90,7 +90,7 @@ class Review extends AnnotationGuide {
     // For each criteria create the object
     for (let i = 0; i < this.criterias.length; i++) {
       let criteria = this.criterias[i]
-      if (LanguageUtils.isInstanceOf(criteria, Criteria)) {
+      if (LanguageUtils.isInstanceOf(criteria, SchemaCriterion)) {
         object.criteria.push(criteria.toObject())
       }
     }

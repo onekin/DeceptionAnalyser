@@ -5,18 +5,18 @@ import LanguageUtils from '../utils/LanguageUtils'
 import ColorUtils from '../utils/ColorUtils'
 import Events from './Events'
 import Config from '../Config'
-import Tag from './Tag'
-import TagGroup from './TagGroup'
+import Criterion from './Criterion'
+import CriterionGroup from './CriterionGroup'
 import Alerts from '../utils/Alerts'
 import AnnotationUtils from '../utils/AnnotationUtils'
-import ImportSchema from '../specific/review/ImportSchema'
-import DefaultCriteria from '../specific/review/DefaultCriteria'
+import ImportSchema from '../exporter/ImportSchema'
+import DefaultCriteria from '../model/schema/DefaultCriteria'
 import Review from '../model/schema/Review'
-import CustomCriteriasManager from '../specific/review/CustomCriteriasManager'
+import CustomCriteriaManager from './CustomCriteriaManager'
 
-class TagManager {
+class CriteriaManager {
   /**
-   * TagManager handles sidebar tag groups for review criteria and evidencing.
+   * CriteriaManager handles sidebar criterion groups for review criteria and evidencing.
    * @param {string} namespace - annotation namespace for the current review schema
    * @param {Object} config - grouped config values, e.g. group / subgroup labels
    */
@@ -27,18 +27,18 @@ class TagManager {
       namespace: namespace,
       config: config
     }
-    this.currentTags = []
+    this.currentCriterionGroups = []
     this.events = {}
   }
 
   /**
-   * Initialize tag manager: structure, event handlers, and tags data.
+   * Initialize criteria manager: structure, event handlers, and criteria data.
    * @param {Function} callback
    */
   init (callback) {
-    this.initTagsStructure(() => {
+    this.initCriteriaStructure(() => {
       this.initEventHandlers(() => {
-        this.initAllTags(() => {
+        this.initAllCriteria(() => {
           if (_.isFunction(callback)) {
             callback()
           }
@@ -48,17 +48,17 @@ class TagManager {
   }
 
   /**
-   * Rebuild tags UI and fire update event.
+   * Rebuild criteria UI and fire update event.
    * Used when groups change or configuration is reloaded.
    */
-  reloadTags (callback) {
-    // Remove tags buttons for each container (evidencing, viewing)
-    if (this.tagsContainer && this.tagsContainer.evidencing) {
-      this.tagsContainer.evidencing.innerHTML = ''
+  reloadCriteria (callback) {
+    // Remove criteria buttons for each container (evidencing)
+    if (this.criteriaContainer && this.criteriaContainer.evidencing) {
+      this.criteriaContainer.evidencing.innerHTML = ''
     }
-    // Init tags again and dispatch update event
-    this.initAllTags(() => {
-      LanguageUtils.dispatchCustomEvent(Events.tagsUpdated, {tags: this.currentTags})
+    // Init criteria again and dispatch update event
+    this.initAllCriteria(() => {
+      LanguageUtils.dispatchCustomEvent(Events.criteriaUpdated, {criteria: this.currentCriterionGroups})
       if (_.isFunction(callback)) {
         callback()
       }
@@ -81,7 +81,7 @@ class TagManager {
           callback(err)
         }
       } else {
-        // Retrieve tags which have the review namespace prefix
+        // Retrieve annotations which have the review namespace prefix
         annotations = _.filter(annotations, (annotation) => {
           return AnnotationUtils.hasANamespace(annotation, Config.review.namespace)
         })
@@ -93,14 +93,14 @@ class TagManager {
   }
 
   /**
-   * Load sidebar tag wrapper HTML and bind DOM container references.
+   * Load sidebar criteria wrapper HTML and bind DOM container references.
    * @param {Function} callback
    */
-  initTagsStructure (callback) {
+  initCriteriaStructure (callback) {
     let tagWrapperUrl = chrome.runtime.getURL('pages/sidebar/tagWrapper.html')
     $.get(tagWrapperUrl, (html) => {
       $('#abwaSidebarContainer').append($.parseHTML(html))
-      this.tagsContainer = {evidencing: document.querySelector('#tagsEvidencing')}
+      this.criteriaContainer = {evidencing: document.querySelector('#tagsEvidencing')}
       if (_.isFunction(callback)) {
         callback()
       }
@@ -108,16 +108,16 @@ class TagManager {
   }
 
   /**
-   * Initialize all tags for the current group.
+   * Initialize all criteria for the current group.
    * If no group annotations exist, generate default review schema annotations.
    * @param {Function} callback
    */
-  initAllTags (callback) {
-    TagManager.getGroupAnnotations(window.abwa.groupSelector.currentGroup, (err, annotations) => {
+  initAllCriteria (callback) {
+    CriteriaManager.getGroupAnnotations(window.abwa.groupSelector.currentGroup, (err, annotations) => {
       if (err) {
         Alerts.errorAlert({text: 'Unable to construct the highlighter. Please reload webpage and try it again.'})
       } else {
-        // If no tags exist yet, create default criteria schema in the group.
+        // If no criteria exist yet, create default criteria schema in the group.
         let promise = Promise.resolve(annotations)
         if (annotations.length === 0) {
           promise = new Promise((resolve) => {
@@ -145,10 +145,10 @@ class TagManager {
         promise.then((annotations) => {
           // Keep annotations in model
           this.model.groupAnnotations = annotations
-          // Convert raw annotation objects into TagGroup/Tag items
-          this.currentTags = this.createTagsBasedOnAnnotations()
+          // Convert raw annotation objects into CriterionGroup/Criterion items
+          this.currentCriterionGroups = this.createCriteriaBasedOnAnnotations()
           // Render evidencing buttons into sidebar
-          this.createTagsButtonsForEvidencing()
+          this.createCriteriaButtonsForEvidencing()
           if (_.isFunction(callback)) {
             callback()
           }
@@ -158,20 +158,20 @@ class TagManager {
   }
 
   /**
-   * Create TagGroup and Tag objects from group annotations.
+   * Create CriterionGroup and Criterion objects from group annotations.
    * 1. Extract group-level annotations (group config metadata)
    * 2. Assign colors to each group
-   * 3. Add subgroup elements (actual tags)
-   * 4. Sort groups and tags alphabetically / numerically
+   * 3. Add subgroup elements (actual criteria)
+   * 4. Sort groups and criteria alphabetically / numerically
    */
-  createTagsBasedOnAnnotations () {
-    // Phase 1: Parse group annotations into TagGroup objects
-    let tagGroupsAnnotations = {}
+  createCriteriaBasedOnAnnotations () {
+    // Phase 1: Parse group annotations into CriterionGroup objects
+    let criterionGroupsAnnotations = {}
     for (let i = 0; i < this.model.groupAnnotations.length; i++) {
-      let groupTag = this.retrieveTagNameByPrefix(this.model.groupAnnotations[i].tags, (this.model.namespace + ':' + this.model.config.grouped.group))
-      if (groupTag) {
-        tagGroupsAnnotations[groupTag] = new TagGroup({
-          name: groupTag,
+      let groupCriterion = this.retrieveCriterionNameByPrefix(this.model.groupAnnotations[i].tags, (this.model.namespace + ':' + this.model.config.grouped.group))
+      if (groupCriterion) {
+        criterionGroupsAnnotations[groupCriterion] = new CriterionGroup({
+          name: groupCriterion,
           namespace: this.model.namespace,
           group: this.model.config.grouped.group,
           options: jsYaml.load(this.model.groupAnnotations[i].text),
@@ -180,59 +180,59 @@ class TagManager {
       }
     }
     // Phase 2: Assign a distinct color per group
-    let colorsList = ColorUtils.getDifferentColors(Object.keys(tagGroupsAnnotations).length)
-    let array = _.toArray(tagGroupsAnnotations)
+    let colorsList = ColorUtils.getDifferentColors(Object.keys(criterionGroupsAnnotations).length)
+    let array = _.toArray(criterionGroupsAnnotations)
     let colors = {}
     for (let i = 0; i < array.length; i++) {
-      let tagGroup = tagGroupsAnnotations[array[i].config.name]
+      let criterionGroup = criterionGroupsAnnotations[array[i].config.name]
       let color = colorsList[i]
-      colors[tagGroup.config.name] = color
-      tagGroup.config.color = color
+      colors[criterionGroup.config.name] = color
+      criterionGroup.config.color = color
     }
-    // Phase 3: Add subgroup tags to their parent tag group.
+    // Phase 3: Add subgroup criteria to their parent criterion group.
     for (let i = 0; i < this.model.groupAnnotations.length; i++) {
-      let tagAnnotation = this.model.groupAnnotations[i]
-      let tagName = this.retrieveTagNameByPrefix(tagAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.subgroup))
-      let groupBelongedTo = this.retrieveTagNameByPrefix(tagAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.relation))
-      if (tagName && groupBelongedTo) {
-        if (_.isObject(tagGroupsAnnotations[groupBelongedTo]) && _.isArray(tagGroupsAnnotations[groupBelongedTo].tags)) {
-          let options = jsYaml.load(tagAnnotation.text)
-          tagGroupsAnnotations[groupBelongedTo].tags.push(new Tag({
-            name: tagName,
+      let criteriaAnnotation = this.model.groupAnnotations[i]
+      let criteriaName = this.retrieveCriterionNameByPrefix(criteriaAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.subgroup))
+      let groupBelongedTo = this.retrieveCriterionNameByPrefix(criteriaAnnotation.tags, (this.model.namespace + ':' + this.model.config.grouped.relation))
+      if (criteriaName && groupBelongedTo) {
+        if (_.isObject(criterionGroupsAnnotations[groupBelongedTo]) && _.isArray(criterionGroupsAnnotations[groupBelongedTo].criteria)) {
+          let options = jsYaml.load(criteriaAnnotation.text)
+          criterionGroupsAnnotations[groupBelongedTo].criteria.push(new Criterion({
+            name: criteriaName,
             namespace: this.model.namespace,
             options: options || {},
-            annotation: tagAnnotation,
+            annotation: criteriaAnnotation,
             tags: [
               this.model.namespace + ':' + this.model.config.grouped.relation + ':' + groupBelongedTo,
-              this.model.namespace + ':' + this.model.config.grouped.subgroup + ':' + tagName
+              this.model.namespace + ':' + this.model.config.grouped.subgroup + ':' + criteriaName
             ]
-          }, tagGroupsAnnotations[groupBelongedTo]))
+          }, criterionGroupsAnnotations[groupBelongedTo]))
         }
       }
     }
-    // Phase 4: Sort tags belonging to each group and color them.
-    tagGroupsAnnotations = _.map(tagGroupsAnnotations, (tagGroup) => {
-      if (_.isArray(tagGroup.tags) && _.has(tagGroup.tags[0], 'name') && _.isNaN(_.parseInt(tagGroup.tags[0].name))) {
-        tagGroup.tags = _.sortBy(tagGroup.tags, 'name')
+    // Phase 4: Sort criteria belonging to each group and color them.
+    criterionGroupsAnnotations = _.map(criterionGroupsAnnotations, (criterionGroup) => {
+      if (_.isArray(criterionGroup.criteria) && _.has(criterionGroup.criteria[0], 'name') && _.isNaN(_.parseInt(criterionGroup.criteria[0].name))) {
+        criterionGroup.criteria = _.sortBy(criterionGroup.criteria, 'name')
       } else {
-        tagGroup.tags = _.sortBy(tagGroup.tags, (tag) => _.parseInt(tag.name))
+        criterionGroup.criteria = _.sortBy(criterionGroup.criteria, (criterion) => _.parseInt(criterion.name))
       }
-      return tagGroup
+      return criterionGroup
     })
-    tagGroupsAnnotations = _.map(tagGroupsAnnotations, (tagGroup) => {
-      if (tagGroup.tags.length > 0) {
-        tagGroup.tags = _.map(tagGroup.tags, (tag) => {
-          tag.options.color = colors[tagGroup.config.name]
-          tag.color = colors[tagGroup.config.name]
-          return tag
+    criterionGroupsAnnotations = _.map(criterionGroupsAnnotations, (criterionGroup) => {
+      if (criterionGroup.criteria.length > 0) {
+        criterionGroup.criteria = _.map(criterionGroup.criteria, (criterion) => {
+          criterion.options.color = colors[criterionGroup.config.name]
+          criterion.color = colors[criterionGroup.config.name]
+          return criterion
         })
       }
-      return tagGroup
+      return criterionGroup
     })
     // Phase 5: Return groups in ordered list by group name and group config label.
-    tagGroupsAnnotations = _.orderBy(tagGroupsAnnotations, ['config.name'], ['asc'])
-    return _.sortBy(tagGroupsAnnotations, (tagGroupAnnotation) => {
-      return _.get(tagGroupAnnotation, 'config.options.group').toLowerCase()
+    criterionGroupsAnnotations = _.orderBy(criterionGroupsAnnotations, ['config.name'], ['asc'])
+    return _.sortBy(criterionGroupsAnnotations, (criterionGroupAnnotation) => {
+      return _.get(criterionGroupAnnotation, 'config.options.group').toLowerCase()
     })
   }
 
@@ -248,13 +248,13 @@ class TagManager {
   }
 
   /**
-   * Resolve a tag value by prefix in annotation tags.
+   * Resolve a criterion name by prefix in annotation tags.
    * Example: 'review:grouped:subgroup:XYZ' with prefix 'review:grouped:subgroup' returns 'XYZ'.
    * @param {string[]} annotationTags
    * @param {string} prefix
    * @returns {string|null}
    */
-  retrieveTagNameByPrefix (annotationTags, prefix) {
+  retrieveCriterionNameByPrefix (annotationTags, prefix) {
     for (let i = 0; i < annotationTags.length; i++) {
       if (_.startsWith(annotationTags[i].toLowerCase(), prefix.toLowerCase())) {
         return _.replace(annotationTags[i], prefix + ':', '')
@@ -277,52 +277,52 @@ class TagManager {
   }
 
   /**
-   * Render evidencing tag buttons grouped by type (Premises, Critical questions, etc.).
-   * Each group container can be expanded/collapsed and contains one button per tag group.
+   * Render evidencing criterion buttons grouped by type (Premises, Critical questions, etc.).
+   * Each group container can be expanded/collapsed and contains one button per criterion group.
    */
-  createTagsButtonsForEvidencing () {
-    this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Premises', groupHandler: this.collapseExpandGroupedButtonsHandler}))
-    this.tagsContainer.evidencing.append(TagManager.createGroupedButtons({name: 'Critical questions', groupHandler: this.collapseExpandGroupedButtonsHandler}))
+  createCriteriaButtonsForEvidencing () {
+    this.criteriaContainer.evidencing.append(CriteriaManager.createGroupedButtons({name: 'Premises', groupHandler: this.collapseExpandGroupedButtonsHandler}))
+    this.criteriaContainer.evidencing.append(CriteriaManager.createGroupedButtons({name: 'Critical questions', groupHandler: this.collapseExpandGroupedButtonsHandler}))
     // Insert buttons in each of the groups
-    let arrayOfTagGroups = _.values(this.currentTags)
-    let conclusionButton, conclusionTagGroup
-    for (let i = 0; i < arrayOfTagGroups.length; i++) {
-      let tagGroup = arrayOfTagGroups[i]
+    let arrayOfCriterionGroups = _.values(this.currentCriterionGroups)
+    let conclusionButton, conclusionCriterionGroup
+    for (let i = 0; i < arrayOfCriterionGroups.length; i++) {
+      let criterionGroup = arrayOfCriterionGroups[i]
       let color
-      if (tagGroup.config.name === 'Conclusion') {
+      if (criterionGroup.config.name === 'Conclusion') {
         color = 'grey'
-        if (tagGroup.config.options.compile) {
-          let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        if (criterionGroup.config.options.compile) {
+          let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
           if (foundCompile && foundCompile.sentiment) {
             color = foundCompile.sentiment
           }
         }
       } else {
-        color = ColorUtils.setAlphaToColor(tagGroup.config.color, 0.45)
+        color = ColorUtils.setAlphaToColor(criterionGroup.config.color, 0.45)
       }
-      let button = TagManager.createButton({
-        name: tagGroup.config.name,
+      let button = CriteriaManager.createButton({
+        name: criterionGroup.config.name,
         color: color,
-        description: tagGroup.config.options.description,
-        tagGroup: tagGroup,
+        description: criterionGroup.config.options.description,
+        criterionGroup: criterionGroup,
         handler: (event) => {
           let tags = [
-            this.model.namespace + ':' + this.model.config.grouped.relation + ':' + tagGroup.config.name
+            this.model.namespace + ':' + this.model.config.grouped.relation + ':' + criterionGroup.config.name
           ]
           LanguageUtils.dispatchCustomEvent(Events.annotate, { tags: tags, chosen: event.target.dataset.chosen })
         }
       })
       // Insert in its corresponding group container
-      if (tagGroup.config.name !== 'Conclusion') {
-        this.tagsContainer.evidencing.querySelector('[title="' + tagGroup.config.options.group + '"]').nextElementSibling.append(button)
+      if (criterionGroup.config.name !== 'Conclusion') {
+        this.criteriaContainer.evidencing.querySelector('[title="' + criterionGroup.config.options.group + '"]').nextElementSibling.append(button)
       } else {
-        conclusionTagGroup = tagGroup
+        conclusionCriterionGroup = criterionGroup
         conclusionButton = button
       }
     }
-    if (conclusionButton && conclusionTagGroup) {
-      const targetContainer = this.tagsContainer.evidencing
-        .querySelector('[title="' + conclusionTagGroup.config.options.group + '"]')
+    if (conclusionButton && conclusionCriterionGroup) {
+      const targetContainer = this.criteriaContainer.evidencing
+        .querySelector('[title="' + conclusionCriterionGroup.config.options.group + '"]')
         .nextElementSibling
 
       targetContainer.append(document.createElement('br'))
@@ -333,11 +333,11 @@ class TagManager {
   }
 
   /**
-   * Create a button element for a tag group entry.
-   * @param {Object} params - name/color/description/click handler/role/tagGroup
+   * Create a button element for a criterion group entry.
+   * @param {Object} params - name/color/description/click handler/role/criterionGroup
    * @returns {HTMLElement} button
    */
-  static createButton ({name, color = 'grey', description, handler, role, tagGroup}) {
+  static createButton ({name, color = 'grey', description, handler, role, criterionGroup}) {
     let tagButtonTemplate = document.querySelector('#tagButtonTemplate')
     let tagButton = $(tagButtonTemplate.content.firstElementChild).clone().get(0)
     tagButton.innerText = name
@@ -356,10 +356,9 @@ class TagManager {
     tagButton.addEventListener('click', handler)
     // Add a double-click event listener to the button
     tagButton.addEventListener('dblclick', function () {
-      if (tagGroup) {
-        let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.annotation.id === tagGroup.config.annotation.id)
-        CustomCriteriasManager.modifyCriteriaHandler(currentTagGroup)
-        // console.log('this.modifyCriteriaHandler(currentTagGroup)')
+      if (criterionGroup) {
+        let currentCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentCriterion => currentCriterion.config.annotation.id === criterionGroup.config.annotation.id)
+        CustomCriteriaManager.modifyCriteriaHandler(currentCriterionGroup)
       }
     })
 
@@ -413,14 +412,14 @@ class TagManager {
     askGptButton.src = askGptButtonURL // You can set a proper icon URL here
     askGptButton.addEventListener('click', () => {
       if (name === 'Premises') {
-        window.abwa.specific.customCriteriasManager.annotateAllPremises(name)
+        window.abwa.specific.customCriteriaManager.annotateAllPremises(name)
       } else if (name === 'Critical questions') {
-        let conclusionTagGroup = _.find(window.abwa.tagManager.currentTags, tagGroup => tagGroup.config.name === 'Conclusion')
-        if (conclusionTagGroup && conclusionTagGroup.config.options.compile) {
+        let conclusionCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, criterionGroup => criterionGroup.config.name === 'Conclusion')
+        if (conclusionCriterionGroup && conclusionCriterionGroup.config.options.compile) {
           // check if it has the sentiment
-          let foundCompile = conclusionTagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundCompile = conclusionCriterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
           if (foundCompile && foundCompile.sentiment) {
-            window.abwa.specific.customCriteriasManager.formulateAllCriticalQuestions(name)
+            window.abwa.specific.customCriteriaManager.formulateAllCriticalQuestions(name)
           } else {
             Alerts.errorAlert({ title: 'Please draw the conclusions first' })
           }
@@ -446,8 +445,7 @@ class TagManager {
     let createNewButtonURL = chrome.runtime.getURL('/images/add.png')
     createNewButton.src = createNewButtonURL // You can set a proper icon URL here
     createNewButton.addEventListener('click', () => {
-      // TODO: Implement the logic for creating a new tag
-      CustomCriteriasManager.createAddCustomCriteriaButtonHandler(name)
+      CustomCriteriaManager.createAddCustomCriteriaButtonHandler(name)
     })
 
     // Append buttons to the group
@@ -465,12 +463,12 @@ class TagManager {
       for (let i = 0; i < elements.length; i++) {
         let element = elements[i]
         if (element.name !== 'Conclusion') {
-          let button = TagManager.createButton({
+          let button = CriteriaManager.createButton({
             name: element.name,
             color: element.getColor(),
             description: (element.options.description || null),
             handler: buttonHandler,
-            tagGroup: tagGroup,
+            criterionGroup: tagGroup,
             role: 'marking'
           })
           tagButtonContainer.append(button)
@@ -485,21 +483,21 @@ class TagManager {
     this.events.annotationCreated = {
       element: document,
       event: Events.annotationCreated,
-      handler: (event) => { this.reloadTagsChosen() }
+      handler: (event) => { this.reloadCriteriaChosen() }
     }
     this.events.annotationCreated.element.addEventListener(this.events.annotationCreated.event, this.events.annotationCreated.handler, false)
     // For delete event, reload sidebar with elements chosen and not chosen ones
     this.events.annotationDeleted = {
       element: document,
       event: Events.annotationDeleted,
-      handler: (event) => { this.reloadTagsChosen() }
+      handler: (event) => { this.reloadCriteriaChosen() }
     }
     this.events.annotationDeleted.element.addEventListener(this.events.annotationDeleted.event, this.events.annotationDeleted.handler, false)
     // When annotations are reloaded
     this.events.updatedAllAnnotations = {
       element: document,
       event: Events.updatedAllAnnotations,
-      handler: (event) => { this.reloadTagsChosen() }
+      handler: (event) => { this.reloadCriteriaChosen() }
     }
     this.events.updatedAllAnnotations.element.addEventListener(this.events.updatedAllAnnotations.event, this.events.updatedAllAnnotations.handler, false)
     // Callback
@@ -508,8 +506,8 @@ class TagManager {
     }
   }
 
-  reloadTagsChosen () {
-    // Uncheck all the tags
+  reloadCriteriaChosen () {
+    // Uncheck all the criteria
     const green = chrome.runtime.getURL('/images/green.png')
     const yellow = chrome.runtime.getURL('/images/yellow.png')
     const red = chrome.runtime.getURL('/images/red.png')
@@ -524,10 +522,10 @@ class TagManager {
       if (!tagButton.innerText.includes('Conclusion')) {
         tagButton.style.background = ColorUtils.setAlphaToColor(ColorUtils.colorFromString(tagButton.style.backgroundColor), 0.35)
         // Add image for Premises buttons that have sentiment but no annotations
-        let tagName = tagButton.dataset.mark
-        let tagGroup = _.find(_.values(this.currentTags), (tg) => { return tg.config.name === tagName })
-        if (tagGroup && tagGroup.config.options.compile) {
-          let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        let criteriaName = tagButton.dataset.mark
+        let criterionGroup = _.find(_.values(this.currentCriterionGroups), (cg) => { return cg.config.name === criteriaName })
+        if (criterionGroup && criterionGroup.config.options.compile) {
+          let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
           let sentiment
           if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
             sentiment = foundCompile.answer.sentiment
@@ -560,12 +558,12 @@ class TagManager {
           }
         }
       } else {
-        // If it is the conclusion tag, set the background color to grey
-        let arrayOfTagGroups = _.values(this.currentTags)
+        // If it is the conclusion criterion, set the background color to grey
+        let arrayOfCriterionGroups = _.values(this.currentCriterionGroups)
         let conclusionSentiment
-        let conclusionTag = _.find(arrayOfTagGroups, (tagGroup) => { return tagGroup.config.name === 'Conclusion' })
-        if (conclusionTag.config.options.compile) {
-          let foundCompile = conclusionTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        let conclusionCriterion = _.find(arrayOfCriterionGroups, (criterionGroup) => { return criterionGroup.config.name === 'Conclusion' })
+        if (conclusionCriterion.config.options.compile) {
+          let foundCompile = conclusionCriterion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
           if (foundCompile && foundCompile.sentiment) {
             conclusionSentiment = foundCompile.sentiment
           }
@@ -596,30 +594,29 @@ class TagManager {
         }
       }
     }
-    // Retrieve annotated tags
+    // Retrieve annotated criteria
     if (window.abwa.contentAnnotator) {
       let annotations = window.abwa.contentAnnotator.allAnnotations
-      let annotatedTagGroups = []
+      let annotatedCriterionGroups = []
       for (let i = 0; i < annotations.length; i++) {
-        annotatedTagGroups.push(this.getGroupFromAnnotation(annotations[i]))
+        annotatedCriterionGroups.push(this.getGroupFromAnnotation(annotations[i]))
       }
-      annotatedTagGroups = _.uniq(annotatedTagGroups)
-      // Mark as chosen annotated tags
-      for (let i = 0; i < annotatedTagGroups.length; i++) {
-        let model = window.abwa.tagManager.model
-        let tagGroup = annotatedTagGroups[i]
-        if (tagGroup) {
-          let tag = model.namespace + ':' + model.config.grouped.relation + ':' + tagGroup.config.name
+      annotatedCriterionGroups = _.uniq(annotatedCriterionGroups)
+      // Mark as chosen annotated criteria
+      for (let i = 0; i < annotatedCriterionGroups.length; i++) {
+        let model = window.abwa.criteriaManager.model
+        let criterionGroup = annotatedCriterionGroups[i]
+        if (criterionGroup) {
+          let tag = model.namespace + ':' + model.config.grouped.relation + ':' + criterionGroup.config.name
           let numberOfAnnotations = annotations.filter((annotation) => {
             return AnnotationUtils.hasATag(annotation, tag)
           })
-          let tagButton = this.tagsContainer.evidencing.querySelector('.tagButton[data-mark="' + tagGroup.config.name + '"]')
+          let tagButton = this.criteriaContainer.evidencing.querySelector('.tagButton[data-mark="' + criterionGroup.config.name + '"]')
           tagButton.dataset.chosen = 'true'
-          tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + tagGroup.config.name
-          // tagButton.innerText = tagGroup.config.name
+          tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + criterionGroup.config.name
           let sentiment
-          if (tagGroup.config.options.compile) {
-            let foundCompile = tagGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (criterionGroup.config.options.compile) {
+            let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
             if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
               sentiment = foundCompile.answer.sentiment
             }
@@ -659,26 +656,26 @@ class TagManager {
     }
   }
 
-  getFilteringTagList () {
-    return _.map(this.currentTags, (tagGroup) => {
-      return this.getTagFromGroup(tagGroup)
+  getFilteringCriteriaList () {
+    return _.map(this.currentCriterionGroups, (criterionGroup) => {
+      return this.getCriterionFromGroup(criterionGroup)
     })
   }
 
-  getTagFromGroup (tagGroup) {
-    return this.model.namespace + ':' + this.model.config.grouped.relation + ':' + tagGroup.config.name
+  getCriterionFromGroup (criterionGroup) {
+    return this.model.namespace + ':' + this.model.config.grouped.relation + ':' + criterionGroup.config.name
   }
 
-  findAnnotationTagInstance (annotation) {
-    let groupTag = this.getGroupFromAnnotation(annotation)
+  findAnnotationCriterionInstance (annotation) {
+    let groupCriterion = this.getGroupFromAnnotation(annotation)
     if (annotation.tags.length > 1) {
       if (this.hasCodeAnnotation(annotation)) {
-        return this.getCodeFromAnnotation(annotation, groupTag)
+        return this.getCodeFromAnnotation(annotation, groupCriterion)
       } else {
-        return groupTag
+        return groupCriterion
       }
     } else {
-      return groupTag
+      return groupCriterion
     }
   }
 
@@ -687,17 +684,17 @@ class TagManager {
     let criteriaTag = _.find(tags, (tag) => {
       return tag.includes('review:isCriteriaOf:')
     }).replace('review:isCriteriaOf:', '')
-    return _.find(window.abwa.tagManager.currentTags, (tagGroupInstance) => {
-      return criteriaTag === tagGroupInstance.config.name
+    return _.find(window.abwa.criteriaManager.currentCriterionGroups, (criterionGroupInstance) => {
+      return criteriaTag === criterionGroupInstance.config.name
     })
   }
 
-  getCodeFromAnnotation (annotation, groupTag) {
-    let markTag = _.find(annotation.tags, (tag) => {
+  getCodeFromAnnotation (annotation, groupCriterion) {
+    let markCriterion = _.find(annotation.tags, (tag) => {
       return tag.includes('review:level:')
     }).replace('review:level:', '')
-    return _.find(groupTag.tags, (tagInstance) => {
-      return markTag.includes(tagInstance.name)
+    return _.find(groupCriterion.criteria, (criterionInstance) => {
+      return markCriterion.includes(criterionInstance.name)
     })
   }
 
@@ -708,4 +705,4 @@ class TagManager {
   }
 }
 
-export default TagManager
+export default CriteriaManager

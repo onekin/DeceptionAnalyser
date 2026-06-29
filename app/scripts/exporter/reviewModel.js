@@ -1,6 +1,6 @@
 /* eslint-disable */
 
-export class Review {
+export class ReviewReport {
   constructor(){
     this._annotations = []
     this._assessedCriteria = []

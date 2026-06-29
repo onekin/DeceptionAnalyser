@@ -1,20 +1,20 @@
-import LLMClient from '../../llm/LLMClient'
-import LLMTextUtils from '../../utils/LLMTextUtils'
-import Alerts from '../../utils/Alerts'
-import LanguageUtils from '../../utils/LanguageUtils'
-import Events from '../../contentScript/Events'
-import Criteria from '../../model/schema/Criteria'
-import Level from '../../model/schema/Level'
-import Review from '../../model/schema/Review'
-import DefaultCriteria from './DefaultCriteria'
+import LLMClient from '../llm/LLMClient'
+import LLMTextUtils from '../utils/LLMTextUtils'
+import Alerts from '../utils/Alerts'
+import LanguageUtils from '../utils/LanguageUtils'
+import Events from './Events'
+import SchemaCriterion from '../model/schema/SchemaCriterion'
+import Level from '../model/schema/Level'
+import Review from '../model/schema/Review'
+import DefaultCriteria from '../model/schema/DefaultCriteria'
 import _ from 'lodash'
 import $ from 'jquery'
 import 'jquery-contextmenu/dist/jquery.contextMenu'
-import Config from '../../Config'
-import AnnotationUtils from '../../utils/AnnotationUtils'
+import Config from '../Config'
+import AnnotationUtils from '../utils/AnnotationUtils'
 import jsYaml from 'js-yaml'
 
-class CustomCriteriasManager {
+class CustomCriteriaManager {
   constructor () {
     this.events = {}
   }
@@ -30,15 +30,15 @@ class CustomCriteriasManager {
   }
 
   initEventHandler () {
-    this.events.tagsUpdated = {
+    this.events.criteriaUpdated = {
       element: document,
-      event: Events.tagsUpdated,
+      event: Events.criteriaUpdated,
       handler: () => {
         // this.createAddCustomCriteriaButtons()
         this.initContextMenu()
       }
     }
-    this.events.tagsUpdated.element.addEventListener(this.events.tagsUpdated.event, this.events.tagsUpdated.handler, false)
+    this.events.criteriaUpdated.element.addEventListener(this.events.criteriaUpdated.event, this.events.criteriaUpdated.handler, false)
   }
 
   static createAddCustomCriteriaButtonHandler (groupName) {
@@ -58,8 +58,8 @@ class CustomCriteriasManager {
         criteriaName = document.getElementById('criteriaName').value
         criteriaDescription = document.getElementById('criteriaDescription').value
         // Find if criteria name already exists
-        let currentTags = _.map(window.abwa.tagManager.currentTags, tag => tag.config.name)
-        let criteriaExists = _.find(currentTags, tag => tag === criteriaName)
+        let currentCriterionGroups = _.map(window.abwa.criteriaManager.currentCriterionGroups, criterionGroup => criterionGroup.config.name)
+        let criteriaExists = _.find(currentCriterionGroups, criterionGroup => criterionGroup === criteriaName)
         if (_.isString(criteriaExists)) {
           const swal = require('sweetalert2')
           swal.showValidationMessage('A criteria with that name already exists.')
@@ -72,7 +72,7 @@ class CustomCriteriasManager {
         } else {
           // Check if not selected cancel or esc
           if (criteriaName) {
-            CustomCriteriasManager.createNewCustomCriteria({
+            CustomCriteriaManager.createNewCustomCriteria({
               name: criteriaName,
               description: criteriaDescription,
               group: groupName,
@@ -89,7 +89,7 @@ class CustomCriteriasManager {
   static createNewCustomCriteria ({ name, description = 'Custom criteria', group, callback }) {
     let review = new Review({ reviewId: '' })
     review.storageGroup = window.abwa.groupSelector.currentGroup
-    let criteria = new Criteria({ name, description, review, group: group, custom: true })
+    let criteria = new SchemaCriterion({ name, description, review, group: group, custom: true })
     // Create levels for the criteria
     let levels = DefaultCriteria.defaultLevels
     criteria.levels = []
@@ -108,7 +108,7 @@ class CustomCriteriasManager {
         callback(err)
       } else {
         // Reload sidebar
-        window.abwa.tagManager.reloadTags(() => {
+        window.abwa.criteriaManager.reloadCriteria(() => {
           if (_.isFunction(callback)) {
             callback()
           }
@@ -196,7 +196,7 @@ class CustomCriteriasManager {
           // Create new annotation
           let review = new Review({ reviewId: '' })
           review.storageGroup = window.abwa.groupSelector.currentGroup
-          let criteria = new Criteria({
+          let criteria = new SchemaCriterion({
             name: tagGroup.config.name,
             description: tagGroup.config.options.description,
             fullQuestion: '',
@@ -263,7 +263,7 @@ class CustomCriteriasManager {
   }
 
   destroyContextMenus () {
-    let arrayOfTagGroups = _.values(window.abwa.tagManager.currentTags)
+    let arrayOfTagGroups = _.values(window.abwa.criteriaManager.currentCriterionGroups)
     arrayOfTagGroups.forEach(tagGroup => {
       let selector = '[data-mark="' + tagGroup.config.name + '"]'
       if (selector) {
@@ -323,7 +323,7 @@ class CustomCriteriasManager {
 
   initContextMenuForCriteria () {
     // Define context menu items
-    let arrayOfTagGroups = _.values(window.abwa.tagManager.currentTags)
+    let arrayOfTagGroups = _.values(window.abwa.criteriaManager.currentCriterionGroups)
     for (let i = 0; i < arrayOfTagGroups.length; i++) {
       let tagGroup = arrayOfTagGroups[i]
       let criterion = tagGroup.config.name
@@ -348,11 +348,11 @@ class CustomCriteriasManager {
           return {
             callback: (key) => {
               // Get latest version of tag
-              let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.annotation.id === tagGroup.config.annotation.id)
+              let currentCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.annotation.id === tagGroup.config.annotation.id)
               if (key === 'compile') {
                 this.getParagraphs(criterion, (paragraphs) => {
                   if (paragraphs) {
-                    CustomCriteriasManager.compile(criterion, description, paragraphs, currentTagGroup.config.annotation)
+                    CustomCriteriaManager.compile(criterion, description, paragraphs, currentCriterionGroup.config.annotation)
                   } else {
                     Alerts.errorAlert({
                       title: 'There are not annotations',
@@ -363,7 +363,7 @@ class CustomCriteriasManager {
               } else if (key === 'arguments') {
                 this.getParagraphs(criterion, (paragraphs) => {
                   if (paragraphs) {
-                    CustomCriteriasManager.arguments(criterion, description, paragraphs, currentTagGroup.config.annotation)
+                    CustomCriteriaManager.arguments(criterion, description, paragraphs, currentCriterionGroup.config.annotation)
                   } else {
                     Alerts.errorAlert({
                       title: 'There are not annotations',
@@ -372,14 +372,14 @@ class CustomCriteriasManager {
                   }
                 })
               } else if (key === 'recap') {
-                CustomCriteriasManager.recap(currentTagGroup)
+                CustomCriteriaManager.recap(currentCriterionGroup)
               } else if (key === 'delete') {
                 // Delete the tag
-                CustomCriteriasManager.deleteCriteriaHandler(tagGroup)
+                CustomCriteriaManager.deleteCriteriaHandler(tagGroup)
               } else if (key === 'annotatePremise') {
-                if (currentTagGroup.config.name === 'Conclusion') {
+                if (currentCriterionGroup.config.name === 'Conclusion') {
                   // Find conclusion tag and if it has a statement
-                  let majorTag = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === 'Major')
+                  let majorTag = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.name === 'Major')
                   let currentMajorPremise
                   if (majorTag.config.options.compile === '') {
                     Alerts.errorAlert({
@@ -389,7 +389,7 @@ class CustomCriteriasManager {
                   } else if (majorTag.config.options.compile) {
                     currentMajorPremise = majorTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                     if (currentMajorPremise) {
-                      this.annotatePremise(criterion, description, currentTagGroup.config.annotation)
+                      this.annotatePremise(criterion, description, currentCriterionGroup.config.annotation)
                     } else {
                       Alerts.errorAlert({
                         title: 'You do not have a conclusion',
@@ -399,12 +399,12 @@ class CustomCriteriasManager {
                   }
                 } else {
                   this.getParagraphs(criterion, (paragraphs) => {
-                    this.annotatePremise(criterion, description, currentTagGroup.config.annotation, paragraphs)
+                    this.annotatePremise(criterion, description, currentCriterionGroup.config.annotation, paragraphs)
                   })
                 }
               } else if (key === 'annotateCriticalQuestion') {
                 // Find conclusion tag and if it has a statement
-                let conclusionTag = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === 'Conclusion')
+                let conclusionTag = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.name === 'Conclusion')
                 let currentConclusion
                 if (conclusionTag.config.options.compile === '') {
                   Alerts.errorAlert({
@@ -415,7 +415,7 @@ class CustomCriteriasManager {
                   currentConclusion = conclusionTag.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
                   if (currentConclusion) {
                     this.getParagraphs(criterion, (paragraphs) => {
-                      this.formulateCriticalQuestion(criterion, description, currentTagGroup.config.annotation, paragraphs)
+                      this.formulateCriticalQuestion(criterion, description, currentCriterionGroup.config.annotation, paragraphs)
                     })
                   } else {
                     Alerts.errorAlert({
@@ -458,10 +458,10 @@ class CustomCriteriasManager {
   static provideFeedback (tagGroup, feedback) {
     console.log('provideFeedback')
     if (feedback) {
-      CustomCriteriasManager.editFeedback(tagGroup, feedback)
+      CustomCriteriaManager.editFeedback(tagGroup, feedback)
       // You can perform further actions with the found rating here
     } else {
-      CustomCriteriasManager.newFeedback(tagGroup)
+      CustomCriteriaManager.newFeedback(tagGroup)
     }
   }
 
@@ -515,7 +515,7 @@ class CustomCriteriasManager {
           data.feedback.push({ document: window.abwa.contentTypeManager.pdfFingerprint, comment: comment, rate: rate })
         }
         annotation.text = jsYaml.dump(data)
-        LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: annotation})
+        LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: annotation})
         Alerts.successAlert({title: 'Saved', text: 'Feedback saved successfully'})
       }
     })
@@ -571,7 +571,7 @@ class CustomCriteriasManager {
           data.feedback.push({ document: window.abwa.contentTypeManager.pdfFingerprint, comment: comment, rate: rate })
         }
         annotation.text = jsYaml.dump(data)
-        LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: annotation})
+        LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: annotation})
         Alerts.successAlert({title: 'Saved', text: 'Feedback saved successfully'})
       }
     })
@@ -589,8 +589,8 @@ class CustomCriteriasManager {
         if (err) {
           // Nothing to do
         } else {
-          CustomCriteriasManager.deleteTag(tagGroup, () => {
-            window.abwa.tagManager.reloadTags(() => {
+          CustomCriteriaManager.deleteTag(tagGroup, () => {
+            window.abwa.criteriaManager.reloadCriteria(() => {
               window.abwa.contentAnnotator.updateAllAnnotations(() => {
                 window.abwa.sidebar.openSidebar()
               })
@@ -643,9 +643,9 @@ class CustomCriteriasManager {
       cancelButtonColor: '#f6583c',
       cancelCallback: () => {
         // Restore
-        CustomCriteriasManager.restoreTag(tagGroup, (annotation) => {
+        CustomCriteriaManager.restoreTag(tagGroup, (annotation) => {
           console.log('Restored' + annotation)
-          window.abwa.tagManager.reloadTags(() => {
+          window.abwa.criteriaManager.reloadCriteria(() => {
             window.abwa.contentAnnotator.updateAllAnnotations(() => {
               window.abwa.sidebar.openSidebar()
             })
@@ -691,7 +691,7 @@ class CustomCriteriasManager {
         // Create new annotation
         let review = new Review({ reviewId: '' })
         review.storageGroup = window.abwa.groupSelector.currentGroup
-        let criteria = new Criteria({
+        let criteria = new SchemaCriterion({
           name: name,
           description: description,
           fullQuestion: fullQuestionObject,
@@ -715,7 +715,7 @@ class CustomCriteriasManager {
       }
     } else {
       // If name has changed, check if there is not other criteria with the same value
-      if (CustomCriteriasManager.alreadyExistsThisCriteriaName(name)) {
+      if (CustomCriteriaManager.alreadyExistsThisCriteriaName(name)) {
         // Alert already exists
         Alerts.errorAlert({
           title: 'Criteria already exists',
@@ -759,7 +759,7 @@ class CustomCriteriasManager {
               // Update tagGroup annotation
               let review = new Review({ reviewId: '' })
               review.storageGroup = window.abwa.groupSelector.currentGroup
-              let criteria = new Criteria({
+              let criteria = new SchemaCriterion({
                 name,
                 description,
                 fullQuestion,
@@ -797,7 +797,7 @@ class CustomCriteriasManager {
     if (findFeedback) {
       this.annotatePremiseWithFeedback(criterion, description, tagAnnotation, findFeedback, data, paragraphs)
     } else {
-      // this.modifyCriteriaHandler(currentTagGroup)
+      // this.modifyCriteriaHandler(currentCriterionGroup)
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
         if (llm === '') {
           llm = Config.review.defaultLLM
@@ -832,11 +832,11 @@ class CustomCriteriasManager {
                       llm: llm,
                       paragraph: excerpt
                     }
-                    let model = window.abwa.tagManager.model
+                    let model = window.abwa.criteriaManager.model
                     let tag = [
                       model.namespace + ':' + model.config.grouped.relation + ':' + criterion
                     ]
-                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                    CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                       LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                         tags: tag,
                         selectors: selectors,
@@ -845,9 +845,9 @@ class CustomCriteriasManager {
                     })
                   }
                   if (annotation.selectors.length === 0) {
-                    CustomCriteriasManager.showParagraph(annotation, criterion)
+                    CustomCriteriaManager.showParagraph(annotation, criterion)
                   } else {
-                    CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                    CustomCriteriaManager.showAnnotatedParagraph(annotation, criterion)
                   }
                   // retrieve tag annotation
                   let data
@@ -859,7 +859,7 @@ class CustomCriteriasManager {
                     data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: statement, llm: llm.model })
                   }
                   tagAnnotation.text = jsYaml.dump(data)
-                  LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                  LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: tagAnnotation})
                   Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
                 }
                 if (apiKey && apiKey !== '') {
@@ -868,11 +868,11 @@ class CustomCriteriasManager {
                       prompt = Config.prompts.annotatePremisePrompt
                     }
                     let scheme = ''
-                    if (window.abwa.tagManager) {
-                      let currentTags = window.abwa.tagManager.currentTags
+                    if (window.abwa.criteriaManager) {
+                      let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                       // Retrieve Premises
-                      let premises = currentTags.filter(tag => {
-                        return tag.config.options.group === 'Premises'
+                      let premises = currentCriterionGroups.filter(criterionGroup => {
+                        return criterionGroup.config.options.group === 'Premises'
                       })
                       let conclusion
                       for (let i = 0; i < premises.length; i++) {
@@ -959,11 +959,11 @@ class CustomCriteriasManager {
                         llm: llm,
                         paragraph: excerpt
                       }
-                      let model = window.abwa.tagManager.model
+                      let model = window.abwa.criteriaManager.model
                       let tag = [
                         model.namespace + ':' + model.config.grouped.relation + ':' + criterion
                       ]
-                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                      CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                         LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                           tags: tag,
                           selectors: selectors,
@@ -972,9 +972,9 @@ class CustomCriteriasManager {
                       })
                     }
                     if (annotation.selectors.length === 0) {
-                      CustomCriteriasManager.showParagraph(annotation, criterion)
+                      CustomCriteriaManager.showParagraph(annotation, criterion)
                     } else {
-                      CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                      CustomCriteriaManager.showAnnotatedParagraph(annotation, criterion)
                     }
                     // retrieve tag annotation
                     let data
@@ -987,7 +987,7 @@ class CustomCriteriasManager {
                       data.feedback = ''
                     }
                     tagAnnotation.text = jsYaml.dump(data)
-                    LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                    LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: tagAnnotation})
                     Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
                   }
                   if (apiKey && apiKey !== '') {
@@ -996,11 +996,11 @@ class CustomCriteriasManager {
                         prompt = Config.prompts.annotatePremisePrompt
                       }
                       let scheme = ''
-                      if (window.abwa.tagManager) {
-                        let currentTags = window.abwa.tagManager.currentTags
+                      if (window.abwa.criteriaManager) {
+                        let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                         // Retrieve Premises
-                        let premises = currentTags.filter(tag => {
-                          return tag.config.options.group === 'Premises'
+                        let premises = currentCriterionGroups.filter(criterionGroup => {
+                          return criterionGroup.config.options.group === 'Premises'
                         })
                         let conclusion
                         for (let i = 0; i < premises.length; i++) {
@@ -1081,11 +1081,11 @@ class CustomCriteriasManager {
                   let schemeObjects = []
                   let conclusion = {}
                   let conclusionElement
-                  if (window.abwa.tagManager) {
-                    let currentTags = window.abwa.tagManager.currentTags
+                  if (window.abwa.criteriaManager) {
+                    let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                     // Retrieve Premises
-                    let premises = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Premises'
+                    let premises = currentCriterionGroups.filter(criterionGroup => {
+                      return criterionGroup.config.options.group === 'Premises'
                     })
                     for (let i = 0; i < premises.length; i++) {
                       const premise = premises[i]
@@ -1142,11 +1142,11 @@ class CustomCriteriasManager {
                                   llm: llm,
                                   paragraph: excerpt
                                 }
-                                let model = window.abwa.tagManager.model
+                                let model = window.abwa.criteriaManager.model
                                 let tag = [
                                   model.namespace + ':' + model.config.grouped.relation + ':' + answer.name
                                 ]
-                                CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                                CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                                   LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                                     tags: tag,
                                     selectors: selectors,
@@ -1156,8 +1156,8 @@ class CustomCriteriasManager {
                               }
                               // retrieve tag annotation
                               let data
-                              let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === answer.name)
-                              let tagAnnotation = currentTagGroup.config.annotation
+                              let currentCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.name === answer.name)
+                              let tagAnnotation = currentCriterionGroup.config.annotation
                               if (tagAnnotation.text) {
                                 data = jsYaml.load(tagAnnotation.text)
                                 // Check if data.resume exists and is an array. If not, initialize it as an empty array.
@@ -1189,7 +1189,7 @@ class CustomCriteriasManager {
                           }
                           // Conclusion
                           let conclusionData
-                          let conclusionTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === conclusion.name)
+                          let conclusionTagGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.name === conclusion.name)
                           let conclusionAnnotation = conclusionTagGroup.config.annotation
                           if (conclusionAnnotation.text) {
                             conclusionData = jsYaml.load(conclusionAnnotation.text)
@@ -1210,7 +1210,7 @@ class CustomCriteriasManager {
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
                           tagAnnotations.push(conclusionAnnotation)
                           // Single dispatch: save premises + conclusion together so reloadTags runs only once
-                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
+                          LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotations, {annotations: tagAnnotations})
                           Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
                         }
                       }
@@ -1301,7 +1301,7 @@ class CustomCriteriasManager {
     if (findFeedback) {
       this.formulateCriticalQuestionWithFeedback(criterion, description, tagAnnotation, findFeedback, data, paragraphs)
     } else {
-      // this.modifyCriteriaHandler(currentTagGroup)
+      // this.modifyCriteriaHandler(currentCriterionGroup)
       chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, async ({ llm }) => {
         if (llm === '') {
           llm = Config.review.defaultLLM
@@ -1338,11 +1338,11 @@ class CustomCriteriasManager {
                       llm: llm,
                       paragraph: excerpt
                     }
-                    let model = window.abwa.tagManager.model
+                    let model = window.abwa.criteriaManager.model
                     let tag = [
                       model.namespace + ':' + model.config.grouped.relation + ':' + criterion
                     ]
-                    CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                    CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                       LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                         tags: tag,
                         selectors: selectors,
@@ -1351,9 +1351,9 @@ class CustomCriteriasManager {
                     })
                   }
                   if (annotation.selectors.length === 0) {
-                    CustomCriteriasManager.showParagraph(annotation, criterion)
+                    CustomCriteriaManager.showParagraph(annotation, criterion)
                   } else {
-                    CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                    CustomCriteriaManager.showAnnotatedParagraph(annotation, criterion)
                   }
                   // retrieve tag annotation
                   let data
@@ -1383,7 +1383,7 @@ class CustomCriteriasManager {
                     }
                   }
                   tagAnnotation.text = jsYaml.dump(data)
-                  LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: tagAnnotation})
+                  LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: tagAnnotation})
                   Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
                 }
                 if (apiKey && apiKey !== '') {
@@ -1392,11 +1392,11 @@ class CustomCriteriasManager {
                       prompt = Config.prompts.criticalQuestionPrompt
                     }
                     let scheme = ''
-                    if (window.abwa.tagManager) {
-                      let currentTags = window.abwa.tagManager.currentTags
+                    if (window.abwa.criteriaManager) {
+                      let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                       // Retrieve Premises
-                      let premises = currentTags.filter(tag => {
-                        return tag.config.options.group === 'Premises'
+                      let premises = currentCriterionGroups.filter(criterionGroup => {
+                        return criterionGroup.config.options.group === 'Premises'
                       })
                       let conclusion
                       for (let i = 0; i < premises.length; i++) {
@@ -1496,11 +1496,11 @@ class CustomCriteriasManager {
                         llm: llm,
                         paragraph: excerpt
                       }
-                      let model = window.abwa.tagManager.model
+                      let model = window.abwa.criteriaManager.model
                       let tag = [
                         model.namespace + ':' + model.config.grouped.relation + ':' + criterion
                       ]
-                      CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                      CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                         LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                           tags: tag,
                           selectors: selectors,
@@ -1509,9 +1509,9 @@ class CustomCriteriasManager {
                       })
                     }
                     if (annotation.selectors.length === 0) {
-                      CustomCriteriasManager.showParagraph(annotation, criterion)
+                      CustomCriteriaManager.showParagraph(annotation, criterion)
                     } else {
-                      CustomCriteriasManager.showAnnotatedParagraph(annotation, criterion)
+                      CustomCriteriaManager.showAnnotatedParagraph(annotation, criterion)
                     }
                     // retrieve tag annotation
                     let data
@@ -1545,7 +1545,7 @@ class CustomCriteriasManager {
                       }
                     }
                     tagAnnotation.text = jsYaml.dump(data)
-                    LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, { annotation: tagAnnotation })
+                    LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, { annotation: tagAnnotation })
                     Alerts.successAlert({ title: 'Saved', text: 'The text has been saved in the report' })
                   }
                   if (apiKey && apiKey !== '') {
@@ -1558,11 +1558,11 @@ class CustomCriteriasManager {
                         prompt = Config.prompts.criticalQuestionPrompt
                       }
                       let scheme = ''
-                      if (window.abwa.tagManager) {
-                        let currentTags = window.abwa.tagManager.currentTags
+                      if (window.abwa.criteriaManager) {
+                        let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                         // Retrieve Premises
-                        let premises = currentTags.filter(tag => {
-                          return tag.config.options.group === 'Premises'
+                        let premises = currentCriterionGroups.filter(criterionGroup => {
+                          return criterionGroup.config.options.group === 'Premises'
                         })
                         let conclusion
                         for (let i = 0; i < premises.length; i++) {
@@ -1654,11 +1654,11 @@ class CustomCriteriasManager {
                   }
                   let scheme = ''
                   let questionsObjects = []
-                  if (window.abwa.tagManager) {
-                    let currentTags = window.abwa.tagManager.currentTags
+                  if (window.abwa.criteriaManager) {
+                    let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                     // Retrieve Premises
-                    let premises = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Premises'
+                    let premises = currentCriterionGroups.filter(criterionGroup => {
+                      return criterionGroup.config.options.group === 'Premises'
                     })
                     let conclusion
                     for (let i = 0; i < premises.length; i++) {
@@ -1685,8 +1685,8 @@ class CustomCriteriasManager {
                       }
                     }
                     // Retrieve CRITICAL QUESTIONS
-                    let criticalQuestions = currentTags.filter(tag => {
-                      return tag.config.options.group === 'Critical questions'
+                    let criticalQuestions = currentCriterionGroups.filter(criterionGroup => {
+                      return criterionGroup.config.options.group === 'Critical questions'
                     })
                     for (let i = 0; i < criticalQuestions.length; i++) {
                       const criticalQuestionElement = {}
@@ -1715,11 +1715,11 @@ class CustomCriteriasManager {
                               llm: llm,
                               paragraph: excerpt
                             }
-                            let model = window.abwa.tagManager.model
+                            let model = window.abwa.criteriaManager.model
                             let tag = [
                               model.namespace + ':' + model.config.grouped.relation + ':' + llmAnswer.name
                             ]
-                            CustomCriteriasManager.deleteTagAnnotations(tag, () => {
+                            CustomCriteriaManager.deleteTagAnnotations(tag, () => {
                               LanguageUtils.dispatchCustomEvent(Events.annotateByLLM, {
                                 tags: tag,
                                 selectors: selectors,
@@ -1729,9 +1729,9 @@ class CustomCriteriasManager {
                           }
                           // retrieve tag annotation
                           let data
-                          let currentTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === llmAnswer.name)
-                          if (currentTagGroup) {
-                            let tagAnnotation = currentTagGroup.config.annotation
+                          let currentCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, currentTag => currentTag.config.name === llmAnswer.name)
+                          if (currentCriterionGroup) {
+                            let tagAnnotation = currentCriterionGroup.config.annotation
                             if (tagAnnotation.text) {
                               data = jsYaml.load(tagAnnotation.text)
                               // Check if data.resume exists and is an array. If not, initialize it as an empty array.
@@ -1788,7 +1788,7 @@ class CustomCriteriasManager {
                           }
                         })
                       }
-                      LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
+                      LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotations, {annotations: tagAnnotations})
                       Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
                     })
                     .catch((error) => {
@@ -1866,11 +1866,11 @@ class CustomCriteriasManager {
                     } else {
                       argumentsPrompt = Config.prompts.argumentsPrompt
                     }
-                    if (window.abwa.tagManager) {
-                      let currentTags = window.abwa.tagManager.currentTags
+                    if (window.abwa.criteriaManager) {
+                      let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
                       // Retrieve Premises
-                      let premises = currentTags.filter(tag => {
-                        return tag.config.options.group === 'Premises'
+                      let premises = currentCriterionGroups.filter(criterionGroup => {
+                        return criterionGroup.config.options.group === 'Premises'
                       })
                       let conclusion
                       for (let i = 0; i < premises.length; i++) {
@@ -1929,7 +1929,7 @@ class CustomCriteriasManager {
    * @return {boolean}
    */
   static alreadyExistsThisCriteriaName (name) {
-    return !!_.find(window.abwa.tagManager.currentTags, (tag) => { return tag.config.name === name })
+    return !!_.find(window.abwa.criteriaManager.currentCriterionGroups, (tag) => { return tag.config.name === name })
   }
 
   getSelectorsFromLLM (paragraph, documents) {
@@ -1964,15 +1964,15 @@ class CustomCriteriasManager {
     return selectors
   }
 
-  static recap (currentTagGroup) {
-    let criterion = currentTagGroup.config.name
+  static recap (currentCriterionGroup) {
+    let criterion = currentCriterionGroup.config.name
     let tagGroupAnnotations
     let paragraphs = []
     if (window.abwa.contentAnnotator) {
       let annotations = window.abwa.contentAnnotator.allAnnotations
       // Mark as chosen annotated tags
       for (let i = 0; i < annotations.length; i++) {
-        let model = window.abwa.tagManager.model
+        let model = window.abwa.criteriaManager.model
         let tag = model.namespace + ':' + model.config.grouped.relation + ':' + criterion
         tagGroupAnnotations = annotations.filter((annotation) => {
           return AnnotationUtils.hasATag(annotation, tag)
@@ -2008,8 +2008,8 @@ class CustomCriteriasManager {
       }
     }
     let compile = ''
-    if (currentTagGroup.config.options.compile !== '') {
-      const findResume = currentTagGroup.config.options.compile.find((resume) => {
+    if (currentCriterionGroup.config.options.compile !== '') {
+      const findResume = currentCriterionGroup.config.options.compile.find((resume) => {
         return resume.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findResume) {
@@ -2017,8 +2017,8 @@ class CustomCriteriasManager {
       }
     }
     let alternative = ''
-    if (currentTagGroup.config.options.alternative !== '') {
-      const findAlternative = currentTagGroup.config.options.alternative.find((alternative) => {
+    if (currentCriterionGroup.config.options.alternative !== '') {
+      const findAlternative = currentCriterionGroup.config.options.alternative.find((alternative) => {
         return alternative.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findAlternative) {
@@ -2026,8 +2026,8 @@ class CustomCriteriasManager {
       }
     }
     let excerpt = ''
-    if (currentTagGroup.config.options.llmExcerpt) {
-      const findLLMExcerpt = currentTagGroup.config.options.llmExcerpt.find((excerpt) => {
+    if (currentCriterionGroup.config.options.llmExcerpt) {
+      const findLLMExcerpt = currentCriterionGroup.config.options.llmExcerpt.find((excerpt) => {
         return excerpt.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findLLMExcerpt) {
@@ -2035,8 +2035,8 @@ class CustomCriteriasManager {
       }
     }
     let fullQuestion = ''
-    if (currentTagGroup.config.options.fullQuestion && currentTagGroup.config.options.fullQuestion !== '') {
-      const findFullQuestion = currentTagGroup.config.options.fullQuestion.find((fullQuestion) => {
+    if (currentCriterionGroup.config.options.fullQuestion && currentCriterionGroup.config.options.fullQuestion !== '') {
+      const findFullQuestion = currentCriterionGroup.config.options.fullQuestion.find((fullQuestion) => {
         return fullQuestion.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findFullQuestion) {
@@ -2045,8 +2045,8 @@ class CustomCriteriasManager {
     }
     let feedback = ''
     let findFeedback
-    if (currentTagGroup.config.options.feedback && (currentTagGroup.config.options.feedback !== '')) {
-      findFeedback = currentTagGroup.config.options.feedback.find((feedback) => {
+    if (currentCriterionGroup.config.options.feedback && (currentCriterionGroup.config.options.feedback !== '')) {
+      findFeedback = currentCriterionGroup.config.options.feedback.find((feedback) => {
         return feedback.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findFeedback) {
@@ -2085,9 +2085,9 @@ class CustomCriteriasManager {
       `
       }
       if (compile) {
-        html += '<h3>Description:</h3><div width=800px>' + currentTagGroup.config.options.description + '</div></br>'
+        html += '<h3>Description:</h3><div width=800px>' + currentCriterionGroup.config.options.description + '</div></br>'
       }
-      if (currentTagGroup.config.options.fullQuestion) {
+      if (currentCriterionGroup.config.options.fullQuestion) {
         html += '<h3>Question:</h3><div width=800px>' + fullQuestion + '</div></br>'
       }
       if (compile.answer) {
@@ -2121,9 +2121,9 @@ class CustomCriteriasManager {
         text: html,
         confirmButtonText: 'Close',
         width: '900px',
-        currentTagGroup: currentTagGroup,
+        currentCriterionGroup: currentCriterionGroup,
         cancelCallback: () => {
-          CustomCriteriasManager.provideFeedback(currentTagGroup, findFeedback)
+          CustomCriteriaManager.provideFeedback(currentCriterionGroup, findFeedback)
         }
       })
     } else {
@@ -2134,7 +2134,7 @@ class CustomCriteriasManager {
     }
   }
 
-  static attachSentimentListeners (currentTagGroup, selected) {
+  static attachSentimentListeners (currentCriterionGroup, selected) {
     console.log('Attaching sentiment listeners: ' + selected)
     // Get all the images in the container
     const images = document.querySelectorAll('img[data-sentiment]')
@@ -2161,8 +2161,8 @@ class CustomCriteriasManager {
       })
     })
     let compile = ''
-    if (currentTagGroup.config.options.compile !== '') {
-      const findResume = currentTagGroup.config.options.compile.find((resume) => {
+    if (currentCriterionGroup.config.options.compile !== '') {
+      const findResume = currentCriterionGroup.config.options.compile.find((resume) => {
         return resume.document === window.abwa.contentTypeManager.pdfFingerprint
       })
       if (findResume) {
@@ -2182,7 +2182,7 @@ class CustomCriteriasManager {
       let annotations = window.abwa.contentAnnotator.allAnnotations
       // Mark as chosen annotated tags
       for (let i = 0; i < annotations.length; i++) {
-        let model = window.abwa.tagManager.model
+        let model = window.abwa.criteriaManager.model
         let tag = model.namespace + ':' + model.config.grouped.relation + ':' + criterion
         tagGroupAnnotations = annotations.filter((annotation) => {
           return AnnotationUtils.hasATag(annotation, tag)
@@ -2220,4 +2220,4 @@ class CustomCriteriasManager {
   }
 }
 
-export default CustomCriteriasManager
+export default CustomCriteriaManager

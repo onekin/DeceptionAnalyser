@@ -1,9 +1,9 @@
-const Criteria = require('../../model/schema/Criteria')
-const Level = require('../../model/schema/Level')
-const Review = require('../../model/schema/Review')
+const SchemaCriterion = require('../model/schema/SchemaCriterion')
+const Level = require('../model/schema/Level')
+const Review = require('../model/schema/Review')
 const _ = require('lodash')
 const FileSaver = require('file-saver')
-const Alerts = require('../../utils/Alerts')
+const Alerts = require('../utils/Alerts')
 
 const jsYaml = require('js-yaml')
 
@@ -40,7 +40,7 @@ class ExportSchema {
         } catch (e) {
           console.debug('Unable to parse criteria from schema annotation:\n' + e.message)
         }
-        return new Criteria({name: name, description: description, group: group, custom: custom, alternative: alternative, resume: resume})
+        return new SchemaCriterion({name: name, description: description, group: group, custom: custom, alternative: alternative, resume: resume})
       } else {
         return null
       }

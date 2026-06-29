@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import LanguageUtils from './LanguageUtils'
 import Events from '../contentScript/Events'
-import CustomCriteriasManager from '../specific/review/CustomCriteriasManager'
+import CustomCriteriaManager from '../contentScript/CustomCriteriaManager'
 import jsYaml from 'js-yaml'
 
 let swal = null
@@ -106,7 +106,7 @@ class Alerts {
     }
   }
 
-  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null, currentTagGroup = null, showCloseButton = false}) {
+  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null, currentCriterionGroup = null, showCloseButton = false}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -131,7 +131,7 @@ class Alerts {
             container.querySelectorAll('img[data-sentiment]').forEach(img => {
               img.addEventListener('click', () => {
                 const selected = img.getAttribute('data-sentiment')
-                CustomCriteriasManager.attachSentimentListeners(currentTagGroup, selected)
+                CustomCriteriaManager.attachSentimentListeners(currentCriterionGroup, selected)
               })
             })
           }
@@ -347,9 +347,9 @@ class Alerts {
           document.getElementById('redoButton').addEventListener('click', () => {
             swal.close()
             if (type === 'compile') {
-              CustomCriteriasManager.compile(criterion, description, paragraphs)
+              CustomCriteriaManager.compile(criterion, description, paragraphs)
             } else if (type === 'alternative') {
-              CustomCriteriasManager.alternative(criterion, description)
+              CustomCriteriaManager.alternative(criterion, description)
             }
           })
           document.getElementById('summaryButton').addEventListener('click', () => {
@@ -373,7 +373,7 @@ class Alerts {
               }
             }
             annotation.text = jsYaml.dump(data)
-            LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotation, {annotation: annotation})
+            LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: annotation})
             swal.close()
             Alerts.successAlert({title: 'Saved', text: 'The text has been saved in the report'})
           })

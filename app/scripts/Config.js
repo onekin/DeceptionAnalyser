@@ -41,17 +41,6 @@ const Config = {
       '  "sentiment": "[A traffic light color: return \'green\' if the conclusion is highly deceptive and should be scrutinized, \'yellow\' if undecided or uncertain, and \'red\' if there is no sign of deception]"\n' +
       '}\n\n' +
       'Only return the JSON object in your response. Replace all placeholders with specific details from the story and your analysis.',
-    argumentsPrompt: 'Research Paper Context: [The research paper is provided above]\n' +
-      'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
-      'The critical question is: [C_QUESTION]\n' +
-      'And the answer you provided is: [C_ANSWER]\n' +
-      'Now I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.' +
-      'You have to provide an argument and counterargument for the critical question. Base on the above generate a JSON response. The JSON format should be as follows:\n' +
-      '{\n' +
-      '"name": "[C_NAME]",\n' +
-      '"answer": "provide an argument and counterargument for the given critical questions in different bullet points using dashes (all in a single string), you have to put a "</br>" before each dash like "</br>-". You have to provide the evidence after the argument and counter argument reasoning between paranthesis and in italic (<i>). All the content must be specified in the answer key, without creating keys inside.",\n' +
-      '}\n' +
-      'When using this prompt, replace the placeholders with the actual content of the research paper and the specific criterion details.\n',
     criticalQuestionPrompt: 'Story: [The story is provided above]\n' +
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'Now I want to answer a critical question for Argument deception. The critical question is: [C_DESCRIPTION]\n' +

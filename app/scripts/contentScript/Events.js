@@ -12,10 +12,10 @@ const Events = {
   updatedDocumentURL: 'updatedDocumentURL',
   comment: 'annotationComment',
   updateAnnotation: 'updateAnnotation',
-  updateTagAnnotation: 'updateTagAnnotation',
-  updateTagAnnotations: 'updateTagAnnotations',
+  updateCriteriaAnnotation: 'updateCriteriaAnnotation',
+  updateCriteriaAnnotations: 'updateCriteriaAnnotations',
   reply: 'reply',
-  tagsUpdated: 'tagsUpdated',
+  criteriaUpdated: 'criteriaUpdated',
   deleteAllAnnotations: 'deleteAllAnnotations',
   deletedAllAnnotations: 'deletedAllAnnotations'
 }

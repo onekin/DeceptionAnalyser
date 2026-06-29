@@ -1,7 +1,7 @@
 const LanguageUtils = require('../../utils/LanguageUtils')
-const AnnotationGuide = require('./AnnotationGuide')
+const ReviewSchema = require('./ReviewSchema')
 
-class GuideElement {
+class SchemaElement {
   constructor ({name, parentElement, childElements = [], color = 'rgba(125,125,125,1)'}) {
     this.name = name
     this.color = color
@@ -27,13 +27,13 @@ class GuideElement {
 
   getAncestor () {
     let parent = this.parentElement
-    while (LanguageUtils.isInstanceOf(parent, GuideElement)) {
+    while (LanguageUtils.isInstanceOf(parent, SchemaElement)) {
       parent = parent.parentElement
     }
-    if (LanguageUtils.isInstanceOf(parent, AnnotationGuide)) {
+    if (LanguageUtils.isInstanceOf(parent, ReviewSchema)) {
       return parent
     }
   }
 }
 
-module.exports = GuideElement
+module.exports = SchemaElement

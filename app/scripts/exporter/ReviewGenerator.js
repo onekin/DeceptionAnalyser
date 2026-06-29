@@ -1,20 +1,20 @@
 /* eslint-disable */
 
-import Config from '../../Config'
-import Alerts from '../../utils/Alerts'
-import AnnotationUtils from '../../utils/AnnotationUtils'
-import LocalStorageManager from '../../storage/local/LocalStorageManager'
+import Config from '../Config'
+import Alerts from '../utils/Alerts'
+import AnnotationUtils from '../utils/AnnotationUtils'
+import LocalStorageManager from '../storage/local/LocalStorageManager'
 import jsYaml from 'js-yaml'
 
 
 const axios = require('axios')
 const _ = require('lodash')
-const LanguageUtils = require('../../utils/LanguageUtils')
+const LanguageUtils = require('../utils/LanguageUtils')
 const $ = require('jquery')
 require('jquery-contextmenu/dist/jquery.contextMenu')
-const {Review, AssessedTag, Annotation} = require('../../exporter/reviewModel.js')
+const {ReviewReport, AssessedTag, Annotation} = require('./reviewModel.js')
 const FileSaver = require('file-saver')
-const Events = require('../../contentScript/Events')
+const Events = require('../contentScript/Events')
 
 let Swal = null
 if (document && document.head) {
@@ -62,10 +62,10 @@ class ReviewGenerator {
     })
   }
   parseAnnotations (annotations){
-    let currentTags = window.abwa.tagManager.currentTags
+    let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
     const criterionTag = Config.review.namespace + ':' + Config.review.tags.grouped.relation + ':'
 
-    let r = new Review()
+    let r = new ReviewReport()
 
     for (let a in annotations) {
       let criterion = null
@@ -75,7 +75,7 @@ class ReviewGenerator {
         if (annotations[a].tags[t].indexOf(criterionTag) != -1) criterion = annotations[a].tags[t].replace(criterionTag, '').trim()
       }
       if(criterion!=null){
-        let g = window.abwa.tagManager.currentTags.find((el) => {return el.config.name === criterion})
+        let g = window.abwa.criteriaManager.currentCriterionGroups.find((el) => {return el.config.name === criterion})
         if (g!=null) group = g.config.options.group
       }
       let textQuoteSelector = null
@@ -106,14 +106,14 @@ class ReviewGenerator {
       let socialJudge = annotationText.socialJudge !== null ? annotationText.socialJudge : null
       r.insertAnnotation(new Annotation(annotations[a].id,criterion,level,group,highlightText.replace(/(\r\n|\n|\r)/gm, ''),pageNumber,comment,clarifications,factChecking,socialJudge))
     }
-    currentTags.forEach((currentTagGroup) => {
-      let criterion = currentTagGroup.config.name
+    currentCriterionGroups.forEach((currentCriterionGroup) => {
+      let criterion = currentCriterionGroup.config.name
       let tagGroupAnnotations
       if (window.abwa.contentAnnotator) {
         let annotations = window.abwa.contentAnnotator.allAnnotations
         // Mark as chosen annotated tags
         for (let i = 0; i < annotations.length; i++) {
-          let model = window.abwa.tagManager.model
+          let model = window.abwa.criteriaManager.model
           let tag = model.namespace + ':' + model.config.grouped.relation + ':' + criterion
           tagGroupAnnotations = annotations.filter((annotation) => {
             return AnnotationUtils.hasATag(annotation, tag)
@@ -121,8 +121,8 @@ class ReviewGenerator {
         }
       }
       let compile = ''
-      if (currentTagGroup.config.options.compile && currentTagGroup.config.options.compile.length > 0) {
-        const findResume = currentTagGroup.config.options.compile.find((resume) => {
+      if (currentCriterionGroup.config.options.compile && currentCriterionGroup.config.options.compile.length > 0) {
+        const findResume = currentCriterionGroup.config.options.compile.find((resume) => {
           return resume.document === window.abwa.contentTypeManager.pdfFingerprint
         })
         if (findResume) {
@@ -130,8 +130,8 @@ class ReviewGenerator {
         }
       }
       let alternative = ''
-      if (currentTagGroup.config.options.alternative && currentTagGroup.config.options.alternative.length > 0) {
-        const findAlternative = currentTagGroup.config.options.alternative.find((alternative) => {
+      if (currentCriterionGroup.config.options.alternative && currentCriterionGroup.config.options.alternative.length > 0) {
+        const findAlternative = currentCriterionGroup.config.options.alternative.find((alternative) => {
           return alternative.document === window.abwa.contentTypeManager.pdfFingerprint
         })
         if (findAlternative) {
@@ -144,8 +144,8 @@ class ReviewGenerator {
         }
       }
       let fullQuestion = ''
-      if (currentTagGroup.config.options.fullQuestion && currentTagGroup.config.options.fullQuestion.length > 0) {
-        const findFullQuestion = currentTagGroup.config.options.fullQuestion.find((question) => {
+      if (currentCriterionGroup.config.options.fullQuestion && currentCriterionGroup.config.options.fullQuestion.length > 0) {
+        const findFullQuestion = currentCriterionGroup.config.options.fullQuestion.find((question) => {
           return question.document === window.abwa.contentTypeManager.pdfFingerprint
         })
         if (findFullQuestion) {
@@ -153,12 +153,12 @@ class ReviewGenerator {
         }
       }
       let description = ''
-      if (currentTagGroup.config.options.description) {
-        description = currentTagGroup.config.options.description
+      if (currentCriterionGroup.config.options.description) {
+        description = currentCriterionGroup.config.options.description
       }
       let data = {}
-      data.criterion = currentTagGroup.config.name
-      data.group = currentTagGroup.config.options.group
+      data.criterion = currentCriterionGroup.config.name
+      data.group = currentCriterionGroup.config.options.group
       if (compile) {
         data.compile = compile
       }
@@ -379,9 +379,7 @@ class ReviewGenerator {
               window.open("https://github.com/onekin/DeceptionAnalyser","_blank")
             } else if (key === 'config') {
               window.open(chrome.runtime.getURL('/pages/options.html'),"_blank")
-            } /* else if (key === 'prompts') {
-              window.open(chrome.runtime.getURL('/pages/promptConfiguration.html'), "_blank")
-            } */
+            }
           },
           items: items
         }

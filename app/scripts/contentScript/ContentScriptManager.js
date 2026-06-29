@@ -1,14 +1,15 @@
-import ReviewContentScript from '../specific/review/ReviewContentScript'
+import ReviewGenerator from '../exporter/ReviewGenerator'
 import _ from 'lodash'
 import ContentTypeManager from './ContentTypeManager'
 import Sidebar from './Sidebar'
-import TagManager from './TagManager'
+import CriteriaManager from './CriteriaManager'
 import Events from './Events'
 import GroupSelector from './GroupSelector'
 import LocalStorageManager from '../storage/local/LocalStorageManager'
 import Config from '../Config'
 import Alerts from '../utils/Alerts'
 import TextAnnotator from './contentAnnotators/TextAnnotator'
+import CustomCriteriaManager from './CustomCriteriaManager'
 
 class ContentScriptManager {
   constructor () {
@@ -43,15 +44,15 @@ class ContentScriptManager {
     }
   }
 
-  destroyTagsManager () {
-    if (!_.isEmpty(window.abwa.tagManager)) {
-      window.abwa.tagManager.destroy()
+  destroyCriteriaManager () {
+    if (!_.isEmpty(window.abwa.criteriaManager)) {
+      window.abwa.criteriaManager.destroy()
     }
   }
 
   destroy (callback) {
     this.destroyContentTypeManager(() => {
-      this.destroyTagsManager()
+      this.destroyCriteriaManager()
       this.destroyContentAnnotator()
       // TODO Destroy groupSelector, roleManager,
       window.abwa.groupSelector.destroy(() => {
@@ -81,7 +82,7 @@ class ContentScriptManager {
   }
 
   reloadContentByGroup (callback) {
-    this.reloadTagManager(() => {
+    this.reloadCriteriaManager(() => {
       // Load content annotator
       this.reloadContentAnnotator(() => {
         // Reload specific content script
@@ -94,12 +95,12 @@ class ContentScriptManager {
     })
   }
 
-  reloadTagManager (callback) {
-    if (window.abwa.tagManager) {
-      window.abwa.tagManager.destroy()
+  reloadCriteriaManager (callback) {
+    if (window.abwa.criteriaManager) {
+      window.abwa.criteriaManager.destroy()
     }
-    window.abwa.tagManager = new TagManager(Config.review.namespace, Config.review.tags)
-    window.abwa.tagManager.init(() => {
+    window.abwa.criteriaManager = new CriteriaManager(Config.review.namespace, Config.review.tags)
+    window.abwa.criteriaManager.init(() => {
       if (_.isFunction(callback)) {
         callback()
       }
@@ -119,11 +120,18 @@ class ContentScriptManager {
   }
 
   reloadSpecificContentScript (callback) {
-    if (window.abwa.specificContentManager) {
-      window.abwa.specificContentManager.destroy()
+    // Initialize review generator and custom criteria manager
+    window.abwa.specific = window.abwa.specific || {}
+    if (window.abwa.specific.reviewGenerator) {
+      window.abwa.specific.reviewGenerator.destroy()
     }
-    window.abwa.specificContentManager = new ReviewContentScript(Config.review)
-    window.abwa.specificContentManager.init(() => {
+    if (window.abwa.specific.customCriteriaManager) {
+      window.abwa.specific.customCriteriaManager.destroy()
+    }
+    window.abwa.specific.reviewGenerator = new ReviewGenerator()
+    window.abwa.specific.customCriteriaManager = new CustomCriteriaManager()
+    window.abwa.specific.reviewGenerator.init(() => {})
+    window.abwa.specific.customCriteriaManager.init(() => {
       if (_.isFunction(callback)) {
         callback()
       }

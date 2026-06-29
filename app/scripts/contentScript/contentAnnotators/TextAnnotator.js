@@ -1,8 +1,8 @@
 // const ReviewAssistant = require('../../specific/review/ReviewAssistant')
 import ContentAnnotator from './ContentAnnotator'
 import ContentTypeManager from '../ContentTypeManager'
-import Tag from '../Tag'
-import TagGroup from '../TagGroup'
+import Criterion from '../Criterion'
+import CriterionGroup from '../CriterionGroup'
 import Events from '../Events'
 import DOMTextUtils from '../../utils/DOMTextUtils'
 import PDFTextUtils from '../../utils/PDFTextUtils'
@@ -58,12 +58,12 @@ class TextAnnotator extends ContentAnnotator {
       this.initAnnotateEvent(() => {
         this.initAnnotateByLLMEvent(() => {
           this.initUpdateAnnotationEvent(() => {
-            this.initUpdateTagAnnotationEvent(() => {
-              this.initUpdateTagAnnotationsEvent(() => {
+            this.initUpdateCriteriaAnnotationEvent(() => {
+              this.initUpdateCriteriaAnnotationsEvent(() => {
                 this.initReloadAnnotationsEvent(() => {
                   this.initDeleteAllAnnotationsEvent(() => {
                     this.initDocumentURLChangeEvent(() => {
-                      this.initTagsUpdatedEvent(() => {
+                      this.initCriteriaUpdatedEvent(() => {
                         // Reload annotations periodically
                         if (_.isFunction(callback)) {
                           callback()
@@ -96,15 +96,15 @@ class TextAnnotator extends ContentAnnotator {
     }
   }
 
-  initTagsUpdatedEvent (callback) {
-    this.events.tagsUpdated = {element: document, event: Events.tagsUpdated, handler: this.createTagsUpdatedEventHandler()}
-    this.events.tagsUpdated.element.addEventListener(this.events.tagsUpdated.event, this.events.tagsUpdated.handler, false)
+  initCriteriaUpdatedEvent (callback) {
+    this.events.criteriaUpdated = {element: document, event: Events.criteriaUpdated, handler: this.createCriteriaUpdatedEventHandler()}
+    this.events.criteriaUpdated.element.addEventListener(this.events.criteriaUpdated.event, this.events.criteriaUpdated.handler, false)
     if (_.isFunction(callback)) {
       callback()
     }
   }
 
-  createTagsUpdatedEventHandler (callback) {
+  createCriteriaUpdatedEventHandler (callback) {
     return () => {
       this.updateAllAnnotations(() => {
       })
@@ -159,17 +159,17 @@ class TextAnnotator extends ContentAnnotator {
     }
   }
 
-  initUpdateTagAnnotationEvent (callback) {
-    this.events.updateTagAnnotationEvent = { element: document, event: Events.updateTagAnnotation, handler: this.updateTagAnnotationEventHandler() }
-    this.events.updateTagAnnotationEvent.element.addEventListener(this.events.updateTagAnnotationEvent.event, this.events.updateTagAnnotationEvent.handler, false)
+  initUpdateCriteriaAnnotationEvent (callback) {
+    this.events.updateCriteriaAnnotationEvent = { element: document, event: Events.updateCriteriaAnnotation, handler: this.updateCriteriaAnnotationEventHandler() }
+    this.events.updateCriteriaAnnotationEvent.element.addEventListener(this.events.updateCriteriaAnnotationEvent.event, this.events.updateCriteriaAnnotationEvent.handler, false)
     if (_.isFunction(callback)) {
       callback()
     }
   }
 
-  initUpdateTagAnnotationsEvent (callback) {
-    this.events.updateTagAnnotationsEvent = { element: document, event: Events.updateTagAnnotations, handler: this.updateTagAnnotationsEventHandler() }
-    this.events.updateTagAnnotationsEvent.element.addEventListener(this.events.updateTagAnnotationsEvent.event, this.events.updateTagAnnotationsEvent.handler, false)
+  initUpdateCriteriaAnnotationsEvent (callback) {
+    this.events.updateCriteriaAnnotationsEvent = { element: document, event: Events.updateCriteriaAnnotations, handler: this.updateCriteriaAnnotationsEventHandler() }
+    this.events.updateCriteriaAnnotationsEvent.element.addEventListener(this.events.updateCriteriaAnnotationsEvent.event, this.events.updateCriteriaAnnotationsEvent.handler, false)
     if (_.isFunction(callback)) {
       callback()
     }
@@ -442,7 +442,7 @@ class TextAnnotator extends ContentAnnotator {
         }
       } else {
         // Search tagged annotations
-        let filteringTags = window.abwa.tagManager.getFilteringTagList()
+        let filteringTags = window.abwa.criteriaManager.getFilteringCriteriaList()
         this.allAnnotations = _.filter(annotations, (annotation) => {
           let tags = annotation.tags
           return !(tags.length > 0 && _.find(filteringTags, tags[0])) || (tags.length > 1 && _.find(filteringTags, tags[1]))
@@ -478,7 +478,7 @@ class TextAnnotator extends ContentAnnotator {
   highlightAnnotation (annotation, callback) {
     let classNameToHighlight = this.retrieveHighlightClassName(annotation)
     // Get annotation color for an annotation
-    let tagInstance = window.abwa.tagManager.findAnnotationTagInstance(annotation)
+    let tagInstance = window.abwa.criteriaManager.findAnnotationCriterionInstance(annotation)
     if (tagInstance) {
       let color = tagInstance.getColor()
       try {
@@ -491,11 +491,11 @@ class TextAnnotator extends ContentAnnotator {
           // Set purpose color
           highlightedElement.dataset.color = color
           let group = null
-          if (LanguageUtils.isInstanceOf(tagInstance, TagGroup)) {
+          if (LanguageUtils.isInstanceOf(tagInstance, CriterionGroup)) {
             group = tagInstance
             // Set message
             highlightedElement.title = group.config.name
-          } else if (LanguageUtils.isInstanceOf(tagInstance, Tag)) {
+          } else if (LanguageUtils.isInstanceOf(tagInstance, Criterion)) {
             group = tagInstance.group
             highlightedElement.title = group.config.name
           }
@@ -806,7 +806,7 @@ class TextAnnotator extends ContentAnnotator {
     }
   }
 
-  updateTagAnnotationEventHandler () {
+  updateCriteriaAnnotationEventHandler () {
     return (event) => {
       // Get annotation to update
       const annotation = event.detail.annotation
@@ -821,13 +821,13 @@ class TextAnnotator extends ContentAnnotator {
           } else {
             // Dispatch updated annotations events
             // LanguageUtils.dispatchCustomEvent(Events.updatedAllAnnotations, {annotations: window.abwa.contentAnnotator.allAnnotations})
-            window.abwa.tagManager.reloadTags()
+            window.abwa.criteriaManager.reloadCriteria()
           }
         })
     }
   }
 
-  updateTagAnnotationsEventHandler () {
+  updateCriteriaAnnotationsEventHandler () {
     return (event) => {
       // Get annotation to update
       const annotations = event.detail.annotations
@@ -842,8 +842,8 @@ class TextAnnotator extends ContentAnnotator {
         } else {
           updateCount++
           if (updateCount === totalUpdates) {
-            // Reload tags only after all updates are completed
-            window.abwa.tagManager.reloadTags()
+            // Reload criteria only after all updates are completed
+            window.abwa.criteriaManager.reloadCriteria()
           }
         }
       }

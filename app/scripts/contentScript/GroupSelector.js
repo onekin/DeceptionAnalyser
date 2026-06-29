@@ -3,11 +3,11 @@ import $ from 'jquery'
 import Alerts from '../utils/Alerts'
 import ChromeStorage from '../utils/ChromeStorage'
 import LanguageUtils from '../utils/LanguageUtils'
-import ImportSchema from '../specific/review/ImportSchema'
-import ExportSchema from '../specific/review/ExportSchema'
+import ImportSchema from '../exporter/ImportSchema'
+import ExportSchema from '../exporter/ExportSchema'
 import ReviewSchema from '../model/schema/Review'
 import Events from './Events'
-import TagManager from './TagManager'
+import CriteriaManager from './CriteriaManager'
 import LocalStorageManager from '../storage/local/LocalStorageManager'
 
 class GroupSelector {
@@ -622,7 +622,7 @@ class GroupSelector {
 
   exportCriteriaConfiguration (group, callback) {
     // Retrieve group annotations
-    TagManager.getGroupAnnotations(group, (err, groupAnnotations) => {
+    CriteriaManager.getGroupAnnotations(group, (err, groupAnnotations) => {
       if (err) {
 
       } else {

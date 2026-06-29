@@ -1,6 +1,6 @@
 const ColorUtils = require('../utils/ColorUtils')
 
-class Tag {
+class Criterion {
   constructor (config, group = null) {
     this.group = group
     this.name = config.name
@@ -23,17 +23,17 @@ class Tag {
     return this.color
   }
 
-  static getInstance (tagObject, group) {
-    let tag = new Tag({
-      name: tagObject.name,
-      namespace: tagObject.namespace,
-      options: tagObject.options
+  static getInstance (criterionObject, group) {
+    let criterion = new Criterion({
+      name: criterionObject.name,
+      namespace: criterionObject.namespace,
+      options: criterionObject.options
     })
-    tag.group = group
-    tag.color = tagObject.color
-    tag.tags = tagObject.tags
-    return tag
+    criterion.group = group
+    criterion.color = criterionObject.color
+    criterion.tags = criterionObject.tags
+    return criterion
   }
 }
 
-module.exports = Tag
+module.exports = Criterion

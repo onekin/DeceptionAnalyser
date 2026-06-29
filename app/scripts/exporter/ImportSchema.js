@@ -1,8 +1,8 @@
-import Alerts from '../../utils/Alerts'
-import FileUtils from '../../utils/FileUtils'
-import general from './criteriaTemplate/general.json'
-import value from './criteriaTemplate/value.json'
-import empty from './criteriaTemplate/empty.json'
+import Alerts from '../utils/Alerts'
+import FileUtils from '../utils/FileUtils'
+import general from '../data/criteriaTemplate/general.json'
+import value from '../data/criteriaTemplate/value.json'
+import empty from '../data/criteriaTemplate/empty.json'
 // import ReviewModels from './criteriaTemplate/ReviewModels'
 
 class ImportSchema {
@@ -63,7 +63,7 @@ class ImportSchema {
    * @param callback
    */
   static askUserForStandardConfigurationSchema (callback) {
-    const ReviewModels = require('./criteriaTemplate/ReviewModels')
+    const ReviewModels = require('../data/criteriaTemplate/ReviewModels')
     let reviewSchemas = ReviewModels.reviews
     let showForm = () => {
       // Create form

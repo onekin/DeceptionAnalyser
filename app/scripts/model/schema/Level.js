@@ -1,10 +1,10 @@
-const GuideElement = require('./GuideElement')
+const SchemaElement = require('./SchemaElement')
 const jsYaml = require('js-yaml')
 const _ = require('lodash')
 
 const LanguageUtils = require('../../utils/LanguageUtils')
 
-class Level extends GuideElement {
+class Level extends SchemaElement {
   constructor ({name, description = '', color, criteria, levelId}) {
     super({name, parentElement: criteria})
     this.color = color

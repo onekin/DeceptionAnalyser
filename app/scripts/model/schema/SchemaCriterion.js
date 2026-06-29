@@ -1,9 +1,9 @@
-const GuideElement = require('./GuideElement')
+const SchemaElement = require('./SchemaElement')
 const jsYaml = require('js-yaml')
 const Level = require('./Level')
 const LanguageUtils = require('../../utils/LanguageUtils')
 
-class Criteria extends GuideElement {
+class SchemaCriterion extends SchemaElement {
   constructor ({name, color, review, group = 'Other', description, feedback, fullQuestion, custom = false, compile, alternative}) {
     super({name, color, parentElement: review})
     this.levels = this.childElements
@@ -83,11 +83,11 @@ class Criteria extends GuideElement {
     }
   }
 
-  static createCriteriaFromObject (criteria, rubric) {
+  static createSchemaCriterionFromObject (criteria, rubric) {
     criteria.parentElement = rubric
     criteria.rubric = criteria.parentElement
     // Instance criteria object
-    let instancedCriteria = Object.assign(new Criteria({}), criteria)
+    let instancedCriteria = Object.assign(new SchemaCriterion({}), criteria)
     // Instance levels
     for (let i = 0; i < criteria.levels.length; i++) {
       instancedCriteria.levels[i] = Level.createLevelFromObject(criteria.levels[i], instancedCriteria)
@@ -98,24 +98,19 @@ class Criteria extends GuideElement {
   toObject () {
     let object = {
       name: this.name,
-      group: this.group,
       description: this.description,
-      fullQuestion: this.fullQuestion,
+      group: this.group,
+      alternative: this.alternative,
       feedback: this.feedback,
+      compile: this.compile,
+      fullQuestion: this.fullQuestion,
       levels: []
     }
-    if (this.custom) {
-      object.custom = true
-    }
-    // For each level
     for (let i = 0; i < this.levels.length; i++) {
-      let level = this.levels[i]
-      if (LanguageUtils.isInstanceOf(level, Level)) {
-        object.levels.push(level.toObject())
-      }
+      object.levels.push(this.levels[i].toObject())
     }
     return object
   }
 }
 
-module.exports = Criteria
+module.exports = SchemaCriterion

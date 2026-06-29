@@ -1,9 +1,9 @@
 const ColorUtils = require('../utils/ColorUtils')
 
-class TagGroup {
-  constructor (config, tags) {
+class CriterionGroup {
+  constructor (config, criteria) {
     this.config = config
-    this.tags = tags || []
+    this.criteria = criteria || []
     this.config.color = this.config.color || 'rgba(150,150,150,0.5)'
   }
 
@@ -12,4 +12,4 @@ class TagGroup {
   }
 }
 
-module.exports = TagGroup
+module.exports = CriterionGroup
