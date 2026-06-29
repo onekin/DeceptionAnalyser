@@ -1,4 +1,5 @@
-const SchemaCriterion = require('../model/schema/SchemaCriterion')
+const Premise = require('../model/schema/Premise')
+const CriticalQuestion = require('../model/schema/CriticalQuestion')
 const Level = require('../model/schema/Level')
 const Review = require('../model/schema/Review')
 const _ = require('lodash')
@@ -40,7 +41,7 @@ class ExportSchema {
         } catch (e) {
           console.debug('Unable to parse criteria from schema annotation:\n' + e.message)
         }
-        return new SchemaCriterion({name: name, description: description, group: group, custom: custom, alternative: alternative, resume: resume})
+        return new Premise({name: name, description: description, group: group})
       } else {
         return null
       }

@@ -55,6 +55,41 @@ class LLMClient {
     })
   }
 
+  // Same as pdfBasedQuestion but without showing a Swal loading dialog.
+  // Used for batch operations where a single parent dialog is shown instead.
+  static async pdfBasedQuestionSilent ({apiKey, documents, callback, prompt, llm}) {
+    chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm.modelType, data: {documents: documents, apiKey: apiKey, query: prompt, llm: llm} }, function (response) {
+      if (chrome.runtime.lastError) {
+        Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + chrome.runtime.lastError.message })
+      } else if (!response || !response.res) {
+        Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': unexpected empty response' })
+      } else if (response.res.error) {
+        Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + response.res.error })
+      } else {
+        const jsonString = response.res
+        console.log('ANSWER: ' + jsonString)
+        let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)
+        let lastIndex = retrievedJSON.lastIndexOf('}')
+        retrievedJSON = retrievedJSON.substring(0, lastIndex)
+        retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+        if (!retrievedJSON.startsWith('{')) {
+          retrievedJSON = '{' + retrievedJSON
+        }
+        if (!retrievedJSON.endsWith('}')) {
+          retrievedJSON = retrievedJSON + '}'
+        }
+        try {
+          const jsonObject = JSON.parse(retrievedJSON)
+          if (_.isFunction(callback)) {
+            callback(jsonObject)
+          }
+        } catch (err) {
+          Alerts.errorAlert({ title: 'Please try again. Try to repeat the question. Provided answer has been: ' + retrievedJSON + '. Error: ' + err.message })
+        }
+      }
+    })
+  }
+
   static async simpleQuestion ({apiKey, callback, prompt, llm}) {
     chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm.modelType, data: {apiKey: apiKey, query: prompt, llm: llm} }, function (response) {
       if (chrome.runtime.lastError) {

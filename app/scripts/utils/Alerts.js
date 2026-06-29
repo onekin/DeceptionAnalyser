@@ -348,7 +348,7 @@ class Alerts {
             swal.close()
             if (type === 'compile') {
               CustomCriteriaManager.compile(criterion, description, paragraphs)
-            } else if (type === 'alternative') {
+            } else if (type === 'alternative' || type === 'assessments') {
               CustomCriteriaManager.alternative(criterion, description)
             }
           })
@@ -357,19 +357,18 @@ class Alerts {
             if (annotation.text) {
               data = jsYaml.load(annotation.text)
               if (type === 'compile') {
-                // Check if data.resume exists and is an array. If not, initialize it as an empty array.
-                if (!Array.isArray(data.compile)) {
-                  data.compile = []
+                // Store in assessments array for premises
+                if (!Array.isArray(data.assessments)) {
+                  data.assessments = []
                 }
-                // Now that we're sure data.resume is an array, push the new object into it.
-                data.compile.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
-              } else if (type === 'alternative') {
-                // Check if data.alternative exists and is an array. If not, initialize it as an empty array.
-                if (!Array.isArray(data.alternative)) {
-                  data.alternative = []
+                data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
+              } else if (type === 'alternative' || type === 'assessments') {
+                // Check if data.assessments exists and is an array. If not, initialize it as an empty array.
+                if (!Array.isArray(data.assessments)) {
+                  data.assessments = []
                 }
-                // Now that we're sure data.alternative is an array, push the new object into it.
-                data.alternative.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
+                // Now that we're sure data.assessments is an array, push the new object into it.
+                data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: answer, llm: llm })
               }
             }
             annotation.text = jsYaml.dump(data)

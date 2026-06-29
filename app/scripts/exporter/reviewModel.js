@@ -82,10 +82,10 @@ export class ReviewReport {
 
   // Helper to render a criterion card
   renderCriterionCard(assessedCriteria, isQuestion = false) {
-    const { criterion, compile, alternative, fullQuestion, description } = assessedCriteria;
+    const { criterion, compile, assessments, description } = assessedCriteria;
     
     let sentiment = '';
-    if (compile && (compile.sentiment || (compile.answer && compile.answer.sentiment))) {
+    if (!isQuestion && compile && (compile.sentiment || (compile.answer && compile.answer.sentiment))) {
       sentiment = compile.sentiment || compile.answer.sentiment;
     }
 
@@ -96,11 +96,11 @@ export class ReviewReport {
           ${sentiment ? this.getSentimentImageHTML(sentiment) : ''}
         </h2>`;
 
-    // Description section
-    if (fullQuestion && fullQuestion.fullQuestion) {
+    // Description / Question section
+    if (isQuestion && assessments && assessments.adaptedQuestion) {
       html += this.renderSection(
-        isQuestion ? 'Question' : 'Description',
-        this.escapeHtml(fullQuestion.fullQuestion),
+        'Question',
+        this.escapeHtml(assessments.adaptedQuestion),
         'section-content description'
       );
     } else if (description) {
@@ -112,7 +112,15 @@ export class ReviewReport {
     }
 
     // Analysis section
-    if (compile) {
+    if (isQuestion && assessments && assessments.answer) {
+      // Critical Questions: read answer from assessments
+      const altLLM = assessments.llm || '';
+      let analysisContent = this.escapeHtml(assessments.answer);
+      if (altLLM) {
+        analysisContent += ` <span class="llm-badge">(based on ${this.escapeHtml(altLLM)})</span>`;
+      }
+      html += this.renderSection('Analysis', analysisContent, 'section-content analysis');
+    } else if (compile) {
       const compileLLM = (compile.answer && compile.answer.llm) ? compile.answer.llm : (compile.llm || '');
       const analysisText = (compile.answer && compile.answer.statement) 
         ? compile.answer.statement 
@@ -127,8 +135,23 @@ export class ReviewReport {
     }
 
     // Arguments section (for critical questions)
-    if (alternative) {
-      html += this.renderSection('Arguments', this.escapeHtml(alternative), 'section-content arguments');
+    if (assessments && (assessments.argument || assessments.counterargument)) {
+      const argText = assessments.argument || '';
+      const counterText = assessments.counterargument || '';
+      const tableHtml = `
+        <table class="arguments-table">
+          <tr>
+            <th>Argument</th>
+            <th>Counterargument</th>
+          </tr>
+          <tr>
+            <td>${this.escapeHtml(argText)}</td>
+            <td>${this.escapeHtml(counterText)}</td>
+          </tr>
+        </table>`;
+      html += tableHtml;
+    } else if (assessments && typeof assessments === 'string') {
+      html += this.renderSection('Arguments', this.escapeHtml(assessments), 'section-content arguments');
     }
 
     // Evidence section
@@ -556,12 +579,11 @@ export class Annotation {
 }
 
 export class AssessedTag {
-  constructor({ criterion, group = null, compile = null, alternative = null, fullQuestion = null, description = null }) {
+  constructor({ criterion, group = null, compile = null, assessments = null, description = null }) {
     this._criterion = criterion
     this._group = group
     this._compile = compile
-    this._alternative = alternative
-    this._fullQuestion = fullQuestion
+    this._assessments = assessments
     this._description = description
   }
   get criterion(){
@@ -573,11 +595,8 @@ export class AssessedTag {
   get compile(){
     return this._compile
   }
-  get alternative(){
-    return this._alternative
-  }
-  get fullQuestion(){
-    return this._fullQuestion
+  get assessments(){
+    return this._assessments
   }
   get description(){
     return this._description

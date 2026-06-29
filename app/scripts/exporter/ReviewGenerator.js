@@ -121,35 +121,55 @@ class ReviewGenerator {
         }
       }
       let compile = ''
-      if (currentCriterionGroup.config.options.compile && currentCriterionGroup.config.options.compile.length > 0) {
-        const findResume = currentCriterionGroup.config.options.compile.find((resume) => {
-          return resume.document === window.abwa.contentTypeManager.pdfFingerprint
+      // Read from new "assessments" field (or legacy "compile") for premise data
+      const premiseSource = currentCriterionGroup.config.options.assessments || currentCriterionGroup.config.options.compile
+      if (premiseSource && premiseSource.length > 0) {
+        const findCompile = premiseSource.find((entry) => {
+          return entry.document === window.abwa.contentTypeManager.pdfFingerprint
         })
-        if (findResume) {
-          compile = findResume
+        if (findCompile) {
+          compile = findCompile
         }
       }
-      let alternative = ''
-      if (currentCriterionGroup.config.options.alternative && currentCriterionGroup.config.options.alternative.length > 0) {
-        const findAlternative = currentCriterionGroup.config.options.alternative.find((alternative) => {
-          return alternative.document === window.abwa.contentTypeManager.pdfFingerprint
+      let assessments = ''
+      if (currentCriterionGroup.config.options.assessments && currentCriterionGroup.config.options.assessments.length > 0) {
+        const findAssessment = currentCriterionGroup.config.options.assessments.find((a) => {
+          return a.document === window.abwa.contentTypeManager.pdfFingerprint
         })
-        if (findAlternative) {
-          if (Array.isArray(findAlternative.answer)) {
-            alternative = findAlternative.answer.join('')
-          }
-          else  {
-            alternative = findAlternative.answer
-          }
+        if (findAssessment) {
+          assessments = findAssessment
         }
       }
-      let fullQuestion = ''
-      if (currentCriterionGroup.config.options.fullQuestion && currentCriterionGroup.config.options.fullQuestion.length > 0) {
-        const findFullQuestion = currentCriterionGroup.config.options.fullQuestion.find((question) => {
-          return question.document === window.abwa.contentTypeManager.pdfFingerprint
-        })
-        if (findFullQuestion) {
-          fullQuestion = findFullQuestion
+      // Backward compat: old format with separate alternative/fullQuestion arrays
+      if (!assessments) {
+        let alternative = ''
+        if (currentCriterionGroup.config.options.alternative && currentCriterionGroup.config.options.alternative.length > 0) {
+          const findAlternative = currentCriterionGroup.config.options.alternative.find((alt) => {
+            return alt.document === window.abwa.contentTypeManager.pdfFingerprint
+          })
+          if (findAlternative) {
+            alternative = findAlternative
+          }
+        }
+        let fullQuestion = ''
+        if (currentCriterionGroup.config.options.fullQuestion && currentCriterionGroup.config.options.fullQuestion.length > 0) {
+          const findFullQuestion = currentCriterionGroup.config.options.fullQuestion.find((question) => {
+            return question.document === window.abwa.contentTypeManager.pdfFingerprint
+          })
+          if (findFullQuestion) {
+            fullQuestion = findFullQuestion
+          }
+        }
+        if (alternative || fullQuestion) {
+          assessments = {
+            document: (alternative && alternative.document) || (fullQuestion && fullQuestion.document),
+            adaptedQuestion: fullQuestion ? fullQuestion.fullQuestion : '',
+            answer: alternative ? alternative.answer : '',
+            excerpt: alternative ? alternative.excerpt : '',
+            argument: alternative ? alternative.argument : '',
+            counterargument: alternative ? alternative.counterargument : '',
+            llm: alternative ? alternative.llm : ''
+          }
         }
       }
       let description = ''
@@ -162,18 +182,15 @@ class ReviewGenerator {
       if (compile) {
         data.compile = compile
       }
-      if (alternative) {
-        data.alternative = alternative
-      }
-      if (fullQuestion) {
-        data.fullQuestion = fullQuestion
+      if (assessments) {
+        data.assessments = assessments
       }
       if (description) {
         data.description = description
       }
       let assessedTag = new AssessedTag(data)
       r.insertCriteria(assessedTag)
-      if (compile || alternative || (tagGroupAnnotations && tagGroupAnnotations.length > 0)) {
+      if (compile || assessments || (tagGroupAnnotations && tagGroupAnnotations.length > 0)) {
         r.insertAssessedCriteria(assessedTag)
       }
     })
@@ -250,15 +267,42 @@ class ReviewGenerator {
       }
 
       const description = parsed.description || ''
+      const group = parsed.group || ''
 
-      if (Array.isArray(parsed.compile)) {
-        parsed.compile.forEach(entry => {
+      // For Premises: read from assessments (new) or compile (legacy)
+      const premiseData = parsed.assessments || parsed.compile
+      if (Array.isArray(premiseData)) {
+        premiseData.forEach(entry => {
           result.push({
             criteria,
             description,
             document: entry.document,
             answer: entry.answer,
             llm: entry.answer && entry.answer.llm ? entry.answer.llm : (entry.llm || '')
+          })
+        })
+      }
+      // For Critical Questions: read from assessments
+      if (Array.isArray(parsed.assessments)) {
+        parsed.assessments.forEach(entry => {
+          result.push({
+            criteria,
+            description,
+            document: entry.document,
+            answer: entry.answer,
+            llm: entry.llm || ''
+          })
+        })
+      }
+      // Backward compat: old format with separate alternative array
+      if (Array.isArray(parsed.alternative)) {
+        parsed.alternative.forEach(entry => {
+          result.push({
+            criteria,
+            description,
+            document: entry.document,
+            answer: entry.answer,
+            llm: entry.llm || ''
           })
         })
       }

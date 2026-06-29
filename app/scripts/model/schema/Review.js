@@ -1,5 +1,6 @@
 const ReviewSchema = require('./ReviewSchema')
-const SchemaCriterion = require('./SchemaCriterion')
+const Premise = require('./Premise')
+const CriticalQuestion = require('./CriticalQuestion')
 const LanguageUtils = require('../../utils/LanguageUtils')
 const DefaultCriteria = require('./DefaultCriteria')
 
@@ -9,10 +10,16 @@ class Review extends ReviewSchema {
     this.criterias = this.schemaElements
   }
 
+  _createCriterion ({ name, description, group, review, ...rest }) {
+    if (group === 'Critical questions') {
+      return new CriticalQuestion({ name, description, group, review, ...rest })
+    }
+    return new Premise({ name, description, group, review, ...rest })
+  }
+
   toAnnotations () {
     let annotations = []
     annotations.push(this.toAnnotation())
-    // Create annotations for all criterias
     for (let i = 0; i < this.criterias.length; i++) {
       annotations = annotations.concat(this.criterias[i].toAnnotations())
     }
@@ -29,43 +36,35 @@ class Review extends ReviewSchema {
       tags: ['review:default'],
       target: [],
       text: '',
-      uri: this.storageGroup.links ? this.storageGroup.links.html : this.storageGroup.url // Compatibility with both group representations getGroups and userProfile
+      uri: this.storageGroup.links ? this.storageGroup.links.html : this.storageGroup.url
     }
   }
 
   static fromCriterias2 (criterias) {
     let review = new Review({reviewId: ''})
     for (let i = 0; i < criterias.length; i++) {
-      let schemaCriterion = new SchemaCriterion({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
-      review.criterias.push(schemaCriterion)
+      let c = criterias[i]
+      let criterion = this.prototype._createCriterion({
+        name: c.name, description: c.description, group: c.group,
+        review, feedback: c.feedback
+      })
+      review.criterias.push(criterion)
     }
     return review
   }
 
   static fromCriterias (criteriaJSON) {
     let review = new Review({ reviewId: '' })
-
-    // Iterate over top-level groups: "Premises", "CriticalQuestions"
     for (const group in criteriaJSON) {
       if (criteriaJSON.hasOwnProperty(group)) {
         const criteriaGroup = criteriaJSON[group]
-
-        // Iterate over individual criteria inside each group
         for (const name in criteriaGroup) {
           if (criteriaGroup.hasOwnProperty(name)) {
             const description = criteriaGroup[name].description
-
-            let schemaCriterion = new SchemaCriterion({
-              name: name,
-              description: description,
-              custom: true,
-              group: group,
-              resume: '',
-              alternative: '',
-              review: review
+            let criterion = this.prototype._createCriterion({
+              name, description, group, review
             })
-
-            review.criterias.push(schemaCriterion)
+            review.criterias.push(criterion)
           }
         }
       }
@@ -76,8 +75,12 @@ class Review extends ReviewSchema {
   static fromDeceptionSchema (criterias) {
     let review = new Review({reviewId: ''})
     for (let i = 0; i < criterias.length; i++) {
-      let schemaCriterion = new SchemaCriterion({name: criterias[i].name, description: criterias[i].description, custom: criterias[i].custom, group: criterias[i].group, resume: criterias[i].resume, alternative: criterias[i].alternative, review})
-      review.criterias.push(schemaCriterion)
+      let c = criterias[i]
+      let criterion = this.prototype._createCriterion({
+        name: c.name, description: c.description, group: c.group,
+        review, feedback: c.feedback
+      })
+      review.criterias.push(criterion)
     }
     return review
   }
@@ -87,10 +90,9 @@ class Review extends ReviewSchema {
       criteria: [],
       defaultLevels: DefaultCriteria.defaultLevels
     }
-    // For each criteria create the object
     for (let i = 0; i < this.criterias.length; i++) {
       let criteria = this.criterias[i]
-      if (LanguageUtils.isInstanceOf(criteria, SchemaCriterion)) {
+      if (LanguageUtils.isInstanceOf(criteria, Premise) || LanguageUtils.isInstanceOf(criteria, CriticalQuestion)) {
         object.criteria.push(criteria.toObject())
       }
     }

@@ -45,14 +45,15 @@ const Config = {
       'Argument Scheme for analyzing deception:\n' + '[C_SCHEME]' +
       'Now I want to answer a critical question for Argument deception. The critical question is: [C_DESCRIPTION]\n' +
       'Based on the above, I want you to analyse the provided story, then instantiate the question with the values from the story and answer the question. ' +
-      'I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.\'' +
+      'I want to provide an argument and counterargument for the given critical questions, specifying the available evidence that supports the argument and counter-argument and the available counter-evidence that falsifies the argument or the counter-argument.\n' +
       'Please analyze the full story and generate a JSON response. The JSON must provide a text excerpt from the story that supports your answer for the question. The excerpt should come to the point and be quite brief, so be thrifty. The format should be as follows:\n' +
       '{\n' +
       '"name": "[C_NAME]",\n' +
-      '"adaptedQuestion": "the question [C_DESCRIPTION}, but rewritten with the values of the story",\n' +
+      '"adaptedQuestion": "the question [C_DESCRIPTION], but rewritten with the values of the story",\n' +
       '"answer": "[Statement of the premise based on the description, you have to rewrite it to the case in hand, for example you have to provide the values for the v, alpha, s, Agents and claims]",\n' +
-      '"excerpt": "[Provide one excerpt from the story that justifies the statement of the premise. Exact substring from STORY. In JSON, strings must use double quotes, so any inner " must be escaped]",\n' +
-      '"arguments": "Return a SINGLE string with EXACTLY two bullets using </br>- as the only list marker: </br>- Argument: [your reasoning]. </br>- Counterargument: [your reasoning]. Use 1–2 sentences for each reasoning; do NOT add new JSON keys or extra bullets; do NOT include text outside this field.",\n' +
+      '"excerpt": "[Provide one excerpt from the story that justifies the statement of the premise. Exact substring from STORY. In JSON, strings must use double quotes, so any inner \\" must be escaped]",\n' +
+      '"argument": "[Your argument reasoning]",\n' +
+      '"counterargument": "[Your counterargument reasoning]",\n' +
       '}\n' +
       'When using this prompt, replace the placeholders with the actual content of the story and your answer. CONSTRAINTS:\n' +
       '- The excerpt MUST be found in the STORY (case-sensitive).\n' +

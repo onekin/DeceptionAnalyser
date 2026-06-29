@@ -291,10 +291,15 @@ class CriteriaManager {
       let color
       if (criterionGroup.config.name === 'Conclusion') {
         color = 'grey'
-        if (criterionGroup.config.options.compile) {
-          let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-          if (foundCompile && foundCompile.sentiment) {
-            color = foundCompile.sentiment
+        // Check new "assessments" field first, fall back to legacy "compile"
+        const conclusionSource = criterionGroup.config.options.assessments || criterionGroup.config.options.compile
+        if (conclusionSource) {
+          let foundEntry = conclusionSource.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (foundEntry) {
+            const sentiment = foundEntry.answer?.sentiment || foundEntry.sentiment
+            if (sentiment) {
+              color = sentiment
+            }
           }
         }
       } else {
@@ -415,10 +420,13 @@ class CriteriaManager {
         window.abwa.specific.customCriteriaManager.annotateAllPremises(name)
       } else if (name === 'Critical questions') {
         let conclusionCriterionGroup = _.find(window.abwa.criteriaManager.currentCriterionGroups, criterionGroup => criterionGroup.config.name === 'Conclusion')
-        if (conclusionCriterionGroup && conclusionCriterionGroup.config.options.compile) {
+        // Check new "assessments" field first, fall back to legacy "compile"
+        const conclusionSource = conclusionCriterionGroup && (conclusionCriterionGroup.config.options.assessments || conclusionCriterionGroup.config.options.compile)
+        if (conclusionSource) {
           // check if it has the sentiment
-          let foundCompile = conclusionCriterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-          if (foundCompile && foundCompile.sentiment) {
+          let foundEntry = conclusionSource.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          const sentiment = foundEntry && (foundEntry.answer?.sentiment || foundEntry.sentiment)
+          if (foundEntry && sentiment) {
             window.abwa.specific.customCriteriaManager.formulateAllCriticalQuestions(name)
           } else {
             Alerts.errorAlert({ title: 'Please draw the conclusions first' })
@@ -524,8 +532,8 @@ class CriteriaManager {
         // Add image for Premises buttons that have sentiment but no annotations
         let criteriaName = tagButton.dataset.mark
         let criterionGroup = _.find(_.values(this.currentCriterionGroups), (cg) => { return cg.config.name === criteriaName })
-        if (criterionGroup && criterionGroup.config.options.compile) {
-          let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        if (criterionGroup && (criterionGroup.config.options.assessments || criterionGroup.config.options.compile)) {
+          let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
           let sentiment
           if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
             sentiment = foundCompile.answer.sentiment
@@ -562,10 +570,10 @@ class CriteriaManager {
         let arrayOfCriterionGroups = _.values(this.currentCriterionGroups)
         let conclusionSentiment
         let conclusionCriterion = _.find(arrayOfCriterionGroups, (criterionGroup) => { return criterionGroup.config.name === 'Conclusion' })
-        if (conclusionCriterion.config.options.compile) {
-          let foundCompile = conclusionCriterion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-          if (foundCompile && foundCompile.sentiment) {
-            conclusionSentiment = foundCompile.sentiment
+        if ((conclusionCriterion.config.options.assessments || conclusionCriterion.config.options.compile)) {
+          let foundCompile = (conclusionCriterion.config.options.assessments || conclusionCriterion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if (foundCompile && (foundCompile.answer?.sentiment || foundCompile.sentiment)) {
+            conclusionSentiment = foundCompile.answer?.sentiment || foundCompile.sentiment
           }
           // Change to a darker color
           if (conclusionSentiment) {
@@ -615,8 +623,8 @@ class CriteriaManager {
           tagButton.dataset.chosen = 'true'
           tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + criterionGroup.config.name
           let sentiment
-          if (criterionGroup.config.options.compile) {
-            let foundCompile = criterionGroup.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          if ((criterionGroup.config.options.assessments || criterionGroup.config.options.compile)) {
+            let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
             if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
               sentiment = foundCompile.answer.sentiment
             }
