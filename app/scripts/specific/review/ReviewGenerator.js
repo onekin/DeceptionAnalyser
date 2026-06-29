@@ -49,9 +49,6 @@ class ReviewGenerator {
       this.configurationImage.addEventListener('click', () => {
         this.configurationButtonHandler()
       })
-      if (_.isFunction(callback)) {
-        callback()
-      }
       // New schema button
       // let newSchemaImageURL = chrome.runtime.getURL('/images/add.png')
       this.newSchemaImage = this.container.querySelector('#newSchemaButton')

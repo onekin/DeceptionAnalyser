@@ -4,7 +4,6 @@
 
 /* Container backdrop with modern blur effect */
 .swal2-container {
-  zoom: 1.5 !important;
   z-index: $sidebarZIndex - 1 !important;
   backdrop-filter: blur(4px) !important;
   
@@ -21,7 +20,16 @@
   background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%) !important;
   border: 1px solid rgba(255, 255, 255, 0.8);
   padding: 2em !important;
-  animation: swalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+
+  // Entrance animation — only on show, no !important so SweetAlert2 can override for hide
+  &.swal2-show {
+    animation: swalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  // Exit animation — lets SweetAlert2's swal2-hide class work
+  &.swal2-hide {
+    animation: swalSlideOut 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 }
 
 @keyframes swalSlideIn {
@@ -35,11 +43,22 @@
   }
 }
 
+@keyframes swalSlideOut {
+  from {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: scale(0.9) translateY(-20px);
+    opacity: 0;
+  }
+}
+
 /* Modern header with gradient */
 .swal2-title {
   color: #2c3e50 !important;
   font-weight: 700 !important;
-  font-size: 1.5em !important;
+  font-size: 2em !important;
   margin-bottom: 0.5em !important;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   -webkit-background-clip: text;
@@ -51,7 +70,7 @@
 /* Content area */
 .swal2-html-container {
   color: #495057 !important;
-  font-size: 1em !important;
+  font-size: 1.3em !important;
   line-height: 1.6 !important;
   margin: 1em 0 !important;
 }
@@ -63,7 +82,7 @@
   border: 2px solid #e0e6ed !important;
   border-radius: 8px !important;
   padding: 0.75em 1em !important;
-  font-size: 0.95em !important;
+  font-size: 1.05em !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   background: #ffffff !important;
   color: #2c3e50 !important;
@@ -103,7 +122,7 @@
   border-radius: 8px !important;
   padding: 0.75em 2em !important;
   font-weight: 600 !important;
-  font-size: 0.95em !important;
+  font-size: 1.05em !important;
   border: none !important;
   cursor: pointer !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -229,7 +248,7 @@
 /* Close button */
 .swal2-close {
   color: #6c757d !important;
-  font-size: 2em !important;
+  font-size: 2.2em !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   
   &:hover {

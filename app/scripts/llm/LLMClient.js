@@ -13,7 +13,7 @@ class LLMClient {
       text: message,
       allowEscapeKey: false,
       allowOutsideClick: false,
-      onOpen: async () => {
+      didOpen: async () => {
         Swal.showLoading()
         const b = document.getElementById('swal2-title')
         b.innerText = 'Asking ' + LanguageUtils.ucFirst(llm.modelType)
@@ -21,6 +21,9 @@ class LLMClient {
           if (chrome.runtime.lastError) {
             Swal.close()
             Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + chrome.runtime.lastError.message })
+          } else if (!response || !response.res) {
+            Swal.close()
+            Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': unexpected empty response' })
           } else if (response.res.error) {
             Swal.close()
             Alerts.errorAlert({ title: 'Unable to ask ' + llm.modelType + ': ' + response.res.error })
@@ -56,6 +59,8 @@ class LLMClient {
     chrome.runtime.sendMessage({ scope: 'askLLM', cmd: llm.modelType, data: {apiKey: apiKey, query: prompt, llm: llm} }, function (response) {
       if (chrome.runtime.lastError) {
         Alerts.errorAlert({ title: 'Unable to ask OpenAI: ' + chrome.runtime.lastError.message })
+      } else if (!response || !response.res) {
+        Alerts.errorAlert({ title: 'Unable to ask OpenAI: unexpected empty response' })
       } else if (response.res.error) {
         Alerts.errorAlert({ title: 'Unable to ask OpenAI: ' + response.res.error })
       } else {

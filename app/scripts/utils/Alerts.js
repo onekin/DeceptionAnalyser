@@ -20,7 +20,6 @@ class Alerts {
       swal.fire({
         title: title,
         html: text,
-        icon: alertType,
         showCancelButton: showCancelButton,
         cancelButtonText: cancelButtonText,
         confirmButtonText: confirmButtonText
@@ -49,7 +48,6 @@ class Alerts {
       }
     } else {
       swal.fire({
-        icon: Alerts.alertType.info,
         title: title,
         confirmButtonText: confirmButtonText,
         html: text
@@ -71,7 +69,6 @@ class Alerts {
       }
     } else {
       swal.fire({
-        icon: Alerts.alertType.info,
         title: title,
         showConfirmButton: false,
         html: `
@@ -109,7 +106,7 @@ class Alerts {
     }
   }
 
-  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null, currentTagGroup = null}) {
+  static criterionInfoAlert ({text = chrome.i18n.getMessage('expectedInfoMessageNotFound'), title = 'Info', callback, confirmButtonText = 'OK', width, showCancelButton = false, cancelButtonText = 'Cancel', cancelButtonColor = '#757575', cancelCallback = null, currentTagGroup = null, showCloseButton = false}) {
     Alerts.tryToLoadSwal()
     if (_.isNull(swal)) {
       if (_.isFunction(callback)) {
@@ -117,29 +114,35 @@ class Alerts {
       }
     } else {
       swal.fire({
-        icon: Alerts.alertType.info,
         title: title,
         confirmButtonText: confirmButtonText,
         html: text,
+        width: width || '900px',
         showCancelButton: showCancelButton,
         cancelButtonText: cancelButtonText,
         cancelButtonColor: cancelButtonColor,
-        onBeforeOpen: () => {
-          let element = document.querySelector('.swal2-popup')
-          element.style.width = '900px'
-        },
+        showCloseButton: showCloseButton,
+        allowEscapeKey: true,
+        allowOutsideClick: true,
         didOpen: () => {
-          // Attach listeners here after modal content is in DOM
+          // Attach listeners for sentiment images
           const container = document.querySelector('#sentiment-container')
-          if (!container) return
-          container.querySelectorAll('img[data-sentiment]').forEach(img => {
-            img.addEventListener('click', () => {
-              const selected = img.getAttribute('data-sentiment')
-              // Store your sentiment value however you want
-              CustomCriteriasManager.attachSentimentListeners(currentTagGroup, selected)
-              // Optionally close modal or re-render it
+          if (container) {
+            container.querySelectorAll('img[data-sentiment]').forEach(img => {
+              img.addEventListener('click', () => {
+                const selected = img.getAttribute('data-sentiment')
+                CustomCriteriasManager.attachSentimentListeners(currentTagGroup, selected)
+              })
             })
-          })
+          }
+          // Attach listener for in-content feedback button (if present)
+          const feedbackBtn = document.getElementById('swal-feedback-btn')
+          if (feedbackBtn && _.isFunction(cancelCallback)) {
+            feedbackBtn.addEventListener('click', () => {
+              swal.close()
+              setTimeout(() => { cancelCallback(null) }, 300)
+            })
+          }
         }
       }).then((result) => {
         /* Read more about isConfirmed, isDenied below */
@@ -147,7 +150,9 @@ class Alerts {
           if (_.isFunction(callback)) {
             callback(null)
           }
-        } else {
+        } else if (result.dismiss === swal.DismissReason.cancel) {
+          // Only trigger cancelCallback when the cancel button itself was clicked,
+          // not when dismissed via Escape or clicking outside
           if (_.isFunction(cancelCallback)) {
             cancelCallback(null)
           }
@@ -208,7 +213,6 @@ class Alerts {
       }
     } else {
       swal.fire({
-        icon: Alerts.alertType.error,
         title: title,
         html: text,
         onClose: onClose
@@ -242,7 +246,6 @@ class Alerts {
       }
     } else {
       swal.fire({
-        icon: 'success',
         title: title,
         html: text,
         allowOutsideClick: true,
@@ -299,7 +302,6 @@ class Alerts {
         inputPlaceholder: inputPlaceholder,
         inputValue: inputValue,
         html: html,
-        icon: type,
         preConfirm: preConfirm,
         showCancelButton: showCancelButton
       }).then((result) => {

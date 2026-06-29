@@ -904,7 +904,7 @@ class CustomCriteriasManager {
                   Alerts.infoAlert({
                     text: 'Please, configure your LLM.',
                     title: 'Please select a LLM and provide your API key',
-                    callback: callback()
+                    callback: callback
                   })
                 }
               })
@@ -1040,7 +1040,7 @@ class CustomCriteriasManager {
                     Alerts.infoAlert({
                       text: 'Please, configure your LLM.',
                       title: 'Please select a LLM and provide your API key',
-                      callback: callback()
+                      callback: callback
                     })
                   }
                 })
@@ -1187,7 +1187,6 @@ class CustomCriteriasManager {
                               tagAnnotations.push(tagAnnotation)
                             })
                           }
-                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
                           // Conclusion
                           let conclusionData
                           let conclusionTagGroup = _.find(window.abwa.tagManager.currentTags, currentTag => currentTag.config.name === conclusion.name)
@@ -1210,7 +1209,8 @@ class CustomCriteriasManager {
                           }
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
                           tagAnnotations.push(conclusionAnnotation)
-                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: [conclusionAnnotation]})
+                          // Single dispatch: save premises + conclusion together so reloadTags runs only once
+                          LanguageUtils.dispatchCustomEvent(Events.updateTagAnnotations, {annotations: tagAnnotations})
                           Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
                         }
                       }
@@ -1227,7 +1227,7 @@ class CustomCriteriasManager {
                 Alerts.infoAlert({
                   text: 'Please, configure your LLM.',
                   title: 'Please select a LLM and provide your API key',
-                  callback: callback()
+                  callback: callback
                 })
               }
             })
@@ -1405,16 +1405,18 @@ class CustomCriteriasManager {
                           conclusion = premise
                         } else {
                           scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                          if (premise.config.options.compile.answer) {
-                            scheme += premise.config.options.compile.answer + '\n'
+                          const premiseCompile = Array.isArray(premise.config.options.compile) ? premise.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                          if (premiseCompile && premiseCompile.answer) {
+                            scheme += premiseCompile.answer + '\n'
                           } else {
                             scheme += premise.config.options.description + '\n'
                           }
                         }
                       }
+                      const conclusionCompile = Array.isArray(conclusion.config.options.compile) ? conclusion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
+                      if (conclusionCompile && conclusionCompile.answer) {
+                        scheme += conclusionCompile.answer + '\n'
                       } else {
                         scheme += conclusion.config.options.description + '\n'
                       }
@@ -1437,7 +1439,7 @@ class CustomCriteriasManager {
                   Alerts.infoAlert({
                     text: 'Please, configure your LLM.',
                     title: 'Please select a LLM and provide your API key',
-                    callback: callback()
+                    callback: callback
                   })
                 }
               })
@@ -1569,16 +1571,18 @@ class CustomCriteriasManager {
                             conclusion = premise
                           } else {
                             scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                            if (premise.config.options.compile.answer) {
-                              scheme += premise.config.options.compile.answer + '\n'
+                            const premiseCompile = Array.isArray(premise.config.options.compile) ? premise.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                            if (premiseCompile && premiseCompile.answer) {
+                              scheme += premiseCompile.answer + '\n'
                             } else {
                               scheme += premise.config.options.description + '\n'
                             }
                           }
                         }
+                        const conclusionCompile = Array.isArray(conclusion.config.options.compile) ? conclusion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
                         scheme += conclusion.config.name.toUpperCase() + ': '
-                        if (conclusion.config.options.compile.answer) {
-                          scheme += conclusion.config.options.compile.answer + '\n'
+                        if (conclusionCompile && conclusionCompile.answer) {
+                          scheme += conclusionCompile.answer + '\n'
                         } else {
                           scheme += conclusion.config.options.description + '\n'
                         }
@@ -1610,7 +1614,7 @@ class CustomCriteriasManager {
                     Alerts.infoAlert({
                       text: 'Please, configure your LLM.',
                       title: 'Please select a LLM and provide your API key',
-                      callback: callback()
+                      callback: callback
                     })
                   }
                 })
@@ -1663,17 +1667,19 @@ class CustomCriteriasManager {
                         conclusion = premise
                       } else {
                         scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                        if (premise.config.options.compile.answer) {
-                          scheme += premise.config.options.compile.answer + '\n'
+                        const premiseCompile = Array.isArray(premise.config.options.compile) ? premise.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                        if (premiseCompile && premiseCompile.answer) {
+                          scheme += premiseCompile.answer + '\n'
                         } else {
                           scheme += premise.config.options.description + '\n'
                         }
                       }
                     }
                     if (conclusion) {
+                      const conclusionCompile = Array.isArray(conclusion.config.options.compile) ? conclusion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
+                      if (conclusionCompile && conclusionCompile.answer) {
+                        scheme += conclusionCompile.answer + '\n'
                       } else {
                         scheme += conclusion.config.options.description + '\n'
                       }
@@ -1796,7 +1802,7 @@ class CustomCriteriasManager {
                 Alerts.infoAlert({
                   text: 'Please, configure your LLM.',
                   title: 'Please select a LLM and provide your API key',
-                  callback: callback()
+                  callback: callback
                 })
               }
             })
@@ -1873,16 +1879,18 @@ class CustomCriteriasManager {
                           conclusion = premise
                         } else {
                           scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                          if (premise.config.options.compile.answer) {
-                            scheme += premise.config.options.compile.answer + '\n'
+                          const premiseCompile = Array.isArray(premise.config.options.compile) ? premise.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                          if (premiseCompile && premiseCompile.answer) {
+                            scheme += premiseCompile.answer + '\n'
                           } else {
                             scheme += premise.config.options.description + '\n'
                           }
                         }
                       }
+                      const conclusionCompile = Array.isArray(conclusion.config.options.compile) ? conclusion.config.options.compile.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
-                      if (conclusion.config.options.compile.answer) {
-                        scheme += conclusion.config.options.compile.answer + '\n'
+                      if (conclusionCompile && conclusionCompile.answer) {
+                        scheme += conclusionCompile.answer + '\n'
                       } else {
                         scheme += conclusion.config.options.description + '\n'
                       }
@@ -1904,7 +1912,7 @@ class CustomCriteriasManager {
                   Alerts.infoAlert({
                     text: 'Please, configure your LLM.',
                     title: 'Please select a LLM and provide your API key',
-                    callback: callback()
+                    callback: callback
                   })
                 }
               })
@@ -1984,7 +1992,7 @@ class CustomCriteriasManager {
         if (annotation.text) {
           let body = JSON.parse(annotation.text)
           if (body.paragraph) {
-            paragraphs.push('(page ' + pageSelector.page + '): ' + body.paragraph.replace(/(\r\n|\n|\r)/gm, ''))
+            paragraphs.push('(page ' + pageSelector.page + '): ' + body.paragraph.replace(/(\r\n|\n|\r)/gm, ' '))
           } else {
             let fragmentTextSelector
             if (selectors) {
@@ -1993,7 +2001,7 @@ class CustomCriteriasManager {
               })
             }
             if (fragmentTextSelector) {
-              paragraphs.push('(page' + pageSelector.page + '): ' + fragmentTextSelector.exact.replace(/(\r\n|\n|\r)/gm, ''))
+              paragraphs.push('(page ' + pageSelector.page + '): ' + fragmentTextSelector.exact.replace(/(\r\n|\n|\r)/gm, ' '))
             }
           }
         }
@@ -2070,9 +2078,9 @@ class CustomCriteriasManager {
         html += `
         <h3>Sentiment:</h3>
         <div id="sentiment-container" style="width:800px; display:flex; gap:20px; align-items:center;">
-          <img src="${redFace}" data-sentiment="red" style="height:50px; cursor:pointer; ${sentiment === 'red' ? 'border:4px solid red; border-radius:8px;' : ''}">
-          <img src="${yellowFace}" data-sentiment="yellow" style="height:50px; cursor:pointer; ${sentiment === 'yellow' ? 'border:4px solid orange; border-radius:8px;' : ''}">
-          <img src="${greenFace}" data-sentiment="green" style="height:50px; cursor:pointer; ${sentiment === 'green' ? 'border:4px solid green; border-radius:8px;' : ''}">
+          <img src="${redFace}" data-sentiment="red" style="height:35px; cursor:pointer; ${sentiment === 'red' ? 'border:4px solid red; border-radius:8px;' : ''}">
+          <img src="${yellowFace}" data-sentiment="yellow" style="height:35px; cursor:pointer; ${sentiment === 'yellow' ? 'border:4px solid orange; border-radius:8px;' : ''}">
+          <img src="${greenFace}" data-sentiment="green" style="height:35px; cursor:pointer; ${sentiment === 'green' ? 'border:4px solid green; border-radius:8px;' : ''}">
         </div><br/>
       `
       }
@@ -2104,18 +2112,15 @@ class CustomCriteriasManager {
         html += '<h3>Excerpt:</h3><div width=800px>' + excerpt + '</div></br>'
       }
       html += '</div>'
-      let cancelButtonText
-      if (feedback) {
-        cancelButtonText = 'Edit feedback'
-      } else {
-        cancelButtonText = 'Provide feedback'
-      }
+      const feedbackLabel = feedback ? 'Edit feedback' : 'Provide feedback'
+      html += `<div style="text-align:right; margin-top:8px; padding-top:8px; border-top:1px solid #eee;">
+        <button id="swal-feedback-btn" style="background:none;border:none;color:#3085d6;cursor:pointer;font-size:0.9em;text-decoration:underline;padding:0;">${feedbackLabel}</button>
+      </div>`
       Alerts.criterionInfoAlert({
-        title: criterion,
+        title: 'Analysis: ' + criterion,
         text: html,
-        cancelButtonText: cancelButtonText,
-        showCancelButton: true,
-        cancelButtonColor: '#d2371d',
+        confirmButtonText: 'Close',
+        width: '900px',
         currentTagGroup: currentTagGroup,
         cancelCallback: () => {
           CustomCriteriasManager.provideFeedback(currentTagGroup, findFeedback)

@@ -70,36 +70,28 @@ class LLMManager {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.scope === 'askLLM') {
         if (request.cmd === 'anthropic') {
-          if (request.data.documents) {
-            this.askAnthropic(request).then(
-              res => sendResponse({ res: res }),
-              err => sendResponse({ err: err })
-            )// Return the error inside the message handler
-          }
+          this.askAnthropic(request).then(
+            res => sendResponse({ res: res }),
+            err => sendResponse({ err: err })
+          )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'openAI') {
-          if (request.data.documents) {
-            this.askOpenAI(request).then(
-              res => sendResponse({ res: res }),
-              err => sendResponse({ err: err })
-            )// Return the error inside the message handler
-          }
+          this.askOpenAI(request).then(
+            res => sendResponse({ res: res }),
+            err => sendResponse({ err: err })
+          )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'gemini') {
-          if (request.data.documents) {
-            this.askGemini(request).then(
-              res => sendResponse({ res: res }),
-              err => sendResponse({ err: err })
-            )// Return the error inside the message handler
-          }
+          this.askGemini(request).then(
+            res => sendResponse({ res: res }),
+            err => sendResponse({ err: err })
+          )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'groq') {
-          if (request.data.documents) {
-            this.askGroq(request).then(
-              res => sendResponse({ res: res }),
-              err => sendResponse({ err: err })
-            )// Return the error inside the message handler
-          }
+          this.askGroq(request).then(
+            res => sendResponse({ res: res }),
+            err => sendResponse({ err: err })
+          )// Return the error inside the message handler
           return true // Return true inside the message handler
         }
       }
@@ -109,7 +101,7 @@ class LLMManager {
   async askGemini (request) {
     const apiKey = request.data.apiKey
     const query = request.data.query
-    const documents = request.data.documents
+    const documents = request.data.documents || ''
     const modelName = request.data.llm.model
     const model = new ChatGoogleGenerativeAI({
       apiKey: apiKey,
@@ -136,7 +128,7 @@ class LLMManager {
   async askOpenAI (request) {
     const apiKey = request.data.apiKey
     const query = request.data.query
-    const documents = request.data.documents
+    const documents = request.data.documents || ''
     // create model
     const modelName = request.data.llm.model
     const model = new ChatOpenAI({
@@ -168,7 +160,7 @@ class LLMManager {
     const apiKey = request.data.apiKey
     const query = request.data.query
     const modelName = request.data.llm.model
-    const documents = request.data.documents
+    const documents = request.data.documents || ''
     // create model
     const model = new ChatAnthropic({
       anthropicApiKey: apiKey,
@@ -196,7 +188,7 @@ class LLMManager {
     const apiKey = request.data.apiKey
     const query = request.data.query
     const modelName = request.data.llm.model
-    const documents = request.data.documents
+    const documents = request.data.documents || ''
     // create model
     const model = new ChatGroq({
       apiKey: apiKey,
