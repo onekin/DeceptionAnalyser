@@ -273,6 +273,10 @@ class CustomCriteriaManager {
     this.destroyContextMenus()
     this.initContextMenuForCriteria()
     this.initContextMenuForCriteriaGroups()
+    // Refresh LLM indicator
+    if (window.abwa.specific && window.abwa.specific.reviewGenerator) {
+      window.abwa.specific.reviewGenerator.updateLLMIndicator()
+    }
   }
 
   initContextMenuForCriteriaGroups () {
@@ -384,7 +388,7 @@ class CustomCriteriaManager {
                       text: 'Please, retrieve the major premise to draw the conclusion.'
                     })
                   } else if ((majorTag.config.options.assessments || majorTag.config.options.compile)) {
-                    currentMajorPremise = (majorTag.config.options.assessments || majorTag.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    currentMajorPremise = (majorTag.config.options.assessments || majorTag.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                     if (currentMajorPremise) {
                       this.annotatePremise(criterion, description, currentCriterionGroup.config.annotation)
                     } else {
@@ -409,7 +413,7 @@ class CustomCriteriaManager {
                     text: 'Please, retrieve a conclusion to formulate a critical question.'
                   })
                 } else if ((conclusionTag.config.options.assessments || conclusionTag.config.options.compile)) {
-                  currentConclusion = (conclusionTag.config.options.assessments || conclusionTag.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                  currentConclusion = (conclusionTag.config.options.assessments || conclusionTag.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                   if (currentConclusion) {
                     this.getParagraphs(criterion, (paragraphs) => {
                       this.formulateCriticalQuestion(criterion, description, currentCriterionGroup.config.annotation, paragraphs)
@@ -612,14 +616,14 @@ class CustomCriteriaManager {
     let fullQuestion = defaultFullQuestion || ''
     // Read adaptedQuestion from new assessments format, with fallback to old fullQuestion array
     if (!fullQuestion && tagGroup.config.options.assessments && Array.isArray(tagGroup.config.options.assessments)) {
-      let foundAssessment = tagGroup.config.options.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+      let foundAssessment = tagGroup.config.options.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
       if (foundAssessment && foundAssessment.adaptedQuestion) {
         fullQuestion = foundAssessment.adaptedQuestion
       }
     }
     if (!fullQuestion && tagGroup.config.options.fullQuestion) {
       if (Array.isArray(tagGroup.config.options.fullQuestion)) {
-        let foundFQ = tagGroup.config.options.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        let foundFQ = tagGroup.config.options.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
         if (foundFQ) {
           fullQuestion = foundFQ.fullQuestion
         }
@@ -675,7 +679,7 @@ class CustomCriteriaManager {
         // Update adaptedQuestion in assessments (new format) or fullQuestion (old format)
         if (!_.isUndefined(fullQuestion)) {
           if (data.assessments && Array.isArray(data.assessments)) {
-            let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+            let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
             if (!foundAssessment) {
               data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: fullQuestion })
             } else {
@@ -686,7 +690,7 @@ class CustomCriteriaManager {
             if (!Array.isArray(data.fullQuestion)) {
               data.fullQuestion = [{ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: fullQuestion }]
             } else {
-              let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+              let foundFullQuestion = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
               if (!foundFullQuestion) {
                 data.fullQuestion.push({ document: window.abwa.contentTypeManager.pdfFingerprint, fullQuestion: fullQuestion })
               } else {
@@ -800,7 +804,7 @@ class CustomCriteriaManager {
     if (data) {
       data = jsYaml.load(data)
       if (data.feedback) {
-        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
       }
     }
     if (findFeedback) {
@@ -1028,7 +1032,7 @@ class CustomCriteriaManager {
                       }
                       prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
                       if (addFeedback) {
-                        let findStatement = previousAnswer.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        let findStatement = previousAnswer.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                         prompt = prompt + '\n\nYour previous answer for this same prompt has been: \n'
                         prompt = prompt + '"statement":' + findStatement.answer + '\n'
                         prompt = prompt + '"excerpt":' + paragraphs.replaceAll('paragraph1:', '') + '\n'
@@ -1191,7 +1195,7 @@ class CustomCriteriaManager {
                                 if (!Array.isArray(data.assessments)) {
                                   data.assessments = []
                                 }
-                                let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                                let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                                 if (!foundCompile) {
                                   // Store answer as standardized object {statement, excerpt, sentiment}
                                   data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model })
@@ -1213,7 +1217,7 @@ class CustomCriteriaManager {
                             if (!Array.isArray(conclusionData.assessments)) {
                               conclusionData.assessments = []
                             }
-                            let foundCompile = conclusionData.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                            let foundCompile = conclusionData.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                             if (!foundCompile) {
                               conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model })
                             } else {
@@ -1308,7 +1312,7 @@ class CustomCriteriaManager {
     if (data) {
       data = jsYaml.load(data)
       if (data.feedback) {
-        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+        findFeedback = data.feedback.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
       }
     }
     if (findFeedback) {
@@ -1378,7 +1382,7 @@ class CustomCriteriaManager {
                     if (!Array.isArray(data.assessments)) {
                       data.assessments = []
                     }
-                    let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                    let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                     if (!foundAssessment) {
                       data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
                     } else {
@@ -1413,7 +1417,7 @@ class CustomCriteriaManager {
                           conclusion = premise
                         } else {
                           scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                          const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                          const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                           if (premiseCompile && premiseCompile.answer) {
                             const answerText = premiseCompile.answer?.statement || premiseCompile.answer
                             scheme += answerText + '\n'
@@ -1422,7 +1426,7 @@ class CustomCriteriaManager {
                           }
                         }
                       }
-                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
                       if (conclusionCompile && conclusionCompile.answer) {
                         const conclusionText = conclusionCompile.answer?.statement || conclusionCompile.answer
@@ -1534,7 +1538,7 @@ class CustomCriteriaManager {
                       if (!Array.isArray(data.assessments)) {
                         data.assessments = []
                       }
-                      let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                      let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                       if (!foundAssessment) {
                         data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
                       } else {
@@ -1573,7 +1577,7 @@ class CustomCriteriaManager {
                             conclusion = premise
                           } else {
                             scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                            const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                            const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                             if (premiseCompile && premiseCompile.answer) {
                               const answerText = premiseCompile.answer?.statement || premiseCompile.answer
                               scheme += answerText + '\n'
@@ -1582,7 +1586,7 @@ class CustomCriteriaManager {
                             }
                           }
                         }
-                        const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                        const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                         scheme += conclusion.config.name.toUpperCase() + ': '
                         if (conclusionCompile && conclusionCompile.answer) {
                           const conclusionText = conclusionCompile.answer?.statement || conclusionCompile.answer
@@ -1593,8 +1597,8 @@ class CustomCriteriaManager {
                       }
                       prompt = prompt.replaceAll('[C_DESCRIPTION]', description).replaceAll('[C_NAME]', criterion).replaceAll('[C_SCHEME]', scheme)
                       if (addFeedback) {
-                        let findStatement = previousAnswer.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
-                        let findFullQuestion = previousAnswer.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                        let findStatement = previousAnswer.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
+                        let findFullQuestion = previousAnswer.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                         prompt = prompt + '\n\nYour previous answer for this same prompt has been: \n'
                         prompt = prompt + '"adaptedQuestion":' + findFullQuestion.fullQuestion + '\n'
                         prompt = prompt + '"answer":' + findStatement.answer + '\n'
@@ -1671,7 +1675,7 @@ class CustomCriteriaManager {
                         conclusion = premise
                       } else {
                         scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                        const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                        const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                         if (premiseCompile && premiseCompile.answer) {
                           const answerText = premiseCompile.answer?.statement || premiseCompile.answer
                           scheme += answerText + '\n'
@@ -1681,7 +1685,7 @@ class CustomCriteriaManager {
                       }
                     }
                     if (conclusion) {
-                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
                       if (conclusionCompile && conclusionCompile.answer) {
                         const conclusionText = conclusionCompile.answer?.statement || conclusionCompile.answer
@@ -1761,7 +1765,7 @@ class CustomCriteriaManager {
                               if (!Array.isArray(data.assessments)) {
                                 data.assessments = []
                               }
-                              let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+                              let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                               if (!foundAssessment) {
                                 data.assessments.push({
                                   document: window.abwa.contentTypeManager.pdfFingerprint,
@@ -1822,7 +1826,7 @@ class CustomCriteriaManager {
         let data = jsYaml.load(annotation.text)
         // Read from assessments (primary for CQs) or compile (fallback/premises)
         if (data.assessments) {
-          let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
           if (foundAssessment) {
             answer = foundAssessment
             question = foundAssessment
@@ -1830,10 +1834,10 @@ class CustomCriteriaManager {
         }
         // Backward compat: old format with separate fullQuestion array
         if (!question && data.fullQuestion) {
-          question = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          question = data.fullQuestion.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
         }
         if (!answer && data.assessments) {
-          let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
           if (foundCompile) {
             answer = foundCompile
           }
@@ -1890,7 +1894,7 @@ class CustomCriteriaManager {
                           conclusion = premise
                         } else {
                           scheme += premise.config.name.toUpperCase() + ' PREMISE: '
-                          const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                          const premiseCompile = Array.isArray((premise.config.options.assessments || premise.config.options.compile)) ? (premise.config.options.assessments || premise.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                           if (premiseCompile && premiseCompile.answer) {
                             const answerText = premiseCompile.answer?.statement || premiseCompile.answer
                             scheme += answerText + '\n'
@@ -1899,7 +1903,7 @@ class CustomCriteriaManager {
                           }
                         }
                       }
-                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint) : null
+                      const conclusionCompile = Array.isArray((conclusion.config.options.assessments || conclusion.config.options.compile)) ? (conclusion.config.options.assessments || conclusion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel)) : null
                       scheme += conclusion.config.name.toUpperCase() + ': '
                       if (conclusionCompile && conclusionCompile.answer) {
                         const conclusionText = conclusionCompile.answer?.statement || conclusionCompile.answer
@@ -1994,6 +1998,8 @@ class CustomCriteriaManager {
       }
     }
     if (tagGroupAnnotations) {
+      // Filter to only show annotations from the current LLM
+      tagGroupAnnotations = CustomCriteriaManager.filterAnnotationsByCurrentLLM(tagGroupAnnotations)
       for (let i = 0; i < tagGroupAnnotations.length; i++) {
         let annotation = tagGroupAnnotations[i]
         let selectors = annotation.target[0].selector
@@ -2224,6 +2230,8 @@ class CustomCriteriaManager {
       }
     }
     if (tagGroupAnnotations) {
+      // Filter to only show annotations from the current LLM
+      tagGroupAnnotations = CustomCriteriaManager.filterAnnotationsByCurrentLLM(tagGroupAnnotations)
       paragraphs = ''
       for (let i = 0; i < tagGroupAnnotations.length; i++) {
         let annotation = tagGroupAnnotations[i]
@@ -2251,6 +2259,22 @@ class CustomCriteriaManager {
     if (_.isFunction(callback)) {
       callback(paragraphs)
     }
+  }
+
+  // Filter document annotations (highlights) to only show those created by the current LLM.
+  // Manual annotations (no llm field) always pass through.
+  static filterAnnotationsByCurrentLLM (annotations) {
+    const currentLLM = window.abwa && window.abwa.currentLLMModel
+    if (!currentLLM) return annotations
+    if (!Array.isArray(annotations)) return annotations
+    return annotations.filter(a => {
+      if (!a.text) return true
+      try {
+        const parsed = typeof a.text === 'string' ? JSON.parse(a.text) : a.text
+        if (!parsed.llm) return true
+        return parsed.llm.model === currentLLM
+      } catch (e) { return true }
+    })
   }
 }
 

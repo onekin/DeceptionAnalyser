@@ -294,7 +294,11 @@ class CriteriaManager {
         // Check new "assessments" field first, fall back to legacy "compile"
         const conclusionSource = criterionGroup.config.options.assessments || criterionGroup.config.options.compile
         if (conclusionSource) {
-          let foundEntry = conclusionSource.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          const currentLLM = window.abwa && window.abwa.currentLLMModel
+          let foundEntry = conclusionSource.find(item =>
+            item.document === window.abwa.contentTypeManager.pdfFingerprint &&
+            (!currentLLM || !item.llm || item.llm === currentLLM)
+          )
           if (foundEntry) {
             const sentiment = foundEntry.answer?.sentiment || foundEntry.sentiment
             if (sentiment) {
@@ -424,7 +428,7 @@ class CriteriaManager {
         const conclusionSource = conclusionCriterionGroup && (conclusionCriterionGroup.config.options.assessments || conclusionCriterionGroup.config.options.compile)
         if (conclusionSource) {
           // check if it has the sentiment
-          let foundEntry = conclusionSource.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundEntry = conclusionSource.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
           const sentiment = foundEntry && (foundEntry.answer?.sentiment || foundEntry.sentiment)
           if (foundEntry && sentiment) {
             window.abwa.specific.customCriteriaManager.formulateAllCriticalQuestions(name)
@@ -533,7 +537,7 @@ class CriteriaManager {
         let criteriaName = tagButton.dataset.mark
         let criterionGroup = _.find(_.values(this.currentCriterionGroups), (cg) => { return cg.config.name === criteriaName })
         if (criterionGroup && (criterionGroup.config.options.assessments || criterionGroup.config.options.compile)) {
-          let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
           let sentiment
           if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
             sentiment = foundCompile.answer.sentiment
@@ -571,7 +575,7 @@ class CriteriaManager {
         let conclusionSentiment
         let conclusionCriterion = _.find(arrayOfCriterionGroups, (criterionGroup) => { return criterionGroup.config.name === 'Conclusion' })
         if ((conclusionCriterion.config.options.assessments || conclusionCriterion.config.options.compile)) {
-          let foundCompile = (conclusionCriterion.config.options.assessments || conclusionCriterion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+          let foundCompile = (conclusionCriterion.config.options.assessments || conclusionCriterion.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
           if (foundCompile && (foundCompile.answer?.sentiment || foundCompile.sentiment)) {
             conclusionSentiment = foundCompile.answer?.sentiment || foundCompile.sentiment
           }
@@ -619,12 +623,24 @@ class CriteriaManager {
           let numberOfAnnotations = annotations.filter((annotation) => {
             return AnnotationUtils.hasATag(annotation, tag)
           })
+          // Filter to only count annotations from the current LLM
+          const currentLLMModel = window.abwa && window.abwa.currentLLMModel
+          if (currentLLMModel) {
+            numberOfAnnotations = numberOfAnnotations.filter(a => {
+              if (!a.text) return true
+              try {
+                const parsed = typeof a.text === 'string' ? JSON.parse(a.text) : a.text
+                if (!parsed.llm) return true
+                return parsed.llm.model === currentLLMModel
+              } catch (e) { return true }
+            })
+          }
           let tagButton = this.criteriaContainer.evidencing.querySelector('.tagButton[data-mark="' + criterionGroup.config.name + '"]')
           tagButton.dataset.chosen = 'true'
           tagButton.innerText = '(' + numberOfAnnotations.length + ') ' + criterionGroup.config.name
           let sentiment
           if ((criterionGroup.config.options.assessments || criterionGroup.config.options.compile)) {
-            let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint)
+            let foundCompile = (criterionGroup.config.options.assessments || criterionGroup.config.options.compile).find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
             if (foundCompile && foundCompile.answer && foundCompile.answer.sentiment) {
               sentiment = foundCompile.answer.sentiment
             }

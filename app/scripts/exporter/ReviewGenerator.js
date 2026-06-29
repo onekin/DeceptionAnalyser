@@ -50,15 +50,74 @@ class ReviewGenerator {
         this.configurationButtonHandler()
       })
       // New schema button
-      // let newSchemaImageURL = chrome.runtime.getURL('/images/add.png')
       this.newSchemaImage = this.container.querySelector('#newSchemaButton')
-      // this.newSchemaImage.src = newSchemaImageURL
       this.newSchemaImage.addEventListener('click', () => {
         this.newSchemaButtonHandler()
+      })
+      // LLM indicator
+      this.llmIndicator = this.container.querySelector('#llmIndicator')
+      this.llmModelName = this.container.querySelector('#llmModelName')
+      this.updateLLMIndicator()
+      // Refresh LLM indicator when user returns to this tab (e.g. after changing LLM in options)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.updateLLMIndicator()
+        }
       })
       if (_.isFunction(callback)) {
         callback()
       }
+    })
+  }
+
+  updateLLMIndicator () {
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, ({ llm }) => {
+      const newModel = (llm && llm.model) ? llm.model : null
+      if (llm && llm.model) {
+        this.llmIndicator.style.display = 'block'
+        this.llmModelName.textContent = llm.model
+      } else {
+        this.llmIndicator.style.display = 'none'
+      }
+      const previousModel = window.abwa.currentLLMModel
+      window.abwa.currentLLMModel = newModel
+      // Reload criteria if model actually changed (not on every initContextMenu call)
+      if (previousModel !== newModel && window.abwa.criteriaManager) {
+        window.abwa.criteriaManager.reloadCriteria()
+      }
+    })
+  }
+
+  static getCurrentLLMModel (callback) {
+    chrome.runtime.sendMessage({ scope: 'llm', cmd: 'getSelectedLLM' }, ({ llm }) => {
+      if (llm && llm.model) {
+        callback(llm.model)
+      } else {
+        callback(null)
+      }
+    })
+  }
+
+  // Filter an assessments/compile array to only show entries matching the current LLM.
+  // If no LLM is selected, returns the original array (show all).
+  static filterByCurrentLLM (entries) {
+    if (!window.abwa || !window.abwa.currentLLMModel) return entries
+    if (!Array.isArray(entries)) return entries
+    return entries.filter(e => !e.llm || e.llm === window.abwa.currentLLMModel)
+  }
+
+  // Filter document annotations (highlights) to only show those created by the current LLM.
+  // Manual annotations (no llm field) always pass through.
+  static filterAnnotationsByCurrentLLM (annotations) {
+    if (!window.abwa || !window.abwa.currentLLMModel) return annotations
+    if (!Array.isArray(annotations)) return annotations
+    return annotations.filter(a => {
+      if (!a.text) return true
+      try {
+        const parsed = typeof a.text === 'string' ? JSON.parse(a.text) : a.text
+        if (!parsed.llm) return true
+        return parsed.llm.model === window.abwa.currentLLMModel
+      } catch (e) { return true }
     })
   }
   parseAnnotations (annotations){
