@@ -607,7 +607,6 @@ class ReviewGenerator {
   }
 
   generateXLSX (scope = Config.exportScope.CURRENT_DOC_CURRENT_LLM) {
-    const XLSX = require('xlsx')
     const filterByDoc = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.CURRENT_DOC_ALL_LLM)
     const filterByLLM = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.ALL_DOCS_CURRENT_LLM)
     const currentDoc = window.abwa.contentTypeManager.pdfFingerprint
@@ -681,47 +680,132 @@ class ReviewGenerator {
       docGroups.get(pair.document).push(pair)
     })
 
-    // Create workbook with one sheet per document
-    const wb = XLSX.utils.book_new()
+    // --- ExcelJS styled workbook ---
+    const ExcelJS = require('exceljs')
+    const wb = new ExcelJS.Workbook()
+    wb.creator = 'DeceptionAnalyser'
+    wb.date = new Date()
+
+    // Pastel fill colors for sentiments
+    const sentimentFills = {
+      green: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC6EFCE' } },
+      yellow: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } },
+      red: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFC7CE' } }
+    }
+
+    // Shared styles
+    const headerFont = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' }
+    const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } }
+    const headerAlignment = { horizontal: 'center', vertical: 'center', wrapText: true }
+    const cellBorder = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    }
+
     docGroups.forEach((docPairs, docFp) => {
-      const rows = [columns]
+      const sheetName = resolveLabel(docFp).replace(/[\[\]\*\?\/\\:]/g, '').substring(0, 31) || 'Document'
+      const ws = wb.addWorksheet(sheetName)
+
+      // Header row
+      const headerRow = ws.addRow(columns)
+      headerRow.eachCell((cell) => {
+        cell.font = headerFont
+        cell.fill = headerFill
+        cell.alignment = headerAlignment
+        cell.border = cellBorder
+      })
+      headerRow.height = 30
+
+      // Data rows
       docPairs.forEach(pair => {
         const pairKey = pair.document + '|' + pair.model
-        const row = [pair.model]
+        const rowData = [pair.model]
+
+        // Collect premise texts and sentiments
+        const premiseSentiments = []
         premiseNames.forEach(name => {
           const entry = dataMap[name] && dataMap[name].get(pairKey)
-          if (!entry) { row.push(''); return }
+          if (!entry) { rowData.push(''); premiseSentiments.push(null); return }
           const answer = entry.answer
           const text = typeof answer === 'string' ? answer : (answer && answer.statement) || ''
           const sentiment = (answer && answer.sentiment) || entry.sentiment || ''
-          const prefix = sentiment === 'green' ? '🟢 ' : sentiment === 'yellow' ? '🟡 ' : sentiment === 'red' ? '🔴 ' : ''
-          row.push(prefix + text)
+          rowData.push(text)
+          premiseSentiments.push(sentiment || null)
         })
+
+        // Critical question texts
         cqNames.forEach(name => {
           const entry = dataMap[name] && dataMap[name].get(pairKey)
-          if (!entry) { row.push(''); return }
+          if (!entry) { rowData.push(''); return }
           const answer = entry.answer || ''
           const text = typeof answer === 'string' ? answer : (answer.answer || answer.statement || answer)
-          row.push(text)
+          rowData.push(text)
         })
-        rows.push(row)
+
+        const row = ws.addRow(rowData)
+
+        // Style Model column
+        const modelCell = row.getCell(1)
+        modelCell.border = cellBorder
+        modelCell.alignment = { vertical: 'top' }
+
+        // Apply pastel background to premise cells based on sentiment
+        premiseNames.forEach((name, idx) => {
+          const cell = row.getCell(idx + 2) // column 1 = Model, so premise starts at col 2
+          const sentiment = premiseSentiments[idx]
+          if (sentiment && sentimentFills[sentiment]) {
+            cell.fill = sentimentFills[sentiment]
+          }
+          cell.border = cellBorder
+          cell.alignment = { vertical: 'top', wrapText: true }
+        })
+
+        // Style CQ cells
+        const cqStart = premiseNames.length + 2
+        cqNames.forEach((name, idx) => {
+          const cell = row.getCell(cqStart + idx)
+          cell.border = cellBorder
+          cell.alignment = { vertical: 'top', wrapText: true }
+        })
       })
-      const ws = XLSX.utils.aoa_to_sheet(rows)
-      // Set column widths
-      ws['!cols'] = columns.map((c, i) => {
-        if (i === 0) return { wch: 20 }
-        const maxLen = Math.max(c.length, ...rows.slice(1).map(r => String(r[i] || '').length))
-        return { wch: Math.min(Math.max(maxLen, 10), 50) }
+
+      // Column widths
+      columns.forEach((colName, i) => {
+        const col = ws.getColumn(i + 1)
+        if (i === 0) {
+          col.width = 22
+        } else {
+          // Calculate max content length
+          let maxLen = colName.length
+          ws.eachRow({ includeEmpty: true }, (row, rowNum) => {
+            if (rowNum > 1) {
+              const val = row.getCell(i + 1).value
+              const strLen = val ? String(val).length : 0
+              if (strLen > maxLen) maxLen = strLen
+            }
+          })
+          col.width = Math.min(Math.max(maxLen + 3, 12), 55)
+        }
       })
-      const sheetName = resolveLabel(docFp).replace(/[\[\]\*\?\/\\:]/g, '').substring(0, 31) || 'Document'
-      XLSX.utils.book_append_sheet(wb, ws, sheetName)
+
+      // Auto-filter on header row
+      ws.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: ws.rowCount, column: columns.length }
+      }
+
+      // Freeze header row
+      ws.views = [{ state: 'frozen', ySplit: 1, activeCell: 'A2' }]
     })
 
-    // Write and download
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const schemaName = (window.abwa.groupSelector.currentGroup && window.abwa.groupSelector.currentGroup.name) || 'analysis'
-    FileSaver.saveAs(blob, schemaName + '-report.xlsx')
+    // Write workbook to buffer and download
+    wb.xlsx.writeBuffer().then((buffer) => {
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const schemaName = (window.abwa.groupSelector.currentGroup && window.abwa.groupSelector.currentGroup.name) || 'analysis'
+      FileSaver.saveAs(blob, schemaName + '-report.xlsx')
+    })
   }
 
   configurationButtonHandler () {
