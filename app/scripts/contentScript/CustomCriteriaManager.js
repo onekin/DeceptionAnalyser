@@ -681,7 +681,7 @@ class CustomCriteriaManager {
           if (data.assessments && Array.isArray(data.assessments)) {
             let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
             if (!foundAssessment) {
-              data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: fullQuestion })
+              data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', adaptedQuestion: fullQuestion })
             } else {
               foundAssessment.adaptedQuestion = fullQuestion
             }
@@ -870,7 +870,7 @@ class CustomCriteriaManager {
                     // Check if data.resume exists and is an array. If not, initialize it as an empty array.
                     data.assessments = []
                     // Now that we're sure data.resume is an array, push the new object into it.
-                    data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: statement, excerpt: excerpt, sentiment: sentiment }, llm: llm.model })
+                    data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: statement, excerpt: excerpt, sentiment: sentiment }, llm: llm.model })
                   }
                   tagAnnotation.text = jsYaml.dump(data)
                   LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotation, {annotation: tagAnnotation})
@@ -998,7 +998,7 @@ class CustomCriteriaManager {
                       // Check if data.resume exists and is an array. If not, initialize it as an empty array.
                       data.assessments = []
                       // Now that we're sure data.resume is an array, push the new object into it.
-                      data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: statement, excerpt: excerpt, sentiment: sentiment }, llm: llm.model })
+                      data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: statement, excerpt: excerpt, sentiment: sentiment }, llm: llm.model })
                       data.feedback = []
                     }
                     tagAnnotation.text = jsYaml.dump(data)
@@ -1125,7 +1125,16 @@ class CustomCriteriaManager {
                     console.log('conclusion', conclusion)
                     console.log('scheme', scheme)
                   }
-                  const promises = schemeObjects.map((schemeElem) => this.askPremisesLLM(prompt, scheme, schemeElem, llm, apiKey, documents))
+                  const total = schemeObjects.length
+                  let completed = 0
+                  const promises = schemeObjects.map((schemeElem) =>
+                    this.askPremisesLLM(prompt, scheme, schemeElem, llm, apiKey, documents)
+                      .then(result => {
+                        completed++
+                        Swal.update({ text: `Processing premises... ${completed}/${total}` })
+                        return result
+                      })
+                  )
                   // Show a single persistent loading dialog for the entire batch
                   let Swal
                   if (document && document.head) {
@@ -1133,7 +1142,7 @@ class CustomCriteriaManager {
                   }
                   Swal.fire({
                     title: 'Asking ' + LanguageUtils.ucFirst(llm.modelType),
-                    text: 'Processing all premises...',
+                    text: `Processing premises... 0/${total}`,
                     allowEscapeKey: false,
                     allowOutsideClick: false,
                     didOpen: () => {
@@ -1198,7 +1207,7 @@ class CustomCriteriaManager {
                                 let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                                 if (!foundCompile) {
                                   // Store answer as standardized object {statement, excerpt, sentiment}
-                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model })
+                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model })
                                 } else {
                                   foundCompile.answer = { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }
                                   foundCompile.llm = llm.model
@@ -1219,7 +1228,7 @@ class CustomCriteriaManager {
                             }
                             let foundCompile = conclusionData.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                             if (!foundCompile) {
-                              conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model })
+                              conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model })
                             } else {
                               foundCompile.answer = { statement: json.statement, sentiment: json.sentiment }
                               foundCompile.llm = llm.model
@@ -1229,7 +1238,7 @@ class CustomCriteriaManager {
                           tagAnnotations.push(conclusionAnnotation)
                           // Single dispatch: save premises + conclusion together so reloadTags runs only once
                           LanguageUtils.dispatchCustomEvent(Events.updateCriteriaAnnotations, {annotations: tagAnnotations})
-                          Alerts.successAlert({title: 'Available analysis', text: 'Critical questions completed'})
+                          Alerts.successAlert({title: 'Available analysis', text: 'Premises completed'})
                         }
                       }
                       LLMClient.pdfBasedQuestionSilent(params)
@@ -1384,7 +1393,7 @@ class CustomCriteriaManager {
                     }
                     let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                     if (!foundAssessment) {
-                      data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
+                      data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
                     } else {
                       foundAssessment.adaptedQuestion = question
                       foundAssessment.answer = answer
@@ -1540,7 +1549,7 @@ class CustomCriteriaManager {
                       }
                       let foundAssessment = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                       if (!foundAssessment) {
-                        data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
+                        data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', adaptedQuestion: question, answer: answer, excerpt: excerpt, argument: argument, counterargument: counterargument, llm: llm.model })
                       } else {
                         foundAssessment.adaptedQuestion = question
                         foundAssessment.answer = answer
@@ -1707,7 +1716,16 @@ class CustomCriteriaManager {
                     }
                   }
                   prompt = prompt.replaceAll('[C_SCHEME]', scheme)
-                  const promises = questionsObjects.map((questionElem) => this.askQuestionsLLM(prompt, scheme, questionElem, llm, apiKey, documents))
+                  const total = questionsObjects.length
+                  let completed = 0
+                  const promises = questionsObjects.map((questionElem) =>
+                    this.askQuestionsLLM(prompt, scheme, questionElem, llm, apiKey, documents)
+                      .then(result => {
+                        completed++
+                        Swal.update({ text: `Processing critical questions... ${completed}/${total}` })
+                        return result
+                      })
+                  )
                   // Show a single persistent loading dialog for the entire batch
                   let Swal
                   if (document && document.head) {
@@ -1715,7 +1733,7 @@ class CustomCriteriaManager {
                   }
                   Swal.fire({
                     title: 'Asking ' + LanguageUtils.ucFirst(llm.modelType),
-                    text: 'Processing all critical questions...',
+                    text: `Processing critical questions... 0/${total}`,
                     allowEscapeKey: false,
                     allowOutsideClick: false,
                     didOpen: () => {
@@ -2031,8 +2049,10 @@ class CustomCriteriaManager {
     // Read from new "assessments" field (or legacy "compile") for premise data
     const premiseSource = currentCriterionGroup.config.options.assessments || currentCriterionGroup.config.options.compile
     if (premiseSource && premiseSource !== '') {
+      const currentLLM = window.abwa && window.abwa.currentLLMModel
       const findCompile = premiseSource.find((entry) => {
         return entry.document === window.abwa.contentTypeManager.pdfFingerprint
+          && (!currentLLM || !entry.llm || entry.llm === currentLLM)
       })
       if (findCompile) {
         compile = findCompile
@@ -2040,8 +2060,10 @@ class CustomCriteriaManager {
     }
     let assessments = ''
     if (currentCriterionGroup.config.options.assessments && currentCriterionGroup.config.options.assessments !== '') {
+      const currentLLM = window.abwa && window.abwa.currentLLMModel
       const findAssessment = currentCriterionGroup.config.options.assessments.find((a) => {
         return a.document === window.abwa.contentTypeManager.pdfFingerprint
+          && (!currentLLM || !a.llm || a.llm === currentLLM)
       })
       if (findAssessment) {
         assessments = findAssessment

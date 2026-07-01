@@ -59,6 +59,7 @@
     "sweetalert2": "^10.7.12",
     "unique-colors": "^1.0.1",
     "wildcard": "^1.1.2",
+    "xlsx": "^0.18.5",
     "xpath-range": "^1.1.1"
   },
   "devDependencies": {

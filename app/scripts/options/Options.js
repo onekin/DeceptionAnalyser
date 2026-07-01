@@ -1,4 +1,5 @@
 import _ from 'lodash'
+import Config from '../Config'
 
 class Options {
   init () {
@@ -7,38 +8,11 @@ class Options {
         modelType: 'openAI',
         model: 'gpt-4'
       }
-      const openAIModels = [
-        // Current GPT-4o family
-        { value: 'gpt-5', label: 'GPT-5' },
-        { value: 'gpt-5-mini', label: 'GPT-5 mini' },
-        { value: 'gpt-4o', label: 'GPT-4o' },
-        { value: 'gpt-4o-mini', label: 'GPT-4o mini' },
-        { value: 'gpt-4', label: 'GPT-4' },
-        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
-      ]
-
-      const anthropicModels = [
-        // Latest Claude 4 family (May 2025)
-        { value: 'claude-sonnet-4-5', label: 'Claude 4.5 Sonnet' },
-        { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' },
-        { value: 'claude-opus-4-1', label: 'Claude Opus 4.1' }
-      ]
-
-      const groqModels = [
-        // Alibaba Cloud
-        { value: 'qwen/qwen3-32b', label: 'Qwen3 32B' },
-        // Meta
-        { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant' },
-        { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile' },
-        { value: 'meta-llama/llama-4-maverick-17b-128e-instruct', label: 'Llama 4 Maverick 17B 128E Instruct' },
-        { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B 16E Instruct' }
-      ]
-
-      const geminiModels = [
-        { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Free)' },
-        { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Free)' },
-        { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite (Free)' }
-      ]
+      const openAIModels = Config.llmModels.openAI
+      const anthropicModels = Config.llmModels.anthropic
+      const groqModels = Config.llmModels.groq
+      const geminiModels = Config.llmModels.gemini
+      const deepseekModels = Config.llmModels.deepseek
 
       const LLMDropdown = document.getElementById('LLMDropdown')
       const modelSelectionContainer = document.getElementById('modelSelectionContainer')
@@ -48,23 +22,27 @@ class Options {
       const anthropicApiContainer = document.getElementById('anthropic-ApiKeyContainer')
       const groqApiContainer = document.getElementById('groq-ApiKeyContainer')
       const geminiApiContainer = document.getElementById('gemini-ApiKeyContainer')
+      const deepseekApiContainer = document.getElementById('deepseek-ApiKeyContainer')
 
       const openAIModelInfoContainer = document.getElementById('openAI-models')
       const anthropicModelInfoContainer = document.getElementById('anthropic-models')
       const groqModelInfoContainer = document.getElementById('groq-models')
       const geminiModelInfoContainer = document.getElementById('gemini-models')
+      const deepseekModelInfoContainer = document.getElementById('deepseek-models')
 
       // Hide models info
       openAIModelInfoContainer.style.display = 'none'
       anthropicModelInfoContainer.style.display = 'none'
       groqModelInfoContainer.style.display = 'none'
       geminiModelInfoContainer.style.display = 'none'
+      deepseekModelInfoContainer.style.display = 'none'
 
       // Hide API key inputs initially
       openAIApiContainer.style.display = 'none'
       anthropicApiContainer.style.display = 'none'
       groqApiContainer.style.display = 'none'
       geminiApiContainer.style.display = 'none'
+      deepseekApiContainer.style.display = 'none'
 
       // Handle LLM dropdown change
       document.querySelector('#LLMDropdown').addEventListener('change', (event) => {
@@ -79,6 +57,8 @@ class Options {
           populateModelDropdown(groqModels) // Populate the Groq models
         } else if (selectedLLM === 'gemini') {
           populateModelDropdown(geminiModels) // Populate the Gemini models
+        } else if (selectedLLM === 'deepseek') {
+          populateModelDropdown(deepseekModels) // Populate the DeepSeek models
         }
 
         // Ensure the selectedModel is correctly set
@@ -184,6 +164,20 @@ class Options {
           groqModelInfoContainer.style.display = 'none'
           geminiModelInfoContainer.style.display = 'block'
           populateModelDropdown(geminiModels)
+        } else if (selectedLLM === 'deepseek') {
+          modelSelectionContainer.style.display = 'block'
+          openAIApiContainer.style.display = 'none'
+          anthropicApiContainer.style.display = 'none'
+          groqApiContainer.style.display = 'none'
+          geminiApiContainer.style.display = 'none'
+          deepseekApiContainer.style.display = 'block'
+          // Hide models info
+          openAIModelInfoContainer.style.display = 'none'
+          anthropicModelInfoContainer.style.display = 'none'
+          groqModelInfoContainer.style.display = 'none'
+          geminiModelInfoContainer.style.display = 'none'
+          deepseekModelInfoContainer.style.display = 'block'
+          populateModelDropdown(deepseekModels)
         } else {
           modelSelectionContainer.style.display = 'none'
           openAIApiContainer.style.display = 'none'

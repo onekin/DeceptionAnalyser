@@ -5,6 +5,7 @@ export class ReviewReport {
     this._annotations = []
     this._assessedCriteria = []
     this._allCriteria = []
+    this._documents = {}  // { docFingerprint: { label: string, assessedCriteria: AssessedTag[] } }
   }
   insertAnnotation(annotation){
     this._annotations.push(annotation)
@@ -15,6 +16,19 @@ export class ReviewReport {
   }
   insertCriteria(annotation){
     this._allCriteria.push(annotation)
+  }
+  // Add an assessed criteria to a specific document group
+  insertDocumentAssessment(docId, docLabel, assessedTag) {
+    if (!this._documents[docId]) {
+      this._documents[docId] = { label: docLabel || docId, assessedCriteria: [] }
+    }
+    this._documents[docId].assessedCriteria.push(assessedTag)
+  }
+  get hasMultipleDocuments() {
+    return Object.keys(this._documents).length > 0
+  }
+  get documents() {
+    return this._documents
   }
   groupByCriterionInsideLevel (){
     return this._annotations;
@@ -81,78 +95,46 @@ export class ReviewReport {
   }
 
   // Helper to render a criterion card
-  renderCriterionCard(assessedCriteria, isQuestion = false) {
-    const { criterion, compile, assessments, description } = assessedCriteria;
-    
-    let sentiment = '';
-    if (!isQuestion && compile && (compile.sentiment || (compile.answer && compile.answer.sentiment))) {
-      sentiment = compile.sentiment || compile.answer.sentiment;
-    }
+  renderCriterionCard(assessedCriteria, isQuestion = false, docId = '') {
+    const { criterion, compile, assessments, description, allAssessments } = assessedCriteria;
+    const hasMulti = assessedCriteria.hasMultipleLLMs;
 
     let html = `
-      <div class="criterion-card ${isQuestion ? 'critical-question' : 'premise'}">
-        <h2 class="criterion-title">
-          ${this.escapeHtml(criterion.toUpperCase())}
-          ${sentiment ? this.getSentimentImageHTML(sentiment) : ''}
-        </h2>`;
+      <div class="criterion-card ${isQuestion ? 'critical-question' : 'premise'}" data-criterion="${this.escapeHtml(criterion)}" data-doc="${this.escapeHtml(docId)}">`;
 
     // Description / Question section
-    if (isQuestion && assessments && assessments.adaptedQuestion) {
-      html += this.renderSection(
-        'Question',
-        this.escapeHtml(assessments.adaptedQuestion),
-        'section-content description'
-      );
+    if (isQuestion) {
+      if (description) {
+        html += this.renderSection('Original Question', this.escapeHtml(description), 'section-content description');
+      }
+      if (assessments && assessments.adaptedQuestion && assessments.adaptedQuestion !== description) {
+        html += this.renderSection('Adapted Question', this.escapeHtml(assessments.adaptedQuestion), 'section-content description');
+      }
     } else if (description) {
-      html += this.renderSection(
-        'Description',
-        this.escapeHtml(description),
-        'section-content description'
-      );
+      html += this.renderSection('Description', this.escapeHtml(description), 'section-content description');
     }
 
-    // Analysis section
-    if (isQuestion && assessments && assessments.answer) {
-      // Critical Questions: read answer from assessments
-      const altLLM = assessments.llm || '';
-      let analysisContent = this.escapeHtml(assessments.answer);
-      if (altLLM) {
-        analysisContent += ` <span class="llm-badge">(based on ${this.escapeHtml(altLLM)})</span>`;
+    // Render all assessments as panels (visible based on model filter)
+    const panels = allAssessments && allAssessments.length > 0 ? allAssessments : [isQuestion ? assessments : compile].filter(Boolean);
+    panels.forEach((a, idx) => {
+      const llmName = a.llm || 'Unknown';
+      const sentiment = (a.answer && a.answer.sentiment) || a.sentiment || '';
+      html += `<div class="llm-panel" data-llm="${this.escapeHtml(llmName)}" data-idx="${idx}"${idx === 0 ? '' : ' hidden'}>`;
+      // Title: CQs get plain name, premises get sentiment badge as title
+      if (isQuestion) {
+        html += `<h2 class="criterion-title">${this.escapeHtml(criterion.toUpperCase())}</h2>`;
+      } else if (sentiment) {
+        const isConclusion = (criterion === 'Conclusion');
+        const statusText = isConclusion ? 'Conclusion is ' : 'premise is ';
+        const statusEnd = sentiment === 'green' ? 'met' : sentiment === 'yellow' ? 'partially met' : sentiment === 'red' ? 'NOT met' : '';
+        const icon = this.getSentimentImageHTML(sentiment);
+        html += `<h2 class="criterion-title">${icon} ${this.escapeHtml(criterion.toUpperCase())} ${this.escapeHtml(statusText + statusEnd)}</h2>`;
+      } else {
+        html += `<h2 class="criterion-title">${this.escapeHtml(criterion.toUpperCase())}</h2>`;
       }
-      html += this.renderSection('Analysis', analysisContent, 'section-content analysis');
-    } else if (compile) {
-      const compileLLM = (compile.answer && compile.answer.llm) ? compile.answer.llm : (compile.llm || '');
-      const analysisText = (compile.answer && compile.answer.statement) 
-        ? compile.answer.statement 
-        : compile.answer;
-      
-      let analysisContent = this.escapeHtml(analysisText);
-      if (compileLLM) {
-        analysisContent += ` <span class="llm-badge">(based on ${this.escapeHtml(compileLLM)})</span>`;
-      }
-      
-      html += this.renderSection('Analysis', analysisContent, 'section-content analysis');
-    }
-
-    // Arguments section (for critical questions)
-    if (assessments && (assessments.argument || assessments.counterargument)) {
-      const argText = assessments.argument || '';
-      const counterText = assessments.counterargument || '';
-      const tableHtml = `
-        <table class="arguments-table">
-          <tr>
-            <th>Argument</th>
-            <th>Counterargument</th>
-          </tr>
-          <tr>
-            <td>${this.escapeHtml(argText)}</td>
-            <td>${this.escapeHtml(counterText)}</td>
-          </tr>
-        </table>`;
-      html += tableHtml;
-    } else if (assessments && typeof assessments === 'string') {
-      html += this.renderSection('Arguments', this.escapeHtml(assessments), 'section-content arguments');
-    }
+      html += this.renderSingleAssessment(a, isQuestion, criterion);
+      html += '</div>';
+    });
 
     // Evidence section
     if (criterion !== 'Conclusion') {
@@ -169,237 +151,333 @@ export class ReviewReport {
       }
     }
 
-    html += `
-      </div>`;
-    
+    html += '</div>';
     return html;
   }
 
-  groupByCategoryHTML(){
+  // Render a single assessment (used by both single-LLM and multi-LLM paths)
+  renderSingleAssessment(assessment, isQuestion, criterion) {
+    if (!assessment) return '';
+    let html = '';
+
+    if (isQuestion && assessment.answer) {
+      let analysisContent = this.escapeHtml(assessment.answer);
+      html += this.renderSection('Analysis', analysisContent, 'section-content analysis');
+    } else if (assessment) {
+      const analysisText = (assessment.answer && assessment.answer.statement)
+        ? assessment.answer.statement
+        : (assessment.answer || '');
+      html += this.renderSection('Analysis', this.escapeHtml(analysisText), 'section-content analysis');
+      if (assessment.excerpt || (assessment.answer && assessment.answer.excerpt)) {
+        const excerpt = assessment.excerpt || assessment.answer.excerpt;
+        html += this.renderSection('Excerpt', `<em>${this.escapeHtml(excerpt)}</em>`, 'section-content excerpt');
+      }
+    }
+
+    // Arguments section (for critical questions)
+    if (assessment && (assessment.argument || assessment.counterargument)) {
+      html += `
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>${this.escapeHtml(assessment.argument || '')}</td>
+            <td>${this.escapeHtml(assessment.counterargument || '')}</td>
+          </tr>
+        </table>`;
+    } else if (assessment && typeof assessment === 'string') {
+      html += this.renderSection('Arguments', this.escapeHtml(assessment), 'section-content arguments');
+    }
+
+    return html;
+  }
+
+  groupByCategoryHTML(scope = 1){
     const currentDate = new Date().toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'long', 
       day: 'numeric' 
     });
 
-    // Enhanced CSS with professional styling
+    // Compact, professional report styling
     const styles = `
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1.6;
-        color: #333;
-        max-width: 1200px;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        line-height: 1.5;
+        color: #1a1a1a;
+        max-width: 960px;
         margin: 0 auto;
-        padding: 40px 20px;
-        background: #f8f9fa;
+        padding: 24px 16px;
+        background: #fff;
       }
-      
+
       h1 {
-        color: #1a365d;
-        font-size: 2.5em;
-        margin-bottom: 10px;
-        border-bottom: 3px solid #2c5282;
-        padding-bottom: 15px;
+        color: #1a1a1a;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin-bottom: 4px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e0e0e0;
       }
-      
+
       .report-date {
-        color: #718096;
-        font-size: 1.1em;
-        margin-bottom: 30px;
-        font-style: italic;
+        color: #888;
+        font-size: 0.8em;
+        margin-bottom: 18px;
       }
-      
+
       .criterion-card {
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        margin-bottom: 30px;
-        padding: 25px;
-        border-left: 4px solid #4299e1;
-        transition: box-shadow 0.3s ease;
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-left: 3px solid #555;
+        margin-bottom: 12px;
+        padding: 12px 14px;
       }
-      
-      .criterion-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      }
-      
+
       .criterion-card.critical-question {
-        border-left-color: #9f7aea;
+        border-left-color: #999;
+        background: #fafafa;
+        font-size: 0.92em;
       }
-      
-      .criterion-card.premise {
-        border-left-color: #48bb78;
+
+      /* Group accordion (Premises / Critical Questions) */
+      .group-section {
+        margin-bottom: 8px;
+        border: 1px solid #eee;
       }
-      
-      .criterion-title {
-        color: #2d3748;
-        font-size: 1.5em;
-        margin-bottom: 20px;
+      .group-accordion-toggle {
+        width: 100%;
+        padding: 6px 12px;
+        border: none;
+        background: #fafafa;
+        color: #444;
+        font-size: 0.8em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        text-align: left;
+        cursor: pointer;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 6px;
+        transition: background 0.15s;
       }
-      
+      .group-accordion-toggle:hover { background: #f0f0f0; }
+      .group-accordion-toggle .accordion-arrow {
+        font-size: 0.7em;
+        width: 14px;
+        text-align: center;
+      }
+      .group-badge {
+        margin-left: auto;
+        font-size: 0.85em;
+        font-weight: 400;
+        color: #999;
+      }
+      .group-content { padding: 0 8px 8px; }
+      .group-content[hidden] { display: none; }
+
+
+
+      .criterion-card.premise {
+        border-left-color: #555;
+      }
+
+      .criterion-title {
+        color: #1a1a1a;
+        font-size: 0.95em;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
       .section-content {
-        margin-bottom: 20px;
+        margin-bottom: 8px;
       }
-      
+
       .section-content h3 {
-        color: #4a5568;
-        font-size: 1.1em;
-        margin-bottom: 10px;
-        padding-bottom: 5px;
-        border-bottom: 2px solid #e2e8f0;
+        color: #555;
+        font-size: 0.72em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 3px;
+        padding-bottom: 2px;
+        border-bottom: 1px solid #eee;
       }
-      
+
       .section-content .content {
-        padding: 12px;
-        background: #f7fafc;
-        border-radius: 4px;
-        line-height: 1.7;
+        padding: 4px 0;
+        line-height: 1.45;
+        font-size: 0.88em;
       }
-      
+
       .section-content.description .content {
-        background: #ebf8ff;
-        border-left: 3px solid #4299e1;
-        padding-left: 15px;
+        color: #444;
+        font-style: italic;
       }
-      
+
       .section-content.analysis .content {
-        background: #f0fff4;
-        border-left: 3px solid #48bb78;
-        padding-left: 15px;
+        color: #1a1a1a;
       }
-      
-      .section-content.arguments .content {
-        background: #faf5ff;
-        border-left: 3px solid #9f7aea;
-        padding-left: 15px;
+
+      .section-content.excerpt .content {
+        color: #555;
+        font-style: italic;
+        padding-left: 8px;
+        border-left: 2px solid #ddd;
       }
-      
-      .section-content.evidence .content {
-        background: #fffaf0;
-        border-left: 3px solid #ed8936;
-        padding-left: 15px;
-      }
-      
+
       .llm-badge {
         display: inline-block;
-        background: #bee3f8;
-        color: #2c5282;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.85em;
+        background: #f0f0f0;
+        color: #555;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
         font-weight: 600;
-        margin-left: 8px;
+        margin-left: 4px;
       }
-      
+
       .evidence-list {
         list-style: none;
       }
-      
+
       .evidence-item {
-        margin-bottom: 15px;
-        padding: 12px;
-        background: white;
-        border-radius: 4px;
-        border-left: 3px solid #cbd5e0;
+        margin-bottom: 6px;
+        padding: 6px 8px;
+        border-left: 2px solid #ddd;
+        font-size: 0.85em;
       }
-      
-      .evidence-item:hover {
-        background: #f7fafc;
-        border-left-color: #4299e1;
-      }
-      
+
       .page-reference {
         display: inline-block;
-        background: #edf2f7;
-        color: #2d3748;
-        padding: 2px 8px;
-        border-radius: 4px;
-        font-size: 0.9em;
+        background: #f5f5f5;
+        color: #666;
+        padding: 1px 6px;
+        border-radius: 2px;
+        font-size: 0.85em;
         font-weight: 600;
-        margin-right: 8px;
+        margin-right: 6px;
       }
-      
+
       .highlight-text {
         font-style: italic;
-        color: #2d3748;
-        quotes: '\\201C' '\\201D';
+        color: #333;
       }
-      
-      .highlight-text:before {
-        content: open-quote;
-      }
-      
-      .highlight-text:after {
-        content: close-quote;
-      }
-      
+
+      .highlight-text:before { content: '\\201C'; }
+      .highlight-text:after { content: '\\201D'; }
+
       .comments-section {
-        margin-top: 10px;
-        padding: 10px;
-        background: #edf2f7;
-        border-radius: 4px;
-        font-size: 0.95em;
+        margin-top: 6px;
+        font-size: 0.85em;
+        color: #666;
       }
-      
+
       .comments-section strong {
-        color: #2d3748;
-        display: block;
-        margin-bottom: 5px;
+        font-weight: 600;
+        color: #444;
       }
-      
+
       .comment-item {
-        margin-left: 15px;
-        padding: 5px 0;
-        color: #4a5568;
+        margin-left: 12px;
+        padding: 1px 0;
       }
-      
+
       .comment-item:before {
         content: '• ';
-        color: #718096;
-        font-weight: bold;
+        color: #999;
       }
-      
-      .sentiment-icon {
-        height: 20px;
-        width: 20px;
+
+      .criterion-title img {
+        height: 16px;
+        width: 16px;
         vertical-align: middle;
-        margin-left: 8px;
       }
-      
+
+      .llm-panel[hidden] { display: none; }
+
+      /* Arguments table */
+      .arguments-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+        font-size: 0.85em;
+      }
+      .arguments-table th {
+        background: #f5f5f5;
+        padding: 4px 8px;
+        text-align: left;
+        font-weight: 600;
+        color: #555;
+        border: 1px solid #e8e8e8;
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .arguments-table td {
+        padding: 6px 8px;
+        border: 1px solid #e8e8e8;
+        vertical-align: top;
+        line-height: 1.4;
+      }
+
+      /* Report toolbar */
+      .report-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 8px 12px;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        flex-wrap: wrap;
+      }
+      .report-toolbar label {
+        font-size: 0.75em;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .report-toolbar select {
+        padding: 3px 8px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 0.85em;
+        color: #333;
+        background: #fff;
+        min-width: 140px;
+      }
+      .report-toolbar .toolbar-spacer { flex: 1; }
+      .btn-print {
+        padding: 4px 14px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: #fff;
+        color: #555;
+        font-size: 0.8em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-print:hover { background: #f0f0f0; }
+
       @media print {
-        body {
-          background: white;
-          padding: 20px;
-        }
-        
-        .criterion-card {
-          page-break-inside: avoid;
-          box-shadow: none;
-          border: 1px solid #e2e8f0;
-        }
+        body { padding: 12px; background: #fff; font-size: 11px; }
+        .criterion-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 8px; }
+        .report-toolbar { display: none; }
+        .doc-accordion-toggle { background: none; padding: 6px 10px; }
       }
-      
+
       @media (max-width: 768px) {
-        body {
-          padding: 20px 10px;
-        }
-        
-        h1 {
-          font-size: 2em;
-        }
-        
-        .criterion-card {
-          padding: 15px;
-        }
+        body { padding: 12px 8px; }
+        h1 { font-size: 1.2em; }
+        .criterion-card { padding: 10px; }
       }
     `;
 
@@ -415,24 +493,173 @@ export class ReviewReport {
 <body>
   <h1>Report of the Analysis</h1>
   <p class="report-date">Generated on: ${currentDate}</p>
+
+  <div class="report-toolbar">
+    <label for="docFilter">PDF:</label>
+    <select id="docFilter"></select>
+    <label for="modelFilter">Model:</label>
+    <select id="modelFilter"></select>
+    <span class="toolbar-spacer"></span>
+    <button id="btnPrint" class="btn-print" title="Save as PDF">🖶 Print / PDF</button>
+  </div>
 `;
 
-    // Render Premises
-    this._assessedCriteria.forEach(assessedCriteria => {
-      if (assessedCriteria.group === 'Premises') {
-        htmlContent += this.renderCriterionCard(assessedCriteria, false);
-      }
-    });
+    if (this.hasMultipleDocuments) {
+      // Render all documents (filtered by dropdown)
+      const docIds = Object.keys(this._documents);
+      docIds.forEach((docId, docIdx) => {
+        const doc = this._documents[docId];
 
-    // Render Critical Questions
-    this._assessedCriteria.forEach(assessedCriteria => {
-      if (assessedCriteria.group === 'Critical questions') {
-        htmlContent += this.renderCriterionCard(assessedCriteria, true);
-      }
-    });
+        // Conclusion first (outside accordion)
+        const docConclusion = doc.assessedCriteria.filter(ac => ac.group === 'Premises' && ac.criterion === 'Conclusion');
+        const docPremises = doc.assessedCriteria.filter(ac => ac.group === 'Premises' && ac.criterion !== 'Conclusion');
+        docConclusion.forEach(ac => { htmlContent += this.renderCriterionCard(ac, false, docId); });
+        // Other premises as accordion group
+        if (docPremises.length > 0) {
+          htmlContent += `
+  <div class="group-section">
+    <button class="group-accordion-toggle">
+      <span class="accordion-arrow">▾</span>
+      Premises
+      <span class="group-badge">${docPremises.length} premises</span>
+    </button>
+    <div class="group-content">`;
+          docPremises.forEach(ac => { htmlContent += this.renderCriterionCard(ac, false, docId); });
+          htmlContent += '</div></div>';
+        }
+
+        // Render critical questions as accordion group
+        const docCQs = doc.assessedCriteria.filter(ac => ac.group === 'Critical questions');
+        if (docCQs.length > 0) {
+          htmlContent += `
+  <div class="group-section">
+    <button class="group-accordion-toggle">
+      <span class="accordion-arrow">▾</span>
+      Critical Questions
+      <span class="group-badge">${docCQs.length} questions</span>
+    </button>
+    <div class="group-content">`;
+          docCQs.forEach(ac => { htmlContent += this.renderCriterionCard(ac, true, docId); });
+          htmlContent += '</div></div>';
+        }
+
+      });
+    }
+
+    // Inject doc labels as a JS map for the dropdown
+    const docLabelsJson = JSON.stringify(Object.fromEntries(Object.entries(this._documents).map(([id, d]) => [id, d.label])));
 
     htmlContent += `
 </body>
+<script>
+(function() {
+  // ---- 1. Build doc-models map from rendered cards ----
+  var docFilter = document.getElementById('docFilter');
+  var modelFilter = document.getElementById('modelFilter');
+  var DOC_LABELS = ${docLabelsJson};
+
+  var docModels = {};
+  document.querySelectorAll('.criterion-card[data-doc]').forEach(function(card) {
+    var doc = card.dataset.doc;
+    if (!doc) return;
+    if (!docModels[doc]) docModels[doc] = new Set();
+    card.querySelectorAll('.llm-panel[data-llm]').forEach(function(el) {
+      if (el.dataset.llm) docModels[doc].add(el.dataset.llm);
+    });
+  });
+
+  // ---- 2. Populate doc dropdown ----
+  var docIds = Object.keys(docModels);
+  docIds.forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = DOC_LABELS[d] || d;
+    docFilter.appendChild(opt);
+  });
+
+  // ---- 3. Populate model dropdown for selected doc ----
+  function populateModelFilter(docId) {
+    var sel = modelFilter.value;
+    modelFilter.innerHTML = '';
+    var models = docModels[docId] || new Set();
+    if (models.size === 0) {
+      Object.values(docModels).forEach(function(s) { s.forEach(function(m) { models.add(m); }); });
+    }
+    models.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      if (m === sel) opt.selected = true;
+      modelFilter.appendChild(opt);
+    });
+  }
+  if (docIds.length > 0) populateModelFilter(docIds[0]);
+  else {
+    var allM = new Set();
+    document.querySelectorAll('.llm-panel[data-llm]').forEach(function(el) {
+      if (el.dataset.llm) allM.add(el.dataset.llm);
+    });
+    allM.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      modelFilter.appendChild(opt);
+    });
+  }
+
+  // Apply initial filter (first doc, first model only)
+  applyFilters();
+
+  // ---- 4. Filtering ----
+  function applyFilters() {
+    var selDoc = docFilter.value;
+    var selModel = modelFilter.value;
+
+    document.querySelectorAll('.criterion-card[data-doc]').forEach(function(card) {
+      var showDoc = !selDoc || card.dataset.doc === selDoc;
+      var hasVisible = false;
+      card.querySelectorAll('.llm-panel[data-llm]').forEach(function(panel) {
+        var show = !selModel || panel.dataset.llm === selModel;
+        panel.hidden = !show;
+        if (show) hasVisible = true;
+      });
+      var hasPanels = card.querySelectorAll('.llm-panel[data-llm]').length > 0;
+      card.style.display = hasPanels ? (showDoc && hasVisible ? '' : 'none') : (showDoc ? '' : 'none');
+    });
+
+    document.querySelectorAll('.group-section').forEach(function(group) {
+      var vis = group.querySelectorAll('.criterion-card:not([style*="display: none"])');
+      group.style.display = vis.length > 0 ? '' : 'none';
+    });
+  }
+
+  docFilter.addEventListener('change', function() {
+    populateModelFilter(this.value);
+    applyFilters();
+  });
+  modelFilter.addEventListener('change', applyFilters);
+
+  // ---- 5. Accordions (groups) ----
+  document.querySelectorAll('.group-accordion-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var parent = this.closest('.group-section');
+      var content = parent.querySelector('.group-content');
+      var arrow = this.querySelector('.accordion-arrow');
+      var isCollapsed = parent.classList.contains('collapsed');
+      if (isCollapsed) {
+        parent.classList.remove('collapsed');
+        if (content) content.hidden = false;
+        if (arrow) arrow.textContent = '\\u25BE';
+      } else {
+        parent.classList.add('collapsed');
+        if (content) content.hidden = true;
+        if (arrow) arrow.textContent = '\\u25B8';
+      }
+    });
+  });
+
+  // Print button
+  document.getElementById('btnPrint').addEventListener('click', function() { window.print(); });
+})();
+</script>
 </html>`;
 
     return htmlContent;
@@ -579,12 +806,13 @@ export class Annotation {
 }
 
 export class AssessedTag {
-  constructor({ criterion, group = null, compile = null, assessments = null, description = null }) {
+  constructor({ criterion, group = null, compile = null, assessments = null, description = null, allAssessments = null }) {
     this._criterion = criterion
     this._group = group
     this._compile = compile
     this._assessments = assessments
     this._description = description
+    this._allAssessments = allAssessments  // array of {llm, answer, sentiment, excerpt, ...} for multi-LLM scopes
   }
   get criterion(){
     return this._criterion
@@ -600,6 +828,12 @@ export class AssessedTag {
   }
   get description(){
     return this._description
+  }
+  get allAssessments(){
+    return this._allAssessments
+  }
+  get hasMultipleLLMs(){
+    return this._allAssessments && this._allAssessments.length > 1
   }
 }
 

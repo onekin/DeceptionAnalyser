@@ -93,6 +93,12 @@ class LLMManager {
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
+        } else if (request.cmd === 'deepseek') {
+          this.askDeepSeek(request).then(
+            res => sendResponse({ res: res }),
+            err => sendResponse({ err: err })
+          )
+          return true
         }
       }
     })
@@ -205,6 +211,38 @@ class LLMManager {
       console.log(err.toString())
       if (err.toString().startsWith('Error: 401')) {
         return { error: 'Incorrect API key provided.' }
+      } else {
+        return { error: err.toString() }
+      }
+    })
+  }
+
+  async askDeepSeek (request) {
+    const apiKey = request.data.apiKey
+    const query = request.data.query
+    const documents = request.data.documents || ''
+    const modelName = request.data.llm.model
+    // DeepSeek uses an OpenAI-compatible API
+    const model = new ChatOpenAI({
+      model: modelName,
+      apiKey,
+      configuration: {
+        baseURL: 'https://api.deepseek.com'
+      }
+    })
+
+    const promptTemplate = PromptTemplate.fromTemplate(
+      'CONTENT: {content}. {query}'
+    )
+    const chain = promptTemplate.pipe(model)
+    return chain.invoke({ query: query, content: documents }).then(res => {
+      return res.text
+    }).catch(async err => {
+      console.log(err.toString())
+      if (err.toString().startsWith('Error: 401')) {
+        return { error: 'Incorrect API key provided.' }
+      } else if (err.toString().startsWith('Error: 429')) {
+        return { error: 'Rate limit exceeded. ' + err.toString() }
       } else {
         return { error: err.toString() }
       }

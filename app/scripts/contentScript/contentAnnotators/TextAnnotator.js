@@ -447,6 +447,8 @@ class TextAnnotator extends ContentAnnotator {
           let tags = annotation.tags
           return !(tags.length > 0 && _.find(filteringTags, tags[0])) || (tags.length > 1 && _.find(filteringTags, tags[1]))
         })
+        // Filter to only show annotations from the current LLM
+        this.allAnnotations = this.filterAnnotationsByCurrentLLM(this.allAnnotations)
         // Redraw all annotations
         this.redrawAnnotations()
         LanguageUtils.dispatchCustomEvent(Events.updatedAllAnnotations, {annotations: this.allAnnotations})
@@ -454,6 +456,19 @@ class TextAnnotator extends ContentAnnotator {
           callback(null, this.allAnnotations)
         }
       }
+    })
+  }
+
+  filterAnnotationsByCurrentLLM (annotations) {
+    const currentLLMModel = window.abwa && window.abwa.currentLLMModel
+    if (!currentLLMModel || !Array.isArray(annotations)) return annotations
+    return annotations.filter(a => {
+      if (!a.text) return true // manual annotations always pass through
+      try {
+        const parsed = typeof a.text === 'string' ? JSON.parse(a.text) : a.text
+        if (!parsed.llm) return true // no llm field = manual annotation, keep it
+        return parsed.llm.model === currentLLMModel
+      } catch (e) { return true }
     })
   }
 

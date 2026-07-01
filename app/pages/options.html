@@ -36,6 +36,7 @@
                 <option value="openAI">OpenAI</option>
                 <option value="groq">Groq</option>
                 <option value="gemini">Gemini</option>
+                <option value="deepseek">DeepSeek</option>
               </select>
             </div>
 
@@ -64,6 +65,11 @@
                 <label>Paste here your Gemini API key:</label>
                 <input type="text" id="gemini-APIKey" />
                 <button id="gemini-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
+              </div >
+              <div id="deepseek-ApiKeyContainer" class="APIKey-Configuration">
+                <label>Paste here your DeepSeek API key:</label>
+                <input type="text" id="deepseek-APIKey" />
+                <button id="deepseek-APIKeyValidationButton" class="APIKeyValidationButton">Save</button>
               </div >
             </div>
           </div>
@@ -152,6 +158,27 @@
                     </a>
                   </p>
                   <small class="text-muted">Use Google AI Studio to generate your Gemini API key with your Google account.</small>
+                </div>
+              </div>
+            </div>
+
+            <div id="deepseek-models" class="APIKey-Configuration mb-4">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">DeepSeek API Information</h6>
+                  <p class="card-text" style="font-size: 17px">
+                    <strong>Model Website:</strong><br>
+                    <a href="https://www.deepseek.com" target="_blank" class="text-decoration-none">
+                      https://www.deepseek.com
+                    </a>
+                  </p>
+                  <p class="card-text" style="font-size: 17px">
+                    <strong>Get API Key:</strong><br>
+                    <a href="https://platform.deepseek.com/api_keys" target="_blank" class="text-decoration-none">
+                      https://platform.deepseek.com/api_keys
+                    </a>
+                  </p>
+                  <small class="text-muted">Sign up for DeepSeek Platform and generate an API key from the dashboard.</small>
                 </div>
               </div>
             </div>
