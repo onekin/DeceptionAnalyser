@@ -71,7 +71,7 @@ class LLMClient {
         let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)
         let lastIndex = retrievedJSON.lastIndexOf('}')
         retrievedJSON = retrievedJSON.substring(0, lastIndex)
-        retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '').replace(/<think>[\s\S]*?<\/think>/gi, '').trim()
+        retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/,\s*([}\]])/g, '$1').replace(/,\s*$/gm, '').trim()
         if (!retrievedJSON.startsWith('{')) {
           retrievedJSON = '{' + retrievedJSON
         }
@@ -80,6 +80,9 @@ class LLMClient {
         }
         try {
           const jsonObject = JSON.parse(retrievedJSON)
+          if (response.apiTiming != null) {
+            jsonObject._apiTiming = response.apiTiming
+          }
           if (_.isFunction(callback)) {
             callback(jsonObject)
           }
@@ -104,7 +107,7 @@ class LLMClient {
         let retrievedJSON = jsonString.substring(jsonString.indexOf('{') + 1)
         let lastIndex = retrievedJSON.lastIndexOf('}')
         retrievedJSON = retrievedJSON.substring(0, lastIndex)
-        retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '')
+        retrievedJSON = retrievedJSON.replace(/(\r\n|\n|\r)/gm, '').replace(/,\s*([}\]])/g, '$1').replace(/,\s*$/gm, '')
         if (!retrievedJSON.startsWith('{')) {
           retrievedJSON = '{' + retrievedJSON
         }
@@ -113,6 +116,9 @@ class LLMClient {
         }
         try {
           const jsonObject = JSON.parse(retrievedJSON)
+          if (response.apiTiming != null) {
+            jsonObject._apiTiming = response.apiTiming
+          }
           if (_.isFunction(callback)) {
             callback(jsonObject)
           }

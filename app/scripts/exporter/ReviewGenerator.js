@@ -563,28 +563,55 @@ class ReviewGenerator {
     const premiseNames = criteriaDefs.filter(d => d.group === 'Premises').map(d => d.name)
     const cqNames = criteriaDefs.filter(d => d.group === 'Critical questions').map(d => d.name)
 
-    // Build CSV rows
-    const columns = ['DOCUMENT', 'MODEL', ...premiseNames, ...cqNames]
+    // Build CSV rows — interleave TIME columns after each criterion, plus totals at the end
+    const columns = ['DOCUMENT', 'MODEL']
+    premiseNames.forEach(n => { columns.push(n); columns.push(n + ' API (s)') })
+    cqNames.forEach(n => { columns.push(n); columns.push(n + ' API (s)') })
+    columns.push('PREMISES TOTAL (s)', 'CQs TOTAL (s)', 'TOTAL (s)')
+    // Wall-clock batch timing (read from any premise/CQ criterion config)
+    let premisesWallTime = ''
+    let cqWallTime = ''
+    const allGroups = window.abwa.criteriaManager.currentCriterionGroups || []
+    const premiseGroup = allGroups.find(c => c.config.options.group === 'Premises' && c.config.options.batchTiming != null)
+    const cqGroup = allGroups.find(c => c.config.options.group === 'Critical questions' && c.config.options.batchTiming != null)
+    if (premiseGroup) premisesWallTime = Number(premiseGroup.config.options.batchTiming).toFixed(1)
+    if (cqGroup) cqWallTime = Number(cqGroup.config.options.batchTiming).toFixed(1)
+    columns.push('Tool: premises (s)', 'Tool: CQs (s)')
     const rows = [columns]
 
     pairs.forEach((pair, pairKey) => {
       const row = [resolveLabel(pair.document), pair.model]
+      let premisesTimeSum = 0
       premiseNames.forEach(name => {
         const entry = dataMap[name] && dataMap[name].get(pairKey)
-        if (!entry) { row.push(''); return }
+        if (!entry) { row.push(''); row.push(''); return }
         const answer = entry.answer
         const text = typeof answer === 'string' ? answer : (answer && answer.statement) || ''
         const sentiment = (answer && answer.sentiment) || entry.sentiment || ''
         const prefix = sentiment === 'green' ? '🟢 ' : sentiment === 'yellow' ? '🟡 ' : sentiment === 'red' ? '🔴 ' : ''
         row.push(prefix + text)
+        const timing = entry.timing != null ? Number(entry.timing) : 0
+        row.push(timing > 0 ? timing.toFixed(1) : '')
+        premisesTimeSum += timing
       })
+      let cqTimeSum = 0
       cqNames.forEach(name => {
         const entry = dataMap[name] && dataMap[name].get(pairKey)
-        if (!entry) { row.push(''); return }
+        if (!entry) { row.push(''); row.push(''); return }
         const answer = entry.answer || ''
         const text = typeof answer === 'string' ? answer : (answer.answer || answer.statement || answer)
         row.push(text)
+        const timing = entry.timing != null ? Number(entry.timing) : 0
+        row.push(timing > 0 ? timing.toFixed(1) : '')
+        cqTimeSum += timing
       })
+      row.push(
+        premisesTimeSum > 0 ? premisesTimeSum.toFixed(1) : '',
+        cqTimeSum > 0 ? cqTimeSum.toFixed(1) : '',
+        (premisesTimeSum + cqTimeSum) > 0 ? (premisesTimeSum + cqTimeSum).toFixed(1) : '',
+        premisesWallTime,
+        cqWallTime
+      )
       rows.push(row)
     })
 
@@ -671,7 +698,19 @@ class ReviewGenerator {
 
     const premiseNames = criteriaDefs.filter(d => d.group === 'Premises').map(d => d.name)
     const cqNames = criteriaDefs.filter(d => d.group === 'Critical questions').map(d => d.name)
-    const columns = ['Model', ...premiseNames, ...cqNames]
+    const columns = ['Model']
+    premiseNames.forEach(n => { columns.push(n); columns.push(n + ' API (s)') })
+    cqNames.forEach(n => { columns.push(n); columns.push(n + ' API (s)') })
+    columns.push('PREMISES TOTAL (s)', 'CQs TOTAL (s)', 'TOTAL (s)')
+    // Wall-clock batch timing
+    let premisesWallTime = ''
+    let cqWallTime = ''
+    const allGroups = window.abwa.criteriaManager.currentCriterionGroups || []
+    const premiseGroup = allGroups.find(c => c.config.options.group === 'Premises' && c.config.options.batchTiming != null)
+    const cqGroup = allGroups.find(c => c.config.options.group === 'Critical questions' && c.config.options.batchTiming != null)
+    if (premiseGroup) premisesWallTime = Number(premiseGroup.config.options.batchTiming).toFixed(1)
+    if (cqGroup) cqWallTime = Number(cqGroup.config.options.batchTiming).toFixed(1)
+    columns.push('Tool: premises (s)', 'Tool: CQs (s)')
 
     // Group pairs by document
     const docGroups = new Map() // fp → [pair, ...]
@@ -703,6 +742,11 @@ class ReviewGenerator {
       bottom: { style: 'thin' },
       right: { style: 'thin' }
     }
+    const summaryFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F0FE' } }  // light blue for summary columns
+
+    // Column indices for the 5 summary columns (0-based in columns array)
+    // Layout: ... PREMISES TOTAL, CQs TOTAL, TOTAL, Tool: premises, Tool: CQs
+    const totalColStart = columns.length - 5  // 0-based index of 'PREMISES TOTAL (s)'
 
     docGroups.forEach((docPairs, docFp) => {
       const sheetName = resolveLabel(docFp).replace(/[\[\]\*\?\/\\:]/g, '').substring(0, 31) || 'Document'
@@ -725,24 +769,41 @@ class ReviewGenerator {
 
         // Collect premise texts and sentiments
         const premiseSentiments = []
+        let premisesTimeSum = 0
         premiseNames.forEach(name => {
           const entry = dataMap[name] && dataMap[name].get(pairKey)
-          if (!entry) { rowData.push(''); premiseSentiments.push(null); return }
+          if (!entry) { rowData.push(''); rowData.push(''); premiseSentiments.push(null); return }
           const answer = entry.answer
           const text = typeof answer === 'string' ? answer : (answer && answer.statement) || ''
           const sentiment = (answer && answer.sentiment) || entry.sentiment || ''
           rowData.push(text)
           premiseSentiments.push(sentiment || null)
+          const timing = entry.timing != null ? Number(entry.timing) : 0
+          rowData.push(timing > 0 ? timing.toFixed(1) : '')
+          premisesTimeSum += timing
         })
 
         // Critical question texts
+        let cqTimeSum = 0
         cqNames.forEach(name => {
           const entry = dataMap[name] && dataMap[name].get(pairKey)
-          if (!entry) { rowData.push(''); return }
+          if (!entry) { rowData.push(''); rowData.push(''); return }
           const answer = entry.answer || ''
           const text = typeof answer === 'string' ? answer : (answer.answer || answer.statement || answer)
           rowData.push(text)
+          const timing = entry.timing != null ? Number(entry.timing) : 0
+          rowData.push(timing > 0 ? timing.toFixed(1) : '')
+          cqTimeSum += timing
         })
+
+        // Total columns
+        rowData.push(
+          premisesTimeSum > 0 ? premisesTimeSum.toFixed(1) : '',
+          cqTimeSum > 0 ? cqTimeSum.toFixed(1) : '',
+          (premisesTimeSum + cqTimeSum) > 0 ? (premisesTimeSum + cqTimeSum).toFixed(1) : '',
+          premisesWallTime,
+          cqWallTime
+        )
 
         const row = ws.addRow(rowData)
 
@@ -751,24 +812,43 @@ class ReviewGenerator {
         modelCell.border = cellBorder
         modelCell.alignment = { vertical: 'top' }
 
-        // Apply pastel background to premise cells based on sentiment
+        // Apply pastel background to premise cells based on sentiment (interleaved: text at 2+2*idx, time at 3+2*idx)
         premiseNames.forEach((name, idx) => {
-          const cell = row.getCell(idx + 2) // column 1 = Model, so premise starts at col 2
+          const cell = row.getCell(2 + 2 * idx)
           const sentiment = premiseSentiments[idx]
           if (sentiment && sentimentFills[sentiment]) {
             cell.fill = sentimentFills[sentiment]
           }
           cell.border = cellBorder
           cell.alignment = { vertical: 'top', wrapText: true }
+          // Style timing cell
+          const timeCell = row.getCell(3 + 2 * idx)
+          timeCell.border = cellBorder
+          timeCell.alignment = { vertical: 'top', horizontal: 'right' }
         })
 
-        // Style CQ cells
-        const cqStart = premiseNames.length + 2
+        // Style CQ cells (interleaved: text at cqStart+2*idx, time at cqStart+2*idx+1)
+        const cqStart = 2 + 2 * premiseNames.length
         cqNames.forEach((name, idx) => {
-          const cell = row.getCell(cqStart + idx)
+          const cell = row.getCell(cqStart + 2 * idx)
           cell.border = cellBorder
           cell.alignment = { vertical: 'top', wrapText: true }
+          // Style timing cell
+          const timeCell = row.getCell(cqStart + 2 * idx + 1)
+          timeCell.border = cellBorder
+          timeCell.alignment = { vertical: 'top', horizontal: 'right' }
         })
+
+        // Style summary columns (totals + wall clock)
+        for (let offset = 0; offset < 5; offset++) {
+          const totalCell = row.getCell(totalColStart + 1 + offset)
+          totalCell.border = cellBorder
+          totalCell.alignment = { vertical: 'top', horizontal: 'right' }
+          totalCell.font = { bold: true, size: 10, name: 'Calibri' }
+          // Totals (first 3) get blue fill, wall-clock (last 2) get green fill
+          totalCell.fill = offset < 3 ? summaryFill
+            : { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } }
+        }
       })
 
       // Column widths

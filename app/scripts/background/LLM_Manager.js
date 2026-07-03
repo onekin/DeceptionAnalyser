@@ -70,32 +70,37 @@ class LLMManager {
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.scope === 'askLLM') {
         if (request.cmd === 'anthropic') {
+          const t0 = performance.now()
           this.askAnthropic(request).then(
-            res => sendResponse({ res: res }),
+            res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'openAI') {
+          const t0 = performance.now()
           this.askOpenAI(request).then(
-            res => sendResponse({ res: res }),
+            res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'gemini') {
+          const t0 = performance.now()
           this.askGemini(request).then(
-            res => sendResponse({ res: res }),
+            res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'groq') {
+          const t0 = performance.now()
           this.askGroq(request).then(
-            res => sendResponse({ res: res }),
+            res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
         } else if (request.cmd === 'deepseek') {
+          const t0 = performance.now()
           this.askDeepSeek(request).then(
-            res => sendResponse({ res: res }),
+            res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )
           return true

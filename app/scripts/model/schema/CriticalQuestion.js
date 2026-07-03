@@ -27,7 +27,8 @@ class CriticalQuestion extends SchemaElement {
       excerpt: a.excerpt,
       argument: a.argument,
       counterargument: a.counterargument,
-      llm: a.llm
+      llm: a.llm,
+      timing: a.timing
     }))
     return {
       group: review.storageGroup.id,
@@ -76,7 +77,8 @@ class CriticalQuestion extends SchemaElement {
       excerpt: a.excerpt || '',
       argument: a.argument || '',
       counterargument: a.counterargument || '',
-      llm: a.llm || ''
+      llm: a.llm || '',
+      timing: a.timing
     }))
     return new CriticalQuestion({
       name: config.name,
@@ -101,7 +103,8 @@ class CriticalQuestion extends SchemaElement {
         excerpt: a.excerpt,
         argument: a.argument,
         counterargument: a.counterargument,
-        llm: a.llm
+        llm: a.llm,
+        timing: a.timing
       }))
     }
   }

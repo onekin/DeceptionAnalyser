@@ -1149,6 +1149,7 @@ class CustomCriteriaManager {
                       Swal.showLoading()
                     }
                   })
+                  const batchStartTime = performance.now()
                   Promise.all(promises)
                     .then((responses) => {
                       // console.log('✅ All responses:', responses)
@@ -1167,6 +1168,9 @@ class CustomCriteriaManager {
                         apiKey: apiKey,
                         documents: documents,
                         callback: (json) => {
+                          console.log('⏱ [' + llm.model + '] Conclusion — API: ' + (json._apiTiming != null ? json._apiTiming.toFixed(1) + 's' : 'N/A'))
+                          const conclusionTiming = json._apiTiming
+                          const batchTiming = (performance.now() - batchStartTime) / 1000
                           Swal.close()
                           // let answers = this.parseAllPremisesAnswer(responses)
                           let tagAnnotations = []
@@ -1207,11 +1211,13 @@ class CustomCriteriaManager {
                                 let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                                 if (!foundCompile) {
                                   // Store answer as standardized object {statement, excerpt, sentiment}
-                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model })
+                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model, timing: answer._apiTiming })
                                 } else {
                                   foundCompile.answer = { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }
                                   foundCompile.llm = llm.model
+                                  foundCompile.timing = answer._apiTiming
                                 }
+                                data.batchTiming = batchTiming
                               }
                               tagAnnotation.text = jsYaml.dump(data)
                               tagAnnotations.push(tagAnnotation)
@@ -1228,11 +1234,13 @@ class CustomCriteriaManager {
                             }
                             let foundCompile = conclusionData.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                             if (!foundCompile) {
-                              conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model })
+                              conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model, timing: conclusionTiming })
                             } else {
                               foundCompile.answer = { statement: json.statement, sentiment: json.sentiment }
                               foundCompile.llm = llm.model
+                              foundCompile.timing = conclusionTiming
                             }
+                            conclusionData.batchTiming = batchTiming
                           }
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
                           tagAnnotations.push(conclusionAnnotation)
@@ -1278,6 +1286,7 @@ class CustomCriteriaManager {
         apiKey: apiKey,
         documents: documents,
         callback: (response) => {
+          console.log('⏱ [' + llm.model + '] ' + schemeElem.name + ' — API: ' + (response._apiTiming != null ? response._apiTiming.toFixed(1) + 's' : 'N/A'))
           resolve(response)
         }
       }
@@ -1303,6 +1312,7 @@ class CustomCriteriaManager {
         apiKey: apiKey,
         documents: documents,
         callback: (response) => {
+          console.log('⏱ [' + llm.model + '] ' + questionElem.name + ' — API: ' + (response._apiTiming != null ? response._apiTiming.toFixed(1) + 's' : 'N/A'))
           resolve(response)
         }
       }
@@ -1740,8 +1750,10 @@ class CustomCriteriaManager {
                       Swal.showLoading()
                     }
                   })
+                  const batchStartTime = performance.now()
                   Promise.all(promises)
                     .then((responses) => {
+                      const batchTiming = (performance.now() - batchStartTime) / 1000
                       Swal.close()
                       let tagAnnotations = []
                       if (responses.length > 0) {
@@ -1792,7 +1804,8 @@ class CustomCriteriaManager {
                                   excerpt: excerpt,
                                   argument: argument,
                                   counterargument: counterargument,
-                                  llm: llm.model
+                                  llm: llm.model,
+                                  timing: llmAnswer._apiTiming
                                 })
                               } else {
                                 foundAssessment.adaptedQuestion = question
@@ -1801,7 +1814,9 @@ class CustomCriteriaManager {
                                 foundAssessment.argument = argument
                                 foundAssessment.counterargument = counterargument
                                 foundAssessment.llm = llm.model
+                                foundAssessment.timing = llmAnswer._apiTiming
                               }
+                              data.batchTiming = batchTiming
                               tagAnnotation.text = jsYaml.dump(data)
                               tagAnnotations.push(tagAnnotation)
                             }

@@ -160,6 +160,12 @@ export class ReviewReport {
     if (!assessment) return '';
     let html = '';
 
+    // Timing badge
+    if (assessment.timing || (assessment.answer && assessment.answer.timing)) {
+      const time = assessment.timing || (assessment.answer && assessment.answer.timing)
+      html += `<div class="timing-badge">API: ${Number(time).toFixed(1)}s</div>`;
+    }
+
     if (isQuestion && assessment.answer) {
       let analysisContent = this.escapeHtml(assessment.answer);
       html += this.renderSection('Analysis', analysisContent, 'section-content analysis');
@@ -189,6 +195,98 @@ export class ReviewReport {
     }
 
     return html;
+  }
+
+  // Build a timing summary panel from criteria groups, per LLM model
+  renderTimingSummary() {
+    try {
+      const allGroups = (window.abwa && window.abwa.criteriaManager && window.abwa.criteriaManager.currentCriterionGroups) || []
+      const allPremiseGroups = allGroups.filter(c => c.config.options.group === 'Premises')
+      const conclusionGroups = allPremiseGroups.filter(c => c.config.name === 'Conclusion')
+      const premiseGroups = allPremiseGroups.filter(c => c.config.name !== 'Conclusion')
+      const cqGroups = allGroups.filter(c => c.config.options.group === 'Critical questions')
+      const currentDoc = window.abwa && window.abwa.contentTypeManager && window.abwa.contentTypeManager.pdfFingerprint
+
+      // Collect unique models and per-model counts/timings
+      const models = new Set()
+      const modelData = {}  // { model: { premisesSum, premisesCount, conclusionSum, cqsSum, cqsCount } }
+
+      const initModel = (m) => {
+        if (!modelData[m]) modelData[m] = { premisesSum: 0, premisesCount: 0, conclusionSum: 0, cqsSum: 0, cqsCount: 0 }
+      }
+
+      const processGroups = (groups, sumKey, countKey) => {
+        groups.forEach(cg => {
+          const source = cg.config.options.assessments || cg.config.options.compile
+          if (!Array.isArray(source)) return
+          source.forEach(entry => {
+            if (currentDoc && entry.document !== currentDoc) return
+            if (!entry.llm) return
+            models.add(entry.llm)
+            initModel(entry.llm)
+            if (entry.timing != null) {
+              modelData[entry.llm][sumKey] += Number(entry.timing)
+            }
+            modelData[entry.llm][countKey]++
+          })
+        })
+      }
+      processGroups(premiseGroups, 'premisesSum', 'premisesCount')
+      processGroups(conclusionGroups, 'conclusionSum', null)  // conclusion has no count
+      processGroups(cqGroups, 'cqsSum', 'cqsCount')
+
+      if (models.size === 0) return ''
+
+      // Wall-clock batch times (global)
+      const anyPremise = allPremiseGroups.find(c => c.config.options.batchTiming != null)
+      const anyCq = cqGroups.find(c => c.config.options.batchTiming != null)
+      const wallPremises = anyPremise ? Number(anyPremise.config.options.batchTiming).toFixed(1) : null
+      const wallCqs = anyCq ? Number(anyCq.config.options.batchTiming).toFixed(1) : null
+
+      let html = '<div class="timing-summary">'
+      const sortedModels = [...models].sort()
+
+      sortedModels.forEach(model => {
+        const d = modelData[model]
+        const apiTotal = d.premisesSum + d.conclusionSum + d.cqsSum
+        if (apiTotal === 0) return
+
+        html += '<div class="ts-group" data-ts-model="' + this.escapeHtml(model) + '">'
+        html += '<span class="ts-label">' + this.escapeHtml(model) + '</span>'
+
+        // Premises line
+        if (d.premisesSum > 0) {
+          const countStr = d.premisesCount > 0 ? ' (' + d.premisesCount + ' ∥)' : ''
+          html += '<span class="ts-value">Premises' + countStr + ' — API: ' + d.premisesSum.toFixed(1) + 's</span>'
+        }
+        // Conclusion line (shown separately)
+        if (d.conclusionSum > 0) {
+          html += '<span class="ts-value">Conclusion — API: ' + d.conclusionSum.toFixed(1) + 's</span>'
+        }
+        // CQs line
+        if (d.cqsSum > 0) {
+          const countStr = d.cqsCount > 0 ? ' (' + d.cqsCount + ' ∥)' : ''
+          html += '<span class="ts-value">CQs' + countStr + ' — API: ' + d.cqsSum.toFixed(1) + 's</span>'
+        }
+        // Total API sum
+        html += '<span class="ts-value" style="color:#333;font-weight:700;">Σ API: ' + apiTotal.toFixed(1) + 's</span>'
+        html += '</div>'
+      })
+
+      // Wall-clock row
+      if (wallPremises || wallCqs) {
+        html += '<div class="ts-group ts-wall" style="border-left:2px solid #c8e6c9;padding-left:12px;">'
+        html += '<span class="ts-label" style="color:#2e7d32;">⏱ Tool execution</span>'
+        if (wallPremises) html += '<span class="ts-value wall">Premises: ' + wallPremises + 's</span>'
+        if (wallCqs) html += '<span class="ts-value wall">CQs: ' + wallCqs + 's</span>'
+        html += '</div>'
+      }
+
+      html += '</div>'
+      return html
+    } catch (e) {
+      return ''
+    }
   }
 
   groupByCategoryHTML(scope = 1){
@@ -341,6 +439,48 @@ export class ReviewReport {
         font-weight: 600;
         margin-left: 4px;
       }
+
+      .timing-badge {
+        display: inline-block;
+        background: #e8f4fd;
+        color: #1a73e8;
+        padding: 1px 8px;
+        border-radius: 3px;
+        font-size: 0.78em;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      /* Timing summary panel */
+      .timing-summary {
+        background: #f8fafb;
+        border: 1px solid #e0e0e0;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        font-size: 0.82em;
+        color: #555;
+      }
+      .timing-summary .ts-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .timing-summary .ts-label {
+        font-size: 0.72em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #888;
+      }
+      .timing-summary .ts-value {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.05em;
+      }
+      .timing-summary .ts-value.wall { color: #2e7d32; }
 
       .evidence-list {
         list-style: none;
@@ -502,6 +642,7 @@ export class ReviewReport {
     <span class="toolbar-spacer"></span>
     <button id="btnPrint" class="btn-print" title="Save as PDF">🖶 Print / PDF</button>
   </div>
+${this.renderTimingSummary()}
 `;
 
     if (this.hasMultipleDocuments) {
@@ -629,6 +770,24 @@ export class ReviewReport {
       var vis = group.querySelectorAll('.criterion-card:not([style*="display: none"])');
       group.style.display = vis.length > 0 ? '' : 'none';
     });
+
+    // Filter timing summary groups by model
+    document.querySelectorAll('.ts-group[data-ts-model]').forEach(function(ts) {
+      var show = !selModel || ts.dataset.tsModel === selModel;
+      ts.style.display = show ? '' : 'none';
+    });
+    // Show/hide wall-clock row: visible when any model is selected or no filter
+    var wallRow = document.querySelector('.ts-group.ts-wall');
+    if (wallRow) {
+      var anyVisible = !selModel || document.querySelector('.ts-group[data-ts-model]:not([style*="display: none"])');
+      wallRow.style.display = anyVisible ? '' : 'none';
+    }
+    // Hide entire timing summary if all rows are hidden
+    var summary = document.querySelector('.timing-summary');
+    if (summary) {
+      var vis = summary.querySelectorAll('.ts-group:not([style*="display: none"])');
+      summary.style.display = vis.length > 0 ? '' : 'none';
+    }
   }
 
   docFilter.addEventListener('change', function() {

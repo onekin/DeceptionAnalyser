@@ -1,8 +1,8 @@
 const Assessment = require('./Assessment')
 
 class PremiseAssessment extends Assessment {
-  constructor ({ document, statement, excerpt, sentiment, level, llm }) {
-    super({ document, llm })
+  constructor ({ document, statement, excerpt, sentiment, level, llm, timing }) {
+    super({ document, llm, timing })
     this.statement = statement    // LLM's rewritten premise statement
     this.excerpt = excerpt        // exact substring from the story
     this.sentiment = sentiment    // green | yellow | red

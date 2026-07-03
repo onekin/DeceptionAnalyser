@@ -23,7 +23,8 @@ class Premise extends SchemaElement {
       document: a.document,
       answer: { statement: a.statement, excerpt: a.excerpt, sentiment: a.sentiment },
       level: a.level,
-      llm: a.llm
+      llm: a.llm,
+      timing: a.timing
     }))
     return {
       group: review.storageGroup.id,
@@ -51,7 +52,8 @@ class Premise extends SchemaElement {
       excerpt: c.answer?.excerpt,
       sentiment: c.answer?.sentiment,
       level: c.level,
-      llm: c.llm
+      llm: c.llm,
+      timing: c.timing
     }))
     return new Premise({
       name: config.name,
@@ -75,7 +77,8 @@ class Premise extends SchemaElement {
         excerpt: a.excerpt,
         sentiment: a.sentiment,
         level: a.level,
-        llm: a.llm
+        llm: a.llm,
+        timing: a.timing
       }))
     }
   }
