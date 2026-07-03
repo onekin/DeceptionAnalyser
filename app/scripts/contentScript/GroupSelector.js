@@ -502,15 +502,20 @@ class GroupSelector {
   }
 
   importStandardModelConfiguration () {
-    ImportSchema.askUserForStandardConfigurationSchema((err, jsonObject) => {
+    ImportSchema.askUserForStandardConfigurationSchema((err, jsonObject, reviewName) => {
       if (err) {
         Alerts.errorAlert({text: 'Unable to parse json file. Error:<br/>' + err.message})
       } else {
+        // Generate suggested group name: strip "Argument from " prefix, camelCase the rest
+        const suggestedName = reviewName
+          ? reviewName.replace(/^Argument from /, '').replace(/\s+(\w)/g, (_, c) => c.toUpperCase()).replace(/^./, c => c.toLowerCase())
+          : ''
         Alerts.inputTextAlert({
           alertType: Alerts.alertType.warning,
           title: 'Give a name to your imported review model',
           text: 'When the configuration is imported a new highlighter is created. You can return to your other review models using the sidebar.',
           inputPlaceholder: 'Type here the name of your schema...',
+          inputValue: suggestedName,
           preConfirm: (groupName) => {
             if (_.isString(groupName)) {
               if (groupName.length <= 0) {

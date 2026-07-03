@@ -21,7 +21,7 @@ class Premise extends SchemaElement {
     let review = this.getAncestor()
     let assessments = this.assessments.map(a => ({
       document: a.document,
-      answer: { statement: a.statement, excerpt: a.excerpt, sentiment: a.sentiment },
+      answer: { statement: a.statement, excerpt: a.excerpt, justification: a.justification, sentiment: a.sentiment },
       level: a.level,
       llm: a.llm,
       timing: a.timing
@@ -50,6 +50,7 @@ class Premise extends SchemaElement {
       document: c.document,
       statement: c.answer?.statement,
       excerpt: c.answer?.excerpt,
+      justification: c.answer?.justification,
       sentiment: c.answer?.sentiment,
       level: c.level,
       llm: c.llm,
@@ -75,6 +76,7 @@ class Premise extends SchemaElement {
         document: a.document,
         statement: a.statement,
         excerpt: a.excerpt,
+        justification: a.justification,
         sentiment: a.sentiment,
         level: a.level,
         llm: a.llm,

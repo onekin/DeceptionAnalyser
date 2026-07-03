@@ -37,6 +37,7 @@ gulp.task('chromereload', (cb) => {
   gulp.watch('app/styles/**/*.less', gulp.series('styles:less'))
   gulp.watch('app/styles/**/*.scss', gulp.series('styles:sass'))
   gulp.watch('app/pages/**/*.html', gulp.series('pages'))
+  gulp.watch('app/prompts/**/*.md', gulp.series('prompts'))
   gulp.watch('app/_locales/**/*', gulp.series('locales'))
   gulp.watch('app/images/**/*', gulp.series('images'))
   gulp.watch('app/fonts/**/*.{woff,ttf,eot,svg}', gulp.series('fonts'))

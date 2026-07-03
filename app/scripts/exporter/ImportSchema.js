@@ -1,9 +1,6 @@
 import Alerts from '../utils/Alerts'
 import FileUtils from '../utils/FileUtils'
-import general from '../data/criteriaTemplate/general.json'
-import value from '../data/criteriaTemplate/value.json'
-import empty from '../data/criteriaTemplate/empty.json'
-// import ReviewModels from './criteriaTemplate/ReviewModels'
+import ReviewModels from '../data/criteriaTemplate/ReviewModels'
 
 class ImportSchema {
   static createConfigurationAnnotationsFromReview ({review, callback}) {
@@ -63,11 +60,10 @@ class ImportSchema {
    * @param callback
    */
   static askUserForStandardConfigurationSchema (callback) {
-    const ReviewModels = require('../data/criteriaTemplate/ReviewModels')
     let reviewSchemas = ReviewModels.reviews
     let showForm = () => {
       // Create form
-      let html = ''
+      let html = '<style>.swal2-html-container select { width: 100%; max-width: 100%; box-sizing: border-box; }</style>'
       let selectFrom = document.createElement('select')
       selectFrom.id = 'selectedReview'
       Object.keys(reviewSchemas).forEach(review => {
@@ -81,7 +77,6 @@ class ImportSchema {
       Alerts.multipleInputAlert({
         title: 'Please, select one of the review models',
         html: html,
-        // position: Alerts.position.bottom, // TODO Must be check if it is better to show in bottom or not
         preConfirm: () => {
           return document.querySelector('#selectedReview').value
         },
@@ -93,17 +88,10 @@ class ImportSchema {
             }
             return
           }
-          let jsonObject
-          if (reviewFile === 'General deception analysis') {
-            jsonObject = general
-          } else if (reviewFile === 'Deception analysis on value') {
-            jsonObject = value
-          }
-          if (err) {
-            callback(new Error('Unable to read json file: ' + err.message))
-          } else {
-            callback(null, jsonObject)
-          }
+          // Find the selected review model by name
+          const review = Object.values(ReviewModels.reviews).find(r => r.name === reviewFile)
+          const jsonObject = review ? review.schema : ReviewModels.empty
+          callback(null, jsonObject, reviewFile)
         }
       })
     }
@@ -111,7 +99,7 @@ class ImportSchema {
   }
 
   static retrieveEmptySchema () {
-    return empty
+    return ReviewModels.empty
   }
 }
 

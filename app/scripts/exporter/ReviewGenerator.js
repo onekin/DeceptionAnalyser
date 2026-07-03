@@ -204,7 +204,7 @@ class ReviewGenerator {
       } catch (e) { return true }
     })
   }
-  parseAnnotations (annotations, scope = Config.exportScope.CURRENT_DOC_CURRENT_LLM) {
+  parseAnnotations (annotations, scope = Config.exportScope.ALL_DOCS_ALL_LLM) {
     const filterByDoc = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.CURRENT_DOC_ALL_LLM)
     const filterByLLM = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.ALL_DOCS_CURRENT_LLM)
     const currentDoc = window.abwa.contentTypeManager.pdfFingerprint
@@ -481,7 +481,7 @@ class ReviewGenerator {
     })
   }
 
-  generateExcel (scope = Config.exportScope.CURRENT_DOC_CURRENT_LLM) {
+  generateExcel (scope = Config.exportScope.ALL_DOCS_ALL_LLM) {
     const filterByDoc = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.CURRENT_DOC_ALL_LLM)
     const filterByLLM = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.ALL_DOCS_CURRENT_LLM)
     const currentDoc = window.abwa.contentTypeManager.pdfFingerprint
@@ -587,9 +587,10 @@ class ReviewGenerator {
         if (!entry) { row.push(''); row.push(''); return }
         const answer = entry.answer
         const text = typeof answer === 'string' ? answer : (answer && answer.statement) || ''
+        const justification = (answer && answer.justification) || ''
         const sentiment = (answer && answer.sentiment) || entry.sentiment || ''
         const prefix = sentiment === 'green' ? '🟢 ' : sentiment === 'yellow' ? '🟡 ' : sentiment === 'red' ? '🔴 ' : ''
-        row.push(prefix + text)
+        row.push(prefix + text + (justification ? ' | ' + justification : ''))
         const timing = entry.timing != null ? Number(entry.timing) : 0
         row.push(timing > 0 ? timing.toFixed(1) : '')
         premisesTimeSum += timing
@@ -633,7 +634,7 @@ class ReviewGenerator {
     link.click()
   }
 
-  generateXLSX (scope = Config.exportScope.CURRENT_DOC_CURRENT_LLM) {
+  generateXLSX (scope = Config.exportScope.ALL_DOCS_ALL_LLM) {
     const filterByDoc = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.CURRENT_DOC_ALL_LLM)
     const filterByLLM = (scope === Config.exportScope.CURRENT_DOC_CURRENT_LLM || scope === Config.exportScope.ALL_DOCS_CURRENT_LLM)
     const currentDoc = window.abwa.contentTypeManager.pdfFingerprint
@@ -775,8 +776,9 @@ class ReviewGenerator {
           if (!entry) { rowData.push(''); rowData.push(''); premiseSentiments.push(null); return }
           const answer = entry.answer
           const text = typeof answer === 'string' ? answer : (answer && answer.statement) || ''
+          const justification = (answer && answer.justification) || ''
           const sentiment = (answer && answer.sentiment) || entry.sentiment || ''
-          rowData.push(text)
+          rowData.push(text + (justification ? ' | ' + justification : ''))
           premiseSentiments.push(sentiment || null)
           const timing = entry.timing != null ? Number(entry.timing) : 0
           rowData.push(timing > 0 ? timing.toFixed(1) : '')
@@ -913,7 +915,7 @@ class ReviewGenerator {
     })
   }
 
-  generateReviewByCategory (scope = Config.exportScope.CURRENT_DOC_CURRENT_LLM) {
+  generateReviewByCategory (scope = Config.exportScope.ALL_DOCS_ALL_LLM) {
     Alerts.loadingAlert({text: chrome.i18n.getMessage('GeneratingReviewReport')})
     let review = this.parseAnnotations(window.abwa.contentAnnotator.allAnnotations, scope)
     let report = review.groupByCategoryHTML(scope)

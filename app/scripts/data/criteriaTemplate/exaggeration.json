@@ -1,0 +1,58 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” exaggerates or overstates facts about value “v”, action “α”, or state “s”",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "Exaggeration increases A's chance of benefiting from B's acceptance of “c”",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for exaggeration",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "Which aspects of “c” are inflated beyond reasonable evidence?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "How would B's actions differ if “c” were stated without exaggeration?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Has A exaggerated claims in the past?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What benefits does A derive from overstating “c”?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Are there neutral sources that confirm or falsify the degree of emphasis in “c”?",
+      "custom": true
+    }
+  ]
+}

@@ -178,6 +178,11 @@ export class ReviewReport {
         const excerpt = assessment.excerpt || assessment.answer.excerpt;
         html += this.renderSection('Excerpt', `<em>${this.escapeHtml(excerpt)}</em>`, 'section-content excerpt');
       }
+      // Justification
+      const justification = assessment.justification || (assessment.answer && assessment.answer.justification);
+      if (justification) {
+        html += this.renderSection('Justification', this.escapeHtml(justification), 'section-content justification');
+      }
     }
 
     // Arguments section (for critical questions)

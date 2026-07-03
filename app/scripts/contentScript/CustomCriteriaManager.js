@@ -879,7 +879,7 @@ class CustomCriteriaManager {
                 if (apiKey && apiKey !== '') {
                   chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
                     if (!prompt) {
-                      prompt = Config.prompts.annotatePremisePrompt
+                      console.warn('No prompt found for annotatePremisePrompt')
                     }
                     let scheme = ''
                     if (window.abwa.criteriaManager) {
@@ -1008,7 +1008,7 @@ class CustomCriteriaManager {
                   if (apiKey && apiKey !== '') {
                     chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
                       if (!prompt) {
-                        prompt = Config.prompts.annotatePremisePrompt
+                        console.warn('No prompt found for annotatePremisePrompt')
                       }
                       let scheme = ''
                       if (window.abwa.criteriaManager) {
@@ -1090,7 +1090,7 @@ class CustomCriteriaManager {
               if (apiKey && apiKey !== '') {
                 chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'annotatePremisePrompt'} }, ({ prompt }) => {
                   if (!prompt) {
-                    prompt = Config.prompts.annotatePremisePrompt
+                    console.warn('No prompt found for annotatePremisePrompt')
                   }
                   let scheme = ''
                   let schemeObjects = []
@@ -1150,12 +1150,18 @@ class CustomCriteriaManager {
                     }
                   })
                   const batchStartTime = performance.now()
+                  // Fetch conclusion prompt, then proceed
+                  chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'resolveConclusion'} }, (resolveResponse) => {
+                    let conclusionPrompt = (resolveResponse && resolveResponse.prompt) || ''
+                    if (!conclusionPrompt) {
+                      console.warn('No prompt found for resolveConclusion')
+                    }
                   Promise.all(promises)
                     .then((responses) => {
                       // console.log('✅ All responses:', responses)
                       const stringifiedResponses = JSON.stringify(responses, null, 2)
                       console.log(stringifiedResponses)
-                      let conclusionPrompt = Config.prompts.resolveConclusion
+                      conclusionPrompt = conclusionPrompt.replaceAll('[C_DOCUMENT]', documents)
                       conclusionPrompt = conclusionPrompt.replaceAll('[C_SCHEME]', scheme)
                       conclusionPrompt = conclusionPrompt.replaceAll('[C_NAME]', conclusion.name)
                       conclusionPrompt = conclusionPrompt.replaceAll('[C_DESCRIPTION]', conclusion.description)
@@ -1211,9 +1217,9 @@ class CustomCriteriaManager {
                                 let foundCompile = data.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                                 if (!foundCompile) {
                                   // Store answer as standardized object {statement, excerpt, sentiment}
-                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }, llm: llm.model, timing: answer._apiTiming })
+                                  data.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: answer.statement, excerpt: answer.excerpt, justification: answer.justification, sentiment: answer.sentiment }, llm: llm.model, timing: answer._apiTiming })
                                 } else {
-                                  foundCompile.answer = { statement: answer.statement, excerpt: answer.excerpt, sentiment: answer.sentiment }
+                                  foundCompile.answer = { statement: answer.statement, excerpt: answer.excerpt, justification: answer.justification, sentiment: answer.sentiment }
                                   foundCompile.llm = llm.model
                                   foundCompile.timing = answer._apiTiming
                                 }
@@ -1229,9 +1235,11 @@ class CustomCriteriaManager {
                           let conclusionAnnotation = conclusionTagGroup.config.annotation
                           if (conclusionAnnotation.text) {
                             conclusionData = jsYaml.load(conclusionAnnotation.text)
-                            if (!Array.isArray(conclusionData.assessments)) {
-                              conclusionData.assessments = []
-                            }
+                          }
+                          if (!conclusionData || !Array.isArray(conclusionData.assessments)) {
+                            conclusionData = conclusionData || {}
+                            conclusionData.assessments = []
+                          }
                             let foundCompile = conclusionData.assessments.find(item => item.document === window.abwa.contentTypeManager.pdfFingerprint && (!(window.abwa && window.abwa.currentLLMModel) || !item.llm || item.llm === window.abwa.currentLLMModel))
                             if (!foundCompile) {
                               conclusionData.assessments.push({ document: window.abwa.contentTypeManager.pdfFingerprint, documentTitle: window.abwa.contentTypeManager.documentTitle || '', answer: { statement: json.statement, sentiment: json.sentiment }, llm: llm.model, timing: conclusionTiming })
@@ -1241,7 +1249,6 @@ class CustomCriteriaManager {
                               foundCompile.timing = conclusionTiming
                             }
                             conclusionData.batchTiming = batchTiming
-                          }
                           conclusionAnnotation.text = jsYaml.dump(conclusionData)
                           tagAnnotations.push(conclusionAnnotation)
                           // Single dispatch: save premises + conclusion together so reloadTags runs only once
@@ -1255,6 +1262,7 @@ class CustomCriteriaManager {
                       Swal.close()
                       console.error('❌ Error with one of the LLM calls:', error)
                     })
+                  })  // end getPrompt resolveConclusion
                 })
               } else {
                 let callback = () => {
@@ -1276,6 +1284,7 @@ class CustomCriteriaManager {
   askPremisesLLM (prompt, scheme, schemeElem, llm, apiKey, documents) {
     return new Promise((resolve, reject) => {
       const promptInstance = prompt
+        .replaceAll('[C_DOCUMENT]', documents)
         .replaceAll('[C_SCHEME]', scheme)
         .replaceAll('[C_NAME]', schemeElem.name)
         .replaceAll('[C_DESCRIPTION]', schemeElem.description)
@@ -1302,6 +1311,7 @@ class CustomCriteriaManager {
   askQuestionsLLM (prompt, scheme, questionElem, llm, apiKey, documents) {
     return new Promise((resolve, reject) => {
       const promptInstance = prompt
+        .replaceAll('[C_DOCUMENT]', documents)
         .replaceAll('[C_SCHEME]', scheme)
         .replaceAll('[C_DESCRIPTION]', questionElem.description)
         .replaceAll('[C_NAME]', questionElem.name)
@@ -1420,7 +1430,7 @@ class CustomCriteriaManager {
                 if (apiKey && apiKey !== '') {
                   chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
                     if (!prompt) {
-                      prompt = Config.prompts.criticalQuestionPrompt
+                      console.warn('No prompt found for criticalQuestionPrompt')
                     }
                     let scheme = ''
                     if (window.abwa.criteriaManager) {
@@ -1580,7 +1590,7 @@ class CustomCriteriaManager {
                       data: { type: 'criticalQuestionPrompt' }
                     }, ({ prompt }) => {
                       if (!prompt) {
-                        prompt = Config.prompts.criticalQuestionPrompt
+                        console.warn('No prompt found for criticalQuestionPrompt')
                       }
                       let scheme = ''
                       if (window.abwa.criteriaManager) {
@@ -1677,7 +1687,7 @@ class CustomCriteriaManager {
               if (apiKey && apiKey !== '') {
                 chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'criticalQuestionPrompt'} }, ({ prompt }) => {
                   if (!prompt) {
-                    prompt = Config.prompts.criticalQuestionPrompt
+                    console.warn('No prompt found for criticalQuestionPrompt')
                   }
                   let scheme = ''
                   let questionsObjects = []
@@ -1908,11 +1918,9 @@ class CustomCriteriaManager {
                 }
                 if (apiKey && apiKey !== '') {
                   chrome.runtime.sendMessage({ scope: 'prompt', cmd: 'getPrompt', data: {type: 'argumentsPrompt'} }, ({ prompt }) => {
-                    let argumentsPrompt
-                    if (prompt) {
-                      argumentsPrompt = prompt
-                    } else {
-                      argumentsPrompt = Config.prompts.argumentsPrompt
+                    let argumentsPrompt = prompt || ''
+                    if (!prompt) {
+                      console.warn('No prompt found for argumentsPrompt')
                     }
                     if (window.abwa.criteriaManager) {
                       let currentCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
@@ -1984,6 +1992,7 @@ class CustomCriteriaManager {
   }
 
   getSelectorsFromLLM (paragraph, documents) {
+    if (!paragraph) return []
     let selectors = []
     let pageNumber = LLMTextUtils.getPageNumberFromDocuments(paragraph, documents)
     if (pageNumber) {
@@ -2144,6 +2153,9 @@ class CustomCriteriaManager {
       const yellowFace = chrome.runtime.getURL('/images/yellow.png')
       const greenFace = chrome.runtime.getURL('/images/green.png')
       let html = '<div width=900px style="text-align: justify;text-justify: inter-word">'
+      if (llmModel) {
+        html += '<div style="color:#888;font-size:0.8em;margin-bottom:8px;">🤖 ' + llmModel + '</div>'
+      }
       if (sentiment) {
         html += `
         <h3>Sentiment:</h3>
@@ -2163,8 +2175,9 @@ class CustomCriteriaManager {
       if (compile.answer || (assessments && assessments.answer)) {
         html += '<h3>Statement:</h3><div width=800px>' + statement + '</div></br>'
       }
-      if (llmModel) {
-        html += '<h3>Model:</h3><div width=800px><em>' + llmModel + '</em></div></br>'
+      if ((compile && compile.answer && compile.answer.justification) || (assessments && assessments.answer && assessments.answer.justification)) {
+        const justification = (compile && compile.answer && compile.answer.justification) || (assessments && assessments.answer && assessments.answer.justification)
+        html += '<h3>Justification:</h3><div width=800px>' + justification + '</div></br>'
       }
       if (assessments && (assessments.argument || assessments.counterargument)) {
         html += '<table style="width:800px; border-collapse:collapse; margin-bottom:10px;">'

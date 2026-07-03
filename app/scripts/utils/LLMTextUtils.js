@@ -75,6 +75,7 @@ class LLMTextUtils {
   }
 
   static compressText (text) {
+    if (!text) return ''
     return text.replace(/\s/g, '').replaceAll(/-/g, '').replaceAll(/\r?\n|\r/g, '').replaceAll(/\?/g, '').replaceAll(/-\n-|-\r\n-|-\r-|\r\n|\r|\n/g, '').replaceAll(/[^a-zA-Z0-9 ]/g, '').toLowerCase()
   }
   static getPageNumberFromDocuments (paragraph, documents) {

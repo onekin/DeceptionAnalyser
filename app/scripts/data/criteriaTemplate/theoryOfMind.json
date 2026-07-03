@@ -1,0 +1,76 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim or performs an action “c” intended to influence Agent B",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim/action “c” is tailored to B's beliefs, desires, intentions, or perspective (as understood by A)",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "A benefits if B accepts “c” given B's current mental state",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim/action “c” should be scrutinised for strategic deception based on A's exploitation of B's Theory of Mind",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "What beliefs, desires, or intentions of B are targeted by A's claim/action?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "How does A's knowledge of B's mental state give A leverage in shaping B's response?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Does A have a history of manipulating others by exploiting their beliefs or desires?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What gain does A achieve if B accepts “c” under the assumptions A has about B's perspective?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Is A's representation of B's mental state accurate, or is it a projection/guess?",
+      "custom": true
+    },
+    {
+      "name": "CQ6",
+      "group": "Critical questions",
+      "description": "How would B's decision or interpretation differ if they recognised A's strategic exploitation of their beliefs or desires?",
+      "custom": true
+    },
+    {
+      "name": "CQ7",
+      "group": "Critical questions",
+      "description": "Are there inconsistencies between A's public claims/actions and their private knowledge of B's perspective?",
+      "custom": true
+    },
+    {
+      "name": "CQ8",
+      "group": "Critical questions",
+      "description": "Are there independent checks that B can use to counter A's manipulation (e.g., external evidence, third-party perspectives)?",
+      "custom": true
+    }
+  ]
+}

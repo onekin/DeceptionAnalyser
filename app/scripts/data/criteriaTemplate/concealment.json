@@ -1,0 +1,58 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” omits relevant information “o”",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "Omission of “o” benefits Agent A if B accepts “c” as sufficient",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for concealment of information",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "What information might have been omitted in “c”?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "How would B's beliefs or actions change if “o” were disclosed?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Does A have a history of selective omission?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What benefits does A gain from concealing “o”?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Is there independent evidence supporting or contradicting the omission?",
+      "custom": true
+    }
+  ]
+}

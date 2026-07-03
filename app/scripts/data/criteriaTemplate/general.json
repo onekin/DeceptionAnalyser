@@ -7,13 +7,13 @@
       "custom": true
     },
     {
-      "name": "Minor I",
+      "name": "Minor 1",
       "group": "Premises",
-      "description": "Claim “c” consists of information regarding some value “v”, action “alpha”, or state “s”.",
+      "description": "Claim “c” consists of information regarding some value “v”, action “α”",
       "custom": true
     },
     {
-      "name": "Minor II",
+      "name": "Minor 2",
       "group": "Premises",
       "description": "Agent A stands to benefit from Agent B accepting “c”",
       "custom": true
@@ -33,7 +33,7 @@
     {
       "name": "CQ2",
       "group": "Critical questions",
-      "description": " How do B's actions or beliefs change based on accepting “c”?",
+      "description": "How do B's actions or beliefs change based on accepting “c”?",
       "custom": true
     },
     {
@@ -45,7 +45,7 @@
     {
       "name": "CQ4",
       "group": "Critical questions",
-      "description": "What potential benefit does A have from B accepting “c”",
+      "description": "What potential benefit does A have from B accepting “c”?",
       "custom": true
     },
     {
@@ -57,19 +57,19 @@
     {
       "name": "CQ6",
       "group": "Critical questions",
-      "description": "Are there any inconsistencies or discrepancies in “c”, “v”, “alpha”, or “s”?",
+      "description": "Are there any inconsistencies or discrepancies in “c”, “v”, “α”, or “s”?",
       "custom": true
     },
     {
       "name": "CQ7",
       "group": "Critical questions",
-      "description": "Are there independent verifications or counterclaims to “c” with respect to “v”, “alpha”, or “s”?",
+      "description": "Are there independent verifications or counterclaims to “c” with respect to “v”, “α”, or “s”?",
       "custom": true
     },
     {
       "name": "CQ8",
       "group": "Critical questions",
-      "description": " Is “c”, with respect to “v”, “alpha”, or “s”, consistent with A's knowledge, experience, and personality?",
+      "description": "Is “c”, with respect to “v”, “α”, or “s”, consistent with A's knowledge, experience, and personality?",
       "custom": true
     }
   ]

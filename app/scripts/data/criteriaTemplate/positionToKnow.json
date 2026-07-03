@@ -1,0 +1,82 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A asserts claim “c” to Agent B about value “v”, action “α”, or state “s”",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Agent A asserts, implicitly or explicitly, claim “p”: that they themselves are in a position to know whether “c” is true",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "A's assertion of “p” is deceptive (e.g., fabricated, exaggerated, misrepresented, or selectively invoked)",
+      "custom": true
+    },
+    {
+      "name": "Minor 3",
+      "group": "Premises",
+      "description": "A benefits if B accepts “c” on the basis of A's assertion of “p”",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for deceptive invocation of “p”",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "Did A explicitly or implicitly assert “p” (that they are in a position to know)?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "What evidence suggests that A's assertion of “p” is deceptive (fabricated, exaggerated, or misrepresented)?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "What gaps, limitations, or biases undermine A's alleged position to know?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What incentive does A have to present a deceptive assertion of “p”?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Are there independent sources that confirm or contradict A's supposed position to know?",
+      "custom": true
+    },
+    {
+      "name": "CQ6",
+      "group": "Critical questions",
+      "description": "Does A have a history of making deceptive claims about being in a position to know?",
+      "custom": true
+    },
+    {
+      "name": "CQ7",
+      "group": "Critical questions",
+      "description": "How would B's evaluation of “c” change if the deception in “p” were revealed?",
+      "custom": true
+    },
+    {
+      "name": "CQ8",
+      "group": "Critical questions",
+      "description": "Would claim “c” still stand if A's assertion of “p” were removed?",
+      "custom": true
+    }
+  ]
+}

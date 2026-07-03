@@ -1,0 +1,58 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B about value “v”, action “α”, or state “s”",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” distorts or misrepresents facts about “v”, “α”, or “s”",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "A benefits from B accepting the misrepresentation of the relations between “v”, “α”, and “s”",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for misrepresentation",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "In what ways does “c” misrepresent or distort the situation?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "What evidence exists to verify or falsify “c”?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Has A misrepresented in the past?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What benefit does A gain by misrepresenting instead of being truthful?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Are there independent sources that correct the misrepresentation?",
+      "custom": true
+    }
+  ]
+}

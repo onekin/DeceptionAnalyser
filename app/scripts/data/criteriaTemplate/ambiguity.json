@@ -1,0 +1,58 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” is vague or ambiguous in a way that permits multiple interpretations",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "Ambiguity benefits A by allowing denial, reinterpretation, or opportunistic use of “c”",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for intentional ambiguity",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "Which terms, phrases, or pieces of information in “c” are ambiguous?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "How do possible interpretations affect B's beliefs or actions?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Does A have a record of making and exploiting ambiguous statements?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What benefit does A gain from keeping “c” vague?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Would clarification of “c” change B's interpretation?",
+      "custom": true
+    }
+  ]
+}

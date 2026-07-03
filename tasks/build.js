@@ -3,6 +3,7 @@ require('./scripts')
 require('./manifest')
 require('./styles')
 require('./pages')
+require('./prompts')
 require('./locales')
 require('./images')
 require('./fonts')
@@ -15,6 +16,7 @@ gulp.task('build', gulp.series('clean', gulp.parallel(
   'scripts',
   'styles',
   'pages',
+  'prompts',
   'locales',
   'images',
   'fonts',

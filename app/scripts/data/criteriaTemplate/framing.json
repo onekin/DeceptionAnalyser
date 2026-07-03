@@ -1,0 +1,58 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” uses a specific frame of interpretation “f” that alters interpretation of value “v”, action “α”, or state “s”",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "Frame “f” benefits A if B accepts the claim under this interpretation",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for manipulative framing",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "What alternative frames could be applied to the same facts?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "How does frame “f” alter B's interpretation or likely actions?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Does A have a record of using biased or self-serving frames of interpretation?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What incentives does A have in using “f” rather than a neutral description?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Would B act differently if “c” were framed otherwise?",
+      "custom": true
+    }
+  ]
+}

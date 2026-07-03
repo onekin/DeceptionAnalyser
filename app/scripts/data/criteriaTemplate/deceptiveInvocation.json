@@ -1,0 +1,82 @@
+{
+  "criteria": [
+    {
+      "name": "Major",
+      "group": "Premises",
+      "description": "Agent A makes a claim “c” to Agent B, citing the authority or opinion of Agent/Entity C",
+      "custom": true
+    },
+    {
+      "name": "Minor 1",
+      "group": "Premises",
+      "description": "Claim “c” concerns value “v”, action “α”, or state “s” relevant to B",
+      "custom": true
+    },
+    {
+      "name": "Minor 2",
+      "group": "Premises",
+      "description": "A benefits if B accepts “c” on the basis of C's authority",
+      "custom": true
+    },
+    {
+      "name": "Minor 3",
+      "group": "Premises",
+      "description": "A's use of C's authority is deceptive (e.g., misrepresentation of C's actual opinion, selective quotation, exaggeration of C's expertise, or appeal to false authority)",
+      "custom": true
+    },
+    {
+      "name": "Conclusion",
+      "group": "Premises",
+      "description": "Claim “c” should be scrutinised for deceptive invocation of authority",
+      "custom": true
+    },
+    {
+      "name": "CQ1",
+      "group": "Critical questions",
+      "description": "Did C actually make the statement or hold the opinion attributed to them by A?",
+      "custom": true
+    },
+    {
+      "name": "CQ2",
+      "group": "Critical questions",
+      "description": "Is C genuinely an authority on the domain of “v”, “α”, or “s”?",
+      "custom": true
+    },
+    {
+      "name": "CQ3",
+      "group": "Critical questions",
+      "description": "Did A accurately represent the scope, conditions, and limits of C's opinion?",
+      "custom": true
+    },
+    {
+      "name": "CQ4",
+      "group": "Critical questions",
+      "description": "What incentive does A have to invoke C's authority in support of “c”?",
+      "custom": true
+    },
+    {
+      "name": "CQ5",
+      "group": "Critical questions",
+      "description": "Are there other expert opinions that contradict or nuance C's alleged opinion?",
+      "custom": true
+    },
+    {
+      "name": "CQ6",
+      "group": "Critical questions",
+      "description": "Is there evidence of selective citation, or exaggeration in A's use of C?",
+      "custom": true
+    },
+    {
+      "name": "CQ7",
+      "group": "Critical questions",
+      "description": "Is C's opinion consistent with the broader body of knowledge in the field?",
+      "custom": true
+    },
+    {
+      "name": "CQ8",
+      "group": "Critical questions",
+      "description": "How would B's assessment of “c” change if the deceptive use of C's authority were revealed?",
+      "custom": true
+    }
+  ]
+}
