@@ -24,8 +24,10 @@ const Config = {
       { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }
     ],
     groq: [
-      { value: 'qwen/qwen3.6-27b', label: 'Qwen3.6 27B' },
-      { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B' }
+      { value: 'qwen/qwen3-32b', label: 'Qwen3 32B' },
+      { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B' },
+      { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B' },
+      { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B' }
     ],
     deepseek: [
       { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
