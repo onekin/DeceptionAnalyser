@@ -14,29 +14,28 @@ const Config = {
   },
   llmModels: {
     openAI: [
+      { value: 'gpt-5.5-pro', label: 'GPT-5.5 Pro' },
       { value: 'gpt-5', label: 'GPT-5' },
-      { value: 'gpt-5-mini', label: 'GPT-5 mini' },
-      { value: 'gpt-4.1', label: 'GPT-4.1' },
       { value: 'gpt-4o', label: 'GPT-4o' }
     ],
     anthropic: [
-      { value: 'claude-opus-4-5', label: 'Claude Opus 4.5' },
-      { value: 'claude-sonnet-4-5', label: 'Claude Sonnet 4.5' },
+      { value: 'claude-opus-4-8', label: 'Claude Opus 4.8' },
+      { value: 'claude-sonnet-5', label: 'Claude Sonnet 5' },
       { value: 'claude-haiku-4-5', label: 'Claude Haiku 4.5' }
     ],
     groq: [
-      { value: 'qwen/qwen3-32b', label: 'Qwen3 32B' },
-      { value: 'meta-llama/llama-4-maverick-17b-128e-instruct', label: 'Llama 4 Maverick 17B' },
-      { value: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout 17B' }
+      { value: 'qwen/qwen3.6-27b', label: 'Qwen3.6 27B' },
+      { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B' }
     ],
     deepseek: [
       { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro' },
       { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash' }
     ],
     gemini: [
+      { value: 'gemini-3.5-pro', label: 'Gemini 3.5 Pro' },
+      { value: 'gemini-3.5-flash', label: 'Gemini 3.5 Flash' },
       { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-      { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' }
+      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' }
     ]
   },
   llmProviderLabels: {
