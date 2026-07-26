@@ -5,6 +5,9 @@ import Alerts from '../utils/Alerts'
 import AnnotationUtils from '../utils/AnnotationUtils'
 import LocalStorageManager from '../storage/local/LocalStorageManager'
 import jsYaml from 'js-yaml'
+import JSZip from 'jszip'
+import CriterionGroup from '../contentScript/CriterionGroup'
+import Criterion from '../contentScript/Criterion'
 
 
 const axios = require('axios')
@@ -33,7 +36,7 @@ class ReviewGenerator {
       this.htmlExportBtn = this.container.querySelector('#htmlExportButton')
       this.htmlExportBtn.src = htmlIconURL
       this.htmlExportBtn.addEventListener('click', () => {
-        this.generateReviewByCategory(Config.exportScope.ALL_DOCS_ALL_LLM)
+        this.generateHTMLButtonHandler()
       })
       // CSV/Excel export button — use inline SVG if excel.png is missing
       let csvIconURL = chrome.runtime.getURL('/images/excel.png')
@@ -283,7 +286,12 @@ class ReviewGenerator {
       let annotationText
       if (annotations[a].text!==null&&annotations[a].text!=='') {
         if (annotations[a].text) {
-          annotationText = JSON.parse(annotations[a].text)
+          try {
+            annotationText = JSON.parse(annotations[a].text)
+          } catch (e) {
+            // Annotation text might be YAML (schema config) rather than JSON
+            annotationText = { comment: '' }
+          }
         } else {
           annotationText = { comment: '' }
         }
@@ -445,6 +453,28 @@ class ReviewGenerator {
     return r
   }
 
+  generateHTMLButtonHandler () {
+    $.contextMenu({
+      selector: '#htmlExportButton',
+      trigger: 'left',
+      build: () => {
+        let items = {}
+        items['html'] = { name: 'Export as HTML' }
+        items['htmlAll'] = { name: 'Export all schemas as HTML (ZIP)' }
+        return {
+          callback: (key) => {
+            if (key === 'html') {
+              this.generateReviewByCategory(Config.exportScope.ALL_DOCS_ALL_LLM)
+            } else if (key === 'htmlAll') {
+              this.exportAllSchemasZip('html')
+            }
+          },
+          items: items
+        }
+      }
+    })
+  }
+
   generateSpreadsheetButtonHandler () {
     $.contextMenu({
       selector: '#csvExportButton',
@@ -453,12 +483,19 @@ class ReviewGenerator {
         let items = {}
         items['csv'] = { name: 'Export as CSV' }
         items['excel'] = { name: 'Export as Excel' }
+        items['sep1'] = '---------'
+        items['csvAll'] = { name: 'Export all schemas as CSV (ZIP)' }
+        items['excelAll'] = { name: 'Export all schemas as Excel (ZIP)' }
         return {
           callback: (key) => {
             if (key === 'csv') {
               this.generateExcel(Config.exportScope.ALL_DOCS_ALL_LLM)
             } else if (key === 'excel') {
               this.generateXLSX(Config.exportScope.ALL_DOCS_ALL_LLM)
+            } else if (key === 'csvAll') {
+              this.exportAllSchemasZip('csv')
+            } else if (key === 'excelAll') {
+              this.exportAllSchemasZip('xlsx')
             }
           },
           items: items
@@ -627,11 +664,8 @@ class ReviewGenerator {
     const csv = rows.map(r => r.map(escapeCell).join(',')).join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
     const schemaName = (window.abwa.groupSelector.currentGroup && window.abwa.groupSelector.currentGroup.name) || 'analysis'
-    link.download = schemaName + '-report.csv'
-    link.click()
+    FileSaver.saveAs(blob, schemaName + '-report.csv')
   }
 
   generateXLSX (scope = Config.exportScope.ALL_DOCS_ALL_LLM) {
@@ -952,6 +986,256 @@ class ReviewGenerator {
 
   resume (){
     if(window.abwa.contentAnnotator.allAnnotations.length>0) window.abwa.contentAnnotator.goToAnnotation(window.abwa.contentAnnotator.allAnnotations.reduce((max,a) => new Date(a.updated) > new Date(max.updated) ? a : max))
+  }
+
+  /**
+   * Build CriterionGroups from annotations for a specific group.
+   * Replicates the logic of CriteriaManager.createCriteriaBasedOnAnnotations()
+   * but works with an arbitrary set of annotations.
+   * @param {Array} annotations - annotations belonging to a group
+   * @returns {Array} array of CriterionGroup objects
+   */
+  buildCriterionGroupsForGroup (annotations) {
+    const namespace = Config.review.namespace
+    const tags = Config.review.tags
+    const retrieveCriterionNameByPrefix = (annotationTags, prefix) => {
+      for (let i = 0; i < annotationTags.length; i++) {
+        if (_.startsWith(annotationTags[i].toLowerCase(), prefix.toLowerCase())) {
+          return _.replace(annotationTags[i], prefix + ':', '')
+        }
+      }
+      return null
+    }
+
+    // Phase 1: Build criterion groups from group-level annotations
+    let criterionGroupsAnnotations = {}
+    for (let i = 0; i < annotations.length; i++) {
+      let groupCriterion = retrieveCriterionNameByPrefix(annotations[i].tags, (namespace + ':' + tags.grouped.group))
+      if (groupCriterion) {
+        let options = {}
+        try {
+          options = jsYaml.load(annotations[i].text) || {}
+        } catch (e) {
+          options = {}
+        }
+        criterionGroupsAnnotations[groupCriterion] = new CriterionGroup({
+          name: groupCriterion,
+          namespace: namespace,
+          group: tags.grouped.group,
+          options: options,
+          annotation: annotations[i]
+        })
+      }
+    }
+
+    // Phase 2: Add subgroup criteria to parent groups
+    for (let i = 0; i < annotations.length; i++) {
+      let criteriaAnnotation = annotations[i]
+      let criteriaName = retrieveCriterionNameByPrefix(criteriaAnnotation.tags, (namespace + ':' + tags.grouped.subgroup))
+      let groupBelongedTo = retrieveCriterionNameByPrefix(criteriaAnnotation.tags, (namespace + ':' + tags.grouped.relation))
+      if (criteriaName && groupBelongedTo) {
+        if (_.isObject(criterionGroupsAnnotations[groupBelongedTo]) && _.isArray(criterionGroupsAnnotations[groupBelongedTo].criteria)) {
+          let options = {}
+          try {
+            options = jsYaml.load(criteriaAnnotation.text) || {}
+          } catch (e) {
+            options = {}
+          }
+          criterionGroupsAnnotations[groupBelongedTo].criteria.push(new Criterion({
+            name: criteriaName,
+            namespace: namespace,
+            options: options || {},
+            annotation: criteriaAnnotation,
+            tags: [
+              namespace + ':' + tags.grouped.relation + ':' + groupBelongedTo,
+              namespace + ':' + tags.grouped.subgroup + ':' + criteriaName
+            ]
+          }, criterionGroupsAnnotations[groupBelongedTo]))
+        }
+      }
+    }
+
+    // Return as array
+    return _.sortBy(_.map(criterionGroupsAnnotations), (cg) => {
+      return _.get(cg, 'config.options.group', '').toLowerCase()
+    })
+  }
+
+  /**
+   * Export all schemas (groups) as a ZIP file.
+   * Iterates over all groups, generates the export for each using the
+   * specified export type ('html', 'csv', or 'xlsx'), and bundles
+   * all results into a single ZIP download.
+   * @param {string} exportType - 'html', 'csv', or 'xlsx'
+   */
+  async exportAllSchemasZip (exportType) {
+    const groups = window.abwa.groupSelector.groups
+    if (!groups || groups.length === 0) {
+      Alerts.errorAlert({ text: 'No schemas found to export.' })
+      return
+    }
+
+    Alerts.loadingAlert({ text: 'Exporting all schemas...' })
+
+    // Save current state
+    const savedAllAnnotations = window.abwa.contentAnnotator.allAnnotations
+    const savedCriterionGroups = window.abwa.criteriaManager.currentCriterionGroups
+    const savedCurrentGroup = window.abwa.groupSelector.currentGroup
+
+    // Access all annotations from the database
+    const allAnnotations = window.abwa.storageManager.annotationsDatabase &&
+      window.abwa.storageManager.annotationsDatabase.annotations
+      ? window.abwa.storageManager.annotationsDatabase.annotations
+      : []
+
+    try {
+      const zip = new JSZip()
+      let fileCount = 0
+
+      for (const group of groups) {
+        // Filter annotations for this group
+        const groupAnnotations = allAnnotations.filter(a => a.group === group.id)
+        if (groupAnnotations.length === 0) continue
+
+        // Build criterion groups for this group
+        const criterionGroups = this.buildCriterionGroupsForGroup(groupAnnotations)
+        if (!criterionGroups || criterionGroups.length === 0) continue
+
+        // Temporarily override globals
+        window.abwa.contentAnnotator.allAnnotations = groupAnnotations
+        window.abwa.criteriaManager.currentCriterionGroups = criterionGroups
+        window.abwa.groupSelector.currentGroup = group
+
+        const schemaName = group.name || 'schema'
+        let ext, content
+
+        if (exportType === 'html') {
+          const review = this.parseAnnotations(groupAnnotations, Config.exportScope.ALL_DOCS_ALL_LLM)
+          content = review.groupByCategoryHTML(Config.exportScope.ALL_DOCS_ALL_LLM)
+          ext = 'html'
+        } else if (exportType === 'csv') {
+          content = await this.buildCSVContent(Config.exportScope.ALL_DOCS_ALL_LLM)
+          ext = 'csv'
+        } else if (exportType === 'xlsx') {
+          const buffer = await this.buildXLSXBuffer(Config.exportScope.ALL_DOCS_ALL_LLM)
+          if (buffer) {
+            zip.file(schemaName + '-report.xlsx', buffer)
+            fileCount++
+          }
+          continue // Already added to zip
+        }
+
+        if (content) {
+          const mimeType = exportType === 'html'
+            ? 'text/html;charset=utf-8'
+            : 'text/csv;charset=utf-8'
+          zip.file(schemaName + '-report.' + ext, content, { binary: false })
+          fileCount++
+        }
+      }
+
+      if (fileCount === 0) {
+        Alerts.closeAlert()
+        Alerts.errorAlert({ text: 'No data found to export for any schema.' })
+        return
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' })
+      const zipName = 'all-schemas-' + exportType + '.zip'
+      FileSaver.saveAs(zipBlob, zipName)
+    } catch (err) {
+      console.error('Error exporting all schemas:', err)
+      Alerts.errorAlert({ text: 'An error occurred while exporting all schemas.' })
+    } finally {
+      // Restore original state
+      window.abwa.contentAnnotator.allAnnotations = savedAllAnnotations
+      window.abwa.criteriaManager.currentCriterionGroups = savedCriterionGroups
+      window.abwa.groupSelector.currentGroup = savedCurrentGroup
+
+      Alerts.closeAlert()
+    }
+  }
+
+  /**
+   * Build CSV content string (same logic as generateExcel but returns string via promise).
+   * @param {number} scope - export scope
+   * @returns {Promise<string>} CSV content
+   */
+  buildCSVContent (scope) {
+    return new Promise((resolve) => {
+      const originalSaveAs = FileSaver.saveAs
+      let blobCaptured = false
+
+      FileSaver.saveAs = (blob) => {
+        blobCaptured = true
+        const reader = new FileReader()
+        reader.onload = () => {
+          FileSaver.saveAs = originalSaveAs
+          resolve(reader.result)
+        }
+        reader.onerror = () => {
+          FileSaver.saveAs = originalSaveAs
+          resolve('')
+        }
+        reader.readAsText(blob)
+      }
+
+      try {
+        this.generateExcel(scope)
+      } catch (e) {
+        FileSaver.saveAs = originalSaveAs
+        resolve('')
+        return
+      }
+
+      // generateExcel is synchronous. If no blob was captured, restore and resolve.
+      if (!blobCaptured) {
+        FileSaver.saveAs = originalSaveAs
+        resolve('')
+      }
+    })
+  }
+
+  /**
+   * Build XLSX buffer (same logic as generateXLSX but returns a promise with buffer).
+   * @param {number} scope - export scope
+   * @returns {Promise<ArrayBuffer|null>} XLSX buffer
+   */
+  buildXLSXBuffer (scope) {
+    // This is a wrapper that captures the XLSX buffer from generateXLSX.
+    // We override the final writeBuffer call by temporarily patching FileSaver.
+    return new Promise((resolve) => {
+      const originalSaveAs = FileSaver.saveAs
+      let resolved = false
+      FileSaver.saveAs = (blob) => {
+        if (!resolved) {
+          resolved = true
+          blob.arrayBuffer().then((buf) => {
+            FileSaver.saveAs = originalSaveAs
+            resolve(buf)
+          })
+        }
+      }
+      // Set a timeout in case XLSX generation fails silently
+      const timeout = setTimeout(() => {
+        if (!resolved) {
+          resolved = true
+          FileSaver.saveAs = originalSaveAs
+          resolve(null)
+        }
+      }, 10000)
+
+      try {
+        this.generateXLSX(scope)
+      } catch (e) {
+        clearTimeout(timeout)
+        if (!resolved) {
+          resolved = true
+          FileSaver.saveAs = originalSaveAs
+          resolve(null)
+        }
+      }
+    })
   }
 
   destroy (callback) {

@@ -1,0 +1,2419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analysis Report</title>
+  <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        line-height: 1.5;
+        color: #1a1a1a;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px 16px;
+        background: #fff;
+      }
+
+      h1 {
+        color: #1a1a1a;
+        font-size: 1.4em;
+        font-weight: 700;
+        margin-bottom: 4px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e0e0e0;
+      }
+
+      .report-date {
+        color: #888;
+        font-size: 0.8em;
+        margin-bottom: 18px;
+      }
+
+      .criterion-card {
+        background: #fff;
+        border: 1px solid #e8e8e8;
+        border-left: 3px solid #555;
+        margin-bottom: 12px;
+        padding: 12px 14px;
+      }
+
+      .criterion-card.critical-question {
+        border-left-color: #999;
+        background: #fafafa;
+        font-size: 0.92em;
+      }
+
+      /* Group accordion (Premises / Critical Questions) */
+      .group-section {
+        margin-bottom: 8px;
+        border: 1px solid #eee;
+      }
+      .group-accordion-toggle {
+        width: 100%;
+        padding: 6px 12px;
+        border: none;
+        background: #fafafa;
+        color: #444;
+        font-size: 0.8em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.15s;
+      }
+      .group-accordion-toggle:hover { background: #f0f0f0; }
+      .group-accordion-toggle .accordion-arrow {
+        font-size: 0.7em;
+        width: 14px;
+        text-align: center;
+      }
+      .group-badge {
+        margin-left: auto;
+        font-size: 0.85em;
+        font-weight: 400;
+        color: #999;
+      }
+      .group-content { padding: 0 8px 8px; }
+      .group-content[hidden] { display: none; }
+
+
+
+      .criterion-card.premise {
+        border-left-color: #555;
+      }
+
+      .criterion-title {
+        color: #1a1a1a;
+        font-size: 0.95em;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .section-content {
+        margin-bottom: 8px;
+      }
+
+      .section-content h3 {
+        color: #555;
+        font-size: 0.72em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        margin-bottom: 3px;
+        padding-bottom: 2px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .section-content .content {
+        padding: 4px 0;
+        line-height: 1.45;
+        font-size: 0.88em;
+      }
+
+      .section-content.description .content {
+        color: #444;
+        font-style: italic;
+      }
+
+      .section-content.analysis .content {
+        color: #1a1a1a;
+      }
+
+      .section-content.excerpt .content {
+        color: #555;
+        font-style: italic;
+        padding-left: 8px;
+        border-left: 2px solid #ddd;
+      }
+
+      .llm-badge {
+        display: inline-block;
+        background: #f0f0f0;
+        color: #555;
+        padding: 0 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        font-weight: 600;
+        margin-left: 4px;
+      }
+
+      .timing-badge {
+        display: inline-block;
+        background: #e8f4fd;
+        color: #1a73e8;
+        padding: 1px 8px;
+        border-radius: 3px;
+        font-size: 0.78em;
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      /* Timing summary panel */
+      .timing-summary {
+        background: #f8fafb;
+        border: 1px solid #e0e0e0;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        font-size: 0.82em;
+        color: #555;
+      }
+      .timing-summary .ts-group {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .timing-summary .ts-label {
+        font-size: 0.72em;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: #888;
+      }
+      .timing-summary .ts-value {
+        font-weight: 600;
+        color: #333;
+        font-size: 1.05em;
+      }
+      .timing-summary .ts-value.wall { color: #2e7d32; }
+
+      .evidence-list {
+        list-style: none;
+      }
+
+      .evidence-item {
+        margin-bottom: 6px;
+        padding: 6px 8px;
+        border-left: 2px solid #ddd;
+        font-size: 0.85em;
+      }
+
+      .page-reference {
+        display: inline-block;
+        background: #f5f5f5;
+        color: #666;
+        padding: 1px 6px;
+        border-radius: 2px;
+        font-size: 0.85em;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+
+      .highlight-text {
+        font-style: italic;
+        color: #333;
+      }
+
+      .highlight-text:before { content: '\201C'; }
+      .highlight-text:after { content: '\201D'; }
+
+      .comments-section {
+        margin-top: 6px;
+        font-size: 0.85em;
+        color: #666;
+      }
+
+      .comments-section strong {
+        font-weight: 600;
+        color: #444;
+      }
+
+      .comment-item {
+        margin-left: 12px;
+        padding: 1px 0;
+      }
+
+      .comment-item:before {
+        content: '• ';
+        color: #999;
+      }
+
+      .criterion-title img {
+        height: 16px;
+        width: 16px;
+        vertical-align: middle;
+      }
+
+      .llm-panel[hidden] { display: none; }
+
+      /* Arguments table */
+      .arguments-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 6px;
+        font-size: 0.85em;
+      }
+      .arguments-table th {
+        background: #f5f5f5;
+        padding: 4px 8px;
+        text-align: left;
+        font-weight: 600;
+        color: #555;
+        border: 1px solid #e8e8e8;
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .arguments-table td {
+        padding: 6px 8px;
+        border: 1px solid #e8e8e8;
+        vertical-align: top;
+        line-height: 1.4;
+      }
+
+      /* Report toolbar */
+      .report-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding: 8px 12px;
+        background: #fafafa;
+        border: 1px solid #e8e8e8;
+        flex-wrap: wrap;
+      }
+      .report-toolbar label {
+        font-size: 0.75em;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+      }
+      .report-toolbar select {
+        padding: 3px 8px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 0.85em;
+        color: #333;
+        background: #fff;
+        min-width: 140px;
+      }
+      .report-toolbar .toolbar-spacer { flex: 1; }
+      .btn-print {
+        padding: 4px 14px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background: #fff;
+        color: #555;
+        font-size: 0.8em;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .btn-print:hover { background: #f0f0f0; }
+
+      @media print {
+        body { padding: 12px; background: #fff; font-size: 11px; }
+        .criterion-card { break-inside: avoid; border: 1px solid #ddd; margin-bottom: 8px; }
+        .report-toolbar { display: none; }
+        .doc-accordion-toggle { background: none; padding: 6px 10px; }
+      }
+
+      @media (max-width: 768px) {
+        body { padding: 12px 8px; }
+        h1 { font-size: 1.2em; }
+        .criterion-card { padding: 10px; }
+      }
+    </style>
+</head>
+<body>
+  <h1>Report of the Analysis</h1>
+  <p class="report-date">Generated on: July 26, 2026</p>
+
+  <div class="report-toolbar">
+    <label for="docFilter">PDF:</label>
+    <select id="docFilter"></select>
+    <label for="modelFilter">Model:</label>
+    <select id="modelFilter"></select>
+    <span class="toolbar-spacer"></span>
+    <button id="btnPrint" class="btn-print" title="Save as PDF">🖶 Print / PDF</button>
+  </div>
+
+
+      <div class="criterion-card premise" data-criterion="Conclusion" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Description</h3>
+        <div class="content">Agent A&#039;s claim “c” should be scrutinised for deception</div>
+      </div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="0"><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 6.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Agent Fox&#039;s claim that the Crow has a lovely voice and should be hailed Queen of Birds should be scrutinised for deception.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-5.4" data-idx="1" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 1.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox&#039;s claim to the Crow that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, made to influence her to sing or open her beak, should be scrutinised for deception because he stands to benefit by getting her cheese if she accepts the claim.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-4o" data-idx="2" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 1.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim that the Crow has a lovely voice and should sing to be hailed as the Queen of Birds should be scrutinized for deception, as it was intended to make the Crow drop the cheese, which benefits the Fox.</div>
+      </div></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="3" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 2.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s flattering claims about the Crow&#039;s beauty, feathers, form, wings, and voice quality should be scrutinized for deception, as the Fox made these statements with the deliberate intent to manipulate the Crow into singing and dropping the cheese for his own benefit.</div>
+      </div></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="4" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 1.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s flattering claims about the Crow&#039;s beauty and voice should be scrutinised for deception, as they were deliberately constructed to manipulate the Crow into singing so that the cheese would fall into the Fox&#039;s mouth, thereby benefiting the Fox materially while deceiving the Crow about his true intentions.</div>
+      </div></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 3.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s flattering claims about the Crow&#039;s beauty and voice, implicitly requesting her to sing, should be scrutinised for deception.</div>
+      </div></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 3.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim that the Crow has a very lovely voice and will sing a song should be scrutinised for deception.</div>
+      </div></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 16.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s flattering claim regarding the Crow&#039;s beauty and potential voice should be scrutinised for deception.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 3.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim that the Crow has a beautiful voice and should be hailed Queen of Birds if she sang should be scrutinised for deception.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> CONCLUSION Conclusion is met</h2><div class="timing-badge">API: 5.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim that the Crow has a beautiful voice and should sing to be hailed &#039;Queen of Birds&#039; should be scrutinised for deception.</div>
+      </div></div></div>
+  <div class="group-section">
+    <button class="group-accordion-toggle">
+      <span class="accordion-arrow">▾</span>
+      Premises
+      <span class="group-badge">3 premises</span>
+    </button>
+    <div class="group-content">
+      <div class="criterion-card premise" data-criterion="Major" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Description</h3>
+        <div class="content">Agent A makes a claim “c” intended to influence Agent B</div>
+      </div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="0"><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 12.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Agent Fox makes the claim &#039;the Crow has a lovely voice and should be Queen of Birds&#039; intended to influence Agent Crow.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly flatters the Crow with claims about her voice and potential title, directly attempting to influence the Crow into singing.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-5.4" data-idx="1" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 2.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox (Agent A) makes the claim c to the Crow (Agent B) that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, intending to influence her to sing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This passage shows the Fox making explicit flattering claims to the Crow in order to induce her to act by opening her beak and singing.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-4o" data-idx="2" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 2.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox makes flattering remarks intended to influence the Crow to drop the cheese.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt shows the Fox making flattering remarks about the Crow to influence her to sing and drop the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="3" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 6.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox makes claims (flattering statements about the Crow&#039;s appearance and potential voice) intended to influence the Crow to open her beak and drop the cheese.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This passage shows the Fox making deliberate flattering claims designed to manipulate the Crow into singing, thereby achieving his goal of obtaining the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="4" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 3.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox makes flattering claims about the Crow&#039;s beauty and voice intended to influence the Crow into singing, so that the Fox can obtain the cheese the Crow is holding.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This passage directly demonstrates the Fox making a calculated claim (flattery about the Crow&#039;s appearance and presumed voice) with the explicit intent to influence the Crow&#039;s behavior (to sing), which the Fox knows will cause the Crow to drop the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 8.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox (Agent A) makes flattering claims about the Crow (Agent B) intended to influence the Crow to sing and drop the cheese.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox&#039;s flattering statements about the Crow&#039;s appearance and the implied claim that she should sing are clearly intended to influence the Crow&#039;s behavior for the Fox&#039;s benefit.</div>
+      </div></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 12.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Agent Master Fox makes the claim &quot;Good-morning, beautiful creature!&quot; to influence Agent Crow.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;Good-morning, beautiful creature!&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox delivers a flattering statement directly to the Crow, showing an intent to persuade her.</div>
+      </div></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 42.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox makes a flattery-based claim regarding the Crow&#039;s beauty and potential voice intended to influence the Crow to open her beak.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;Good-morning,
+beautiful
+creature!&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt demonstrates the Fox directly addressing the Crow with explicit praise designed to flatter her into compliance, fulfilling the condition that Agent A makes a claim intended to influence Agent B.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 10.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox (Agent A) makes the claim that the Crow has a beautiful voice and should be hailed Queen of Birds (claim &#039;c&#039;) in order to influence the Crow (Agent B) to sing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox flatters the Crow&#039;s voice with the explicit intent of getting her to open her beak and sing.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MAJOR premise is met</h2><div class="timing-badge">API: 32.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox (Agent A) makes a flattering claim to the Crow (Agent B) that he will hail her &#039;Queen of Birds&#039; if she sings a song, intending to influence her to open her beak and drop the cheese.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox makes a calculated, flattering claim about the Crow&#039;s voice and status to manipulate her into singing.</div>
+      </div></div></div>
+      <div class="criterion-card premise" data-criterion="Minor 1" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Description</h3>
+        <div class="content">Claim “c” consists of information regarding some value “v”, action “α”</div>
+      </div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="0"><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 16.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim &quot;c&quot; to the Crow consists of information regarding the value of being hailed &quot;Queen of Birds&quot; and the action of singing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Could she sing just one song, I know I should hail her Queen of Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt captures the Fox&#039;s claim that links a specific action (singing) to a desired value (royal title), satisfying the premise.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-5.4" data-idx="1" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 3.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox&#039;s claim to the Crow consists of positive information about the value v of the Crow&#039;s beauty and voice, and implies the action α of singing or opening her beak to prove that she deserves to be hailed Queen of Birds.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot;
+said
+the
+Fox.
+&quot;How
+her
+feathers
+shine!
+What
+a
+beautiful
+form
+and
+what
+splendid
+wings!
+Such
+a
+wonderful
+Bird
+should
+have
+a
+very
+lovely
+voice,
+since
+everything
+else
+about
+her
+is
+so
+perfect.
+Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This passage directly states Fox&#039;s claim about the Crow&#039;s value (her beauty and supposed lovely voice) and urges the relevant action of singing, so the premise is clearly satisfied.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-4o" data-idx="2" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 2.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox claims the Crow has a lovely voice and should be hailed Queen of Birds if she could sing one song.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt contains the Fox&#039;s claim about the Crow&#039;s voice, intended to make her sing and drop the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="3" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 4.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim consists of information regarding the Crow&#039;s beauty and voice quality, intended to prompt the action of the Crow singing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This excerpt shows the Fox making specific claims about values (the Crow&#039;s beauty, feathers, form, wings, and implied voice quality) and requesting an action (singing), which directly instantiates the premise&#039;s variables.</div>
+      </div></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="4" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 4.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim consists of information regarding the value of the Crow&#039;s beauty, voice, and status as Queen of Birds, with the action of singing to prove her worth.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>What a charming creature she is! How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly constructs a claim about the Crow&#039;s aesthetic value and potential vocal ability, with the intended action being that the Crow sing to validate her status, making this a clear instantiation of a value-laden claim designed to motivate specific behavior.</div>
+      </div></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 39.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim &#039;c&#039; consists of flattering information regarding the Crow&#039;s beauty, feathers, form, wings, and voice (value &#039;v&#039;), and an implicit request for her to sing (action &#039;α&#039;).</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;What a charming creature she is!&quot; said the Fox. &quot;How her feathers shine! What a beautiful form and what splendid wings! Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This excerpt directly shows the Fox making a claim that consists of information about the Crow&#039;s value (beauty, voice) and the action of singing, which is intended to influence the Crow to open her beak and drop the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 11.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox claims that the Crow has a very lovely voice and that she will sing a song.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect. Could she sing just one song, I know I should hail her Queen of Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt shows the Fox attributing a value (a lovely voice) and an action (sing a song) to the Crow.</div>
+      </div></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 47.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s flattering claim consists of information regarding the value of the Crow possessing a wonderfully lovely voice and being hailed Queen of Birds, and the action of her singing a song to demonstrate it.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Such
+a
+wonderful
+Bird
+should
+have
+a
+very
+lovely
+voice,
+since
+everything
+else
+about
+her
+is
+so
+perfect.
+Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This passage directly presents the Fox&#039;s claim that explicitly links the value of a lovely voice and queenly status to the requested action of singing, thereby satisfying the condition.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 12.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim that the Crow would be Queen of Birds if she sang consists of information regarding the value of her voice and status, and the action of singing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox&#039;s flatteringly claims that performing the action of singing a song would demonstrate the value of her voice and make her Queen of Birds.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 1 premise is met</h2><div class="timing-badge">API: 24.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claim consists of information regarding the Crow&#039;s exceptional beauty and potential status as &#039;Queen of Birds&#039; (value &#039;v&#039;), and prompts her to prove it by singing a song (action &#039;α&#039;).</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>Such
+a
+wonderful
+Bird
+should
+have
+a
+very
+lovely
+voice,
+since
+everything
+else
+about
+her
+is
+so
+perfect.
+Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly links the high value of the Crow&#039;s perfection and status to the specific action of her singing a song.</div>
+      </div></div></div>
+      <div class="criterion-card premise" data-criterion="Minor 2" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Description</h3>
+        <div class="content">Agent A stands to benefit from Agent B accepting “c”</div>
+      </div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="0"><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 26.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Agent Fox stands to benefit from Agent Crow accepting the claim that she is beautiful and should sing, because the Fox will obtain the cheese if the Crow opens her beak.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly identifies the cheese as a desired meal, showing that the Crow&#039;s acceptance of his flattery and subsequent opening of her beak directly benefits him by delivering the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-5.4" data-idx="1" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 2.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox (Agent A) stands to benefit from the Crow (Agent B) accepting his claim that she is beautiful and has a lovely voice worthy of being Queen of Birds (c), because if she believes him and tries to sing, she will drop the cheese, allowing him to eat it.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This excerpt directly shows that Fox wants the Crow&#039;s cheese for his own breakfast, establishing that he benefits if she accepts his flattering claim and drops it.</div>
+      </div></div><div class="llm-panel" data-llm="gpt-4o" data-idx="2" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 2.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting the claim that she should sing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>So she opened her beak wide to utter her loudest caw, and down fell the cheese straight into the Fox&#039;s open mouth.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This excerpt clearly shows that the Fox benefits from the Crow accepting his flattering claim by obtaining the cheese.</div>
+      </div></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="3" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 4.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his flattering claims about her beauty and voice.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox&#039;s internal thought reveals his intention to obtain the cheese before he begins flattering the Crow, demonstrating he stands to gain materially from her accepting his claims.</div>
+      </div></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="4" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 2.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his flattering claims about her appearance and voice.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;Here is a dainty bite for my breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly identifies the cheese as his desired benefit, establishing that he stands to gain materially from manipulating the Crow into dropping it.</div>
+      </div></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 19.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his flattering claim (that she is beautiful and should sing) because he intends to get the cheese she holds for his breakfast.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">This excerpt reveals the Fox&#039;s explicit intention to obtain the cheese from the Crow, confirming his personal benefit from the Crow accepting his flattery.</div>
+      </div></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 7.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his claim.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>So she opened her beak wide to utter her loudest caw,\nand\ndown fell\nthe\ncheese\nstraight\ninto\nthe\nFox&#039;s\nopen\nmouth.</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt shows the Fox receives the cheese as a result of the Crow&#039;s action.</div>
+      </div></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 66.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his flattering claims about her beauty and voice.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;No need to search any farther,&quot; thought sly Master Fox. &quot;Here is a dainty bite for my breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt explicitly reveals the Fox&#039;s underlying motive and expected benefit of obtaining the cheese, confirming he stands to gain from the Crow accepting his flattering claims.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 14.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox (Agent A) stands to benefit by obtaining a dainty breakfast of cheese if the Crow (Agent B) accepts his flattering claims and attempts to sing.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The excerpt explicitly shows that the Fox targets the Crow&#039;s cheese to serve as his breakfast, confirming he stands to directly benefit if she accepts his flattery.</div>
+      </div></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title"><img src="chrome-extension://fkjjmicfnalcegpinediklkdknikdhod/images/green.png" alt="Positive" style="height: 16px; margin-right: 4px; vertical-align: middle;"> MINOR 2 premise is met</h2><div class="timing-badge">API: 21.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox stands to benefit from the Crow accepting his flattering claim that she has a beautiful voice and should sing, as doing so will cause her to drop the cheese he wants to eat.</div>
+      </div>
+      <div class="section-content excerpt">
+        <h3>Excerpt</h3>
+        <div class="content"><em>&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot;</em></div>
+      </div>
+      <div class="section-content justification">
+        <h3>Justification</h3>
+        <div class="content">The Fox explicitly identifies the cheese held by the Crow as his intended meal, establishing his motive to deceive her for personal gain.</div>
+      </div></div></div></div></div>
+  <div class="group-section">
+    <button class="group-accordion-toggle">
+      <span class="accordion-arrow">▾</span>
+      Critical Questions
+      <span class="group-badge">8 questions</span>
+    </button>
+    <div class="group-content">
+      <div class="criterion-card critical-question" data-criterion="CQ1" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">What values of B are promoted (respectively demoted) by “c”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">What values of the Crow (Agent B) are promoted or demoted by Master Fox&#039;s claim that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, made to influence her to sing or open her beak?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 8.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox&#039;s claim promotes the Crow&#039;s vanity, pride, status, and desire for admiration, while demoting caution, suspicion, and practical self-interest; on balance, the claim flatters her aspirational self-image to override her better judgment.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The claim c explicitly elevates values of beauty, excellence, prestige, and public recognition for the Crow: the Fox praises her appearance (&quot;How her feathers shine! What a beautiful form and what splendid wings!&quot;) and promises supreme status (&quot;I should hail her Queen of Birds&quot;). This promotes vanity, pride, and the desire to be admired. The document also shows these values displacing others: &quot;the Crow forgot all her suspicion,\nand also her breakfast,&quot; indicating that caution and self-preservation were demoted by the appeal to status and praise. The line &quot;She wanted very much to be called Queen of Birds&quot; directly supports that social esteem and honor are the values activated by c.</td>
+            <td>A weaker opposing reading is that the claim promotes artistic self-expression or honest demonstration of ability rather than merely vanity: by saying &quot;Such a wonderful Bird should have a very lovely voice&quot; and asking if &quot;she [could] sing just one song,&quot; the Fox frames singing as evidence of merit, which could be seen as promoting the value of excellence or performance. If his praise were sincere, c would not necessarily demote caution but would invite the Crow to display a genuine talent. Evidence that would falsify the affirmative deceptive reading would be sincere concern for her talent without benefit to himself; however, the broader document undercuts this because the Fox had already targeted the cheese (&quot;Here is a dainty bite for my breakfast.&quot;) and benefited when &quot;down fell the cheese straight into the Fox&#039;s open mouth.&quot;</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 3.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox promotes vanity and demotes caution by flattering the Crow.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim manipulates the Crow&#039;s vanity, leading her to drop her guard and ultimately the cheese. This exploits the Crow&#039;s desire for admiration and status as &#039;Queen of Birds.&#039;</td>
+            <td>An opposing view could argue that the Crow, by considering the Fox&#039;s flattery, temporarily promotes the value of social connection and engagement in response to compliments, aligning with social norms.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 13.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claims promote the Crow&#039;s vanity and desire for recognition while demoting her prudence and self-preservation instincts.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattering claims (c) deliberately promote the Crow&#039;s vanity and desire for status by appealing to her wish to be recognized as &#039;Queen of Birds.&#039; The document shows this works: the Crow &#039;wanted very much to be called Queen of Birds&#039; and &#039;forgot all her suspicion.&#039; Simultaneously, these claims demote the Crow&#039;s prudential values—her caution and self-interest in keeping her breakfast—as evidenced by her forgetting &#039;her breakfast&#039; and abandoning her initial &#039;suspicion&#039; when &#039;watched the Fox suspiciously.&#039; The Fox&#039;s strategy exploits pride while suppressing practical wisdom.</td>
+            <td>One could argue the Fox&#039;s claims do not inherently demote the Crow&#039;s prudence but merely reveal a pre-existing weakness. The text shows the Crow &#039;kept her beak tightly closed on the cheese and did not return his greeting&#039; initially, suggesting she possessed caution. The Fox&#039;s words did not create vanity but activated it. Additionally, the desire for recognition (&#039;Queen of Birds&#039;) could be seen as promoting a legitimate value of social standing rather than mere vanity. However, the outcome—&#039;down fell the cheese straight into the Fox&#039;s open mouth&#039;—and the Fox&#039;s mocking final words &#039;where are your wits?&#039; confirm that prudence was indeed demoted in favor of vanity.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 7.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox promotes values of beauty, vocal ability, and status (Queen of Birds) in the Crow to demote her critical judgment and suspicion, thereby manipulating her into singing so he can obtain the cheese. His promotion of these values is deceptive because his true intention is material gain, not genuine admiration.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox deliberately constructs flattery targeting the Crow&#039;s vanity by promoting values of physical beauty and vocal perfection, explicitly dangling the status of &#039;Queen of Birds&#039; as reward for singing. The text shows this is calculated deception: the Fox&#039;s initial thought is &quot;Here is a dainty bite for my breakfast,&quot; revealing his actual goal is obtaining the cheese, not praising the Crow. The narrative confirms the manipulation succeeds: &quot;Listening to these flattering words, the Crow forgot all her suspicion, and also her breakfast.&quot; The Fox&#039;s closing remark—&quot;Though it is cracked, you have a voice sure enough. But where are your wits?&quot;—explicitly mocks the Crow&#039;s lack of judgment, confirming the deceptive intent.</td>
+            <td>One might argue the Fox&#039;s statements about the Crow&#039;s beauty and form are not inherently deceptive observations, merely compliments that happen to have a secondary purpose. The Crow could be genuinely beautiful and possess a voice, making the descriptions technically true. However, this interpretation fails because the text explicitly frames the flattery as a calculated manipulation tactic (the Fox sees the cheese and immediately devises a plan) and because the Fox&#039;s closing mockery of the Crow&#039;s &#039;wits&#039; reveals he knew all along that his promoted values were being used to exploit her judgment, not to celebrate her actual qualities.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 18.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The claim promotes the value of being hailed Queen of Birds (prestige and admiration), while demoting the value of retaining the cheese; on balance, the Crow&#039;s desire for the promoted value directly causes her to sacrifice the demoted value.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim explicitly appeals to the Crow&#039;s vanity by suggesting that, if she sings, she will be hailed Queen of Birds—a title that confers status and admiration. The claim thereby promotes the value the Crow places on being recognised as extraordinary. The document states that, upon hearing this flattery, the Crow &#039;wanted very much to be called Queen of Birds.&#039; This desire is what prompts her to open her beak, causing the cheese to drop. Thus, the claim elevates the abstract value of praise and simultaneously demotes the material value of the cheese, as the Crow&#039;s focus shifts entirely from preserving her breakfast to obtaining the admired title.</td>
+            <td>The claim itself contains no explicit demotion of any value held by the Crow; it only offers positive reinforcement of her beauty and potential voice. One could argue that the cheese is not a value actively demoted by the claim, but merely an incidental possession that the Crow neglects due to her own misplaced priorities. The Fox&#039;s words promote the value of musical recognition without addressing the cheese at all—so while the Crow later loses the cheese, the claim&#039;s immediate effect is purely to promote the value of being Queen of Birds. The demotion of the cheese is a consequence of the Crow&#039;s action, not a component of the claim&#039;s content.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 21.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s claims promote the value of the Crow being esteemed as &#039;Queen of Birds&#039; (social status and admiration) and demote her values of caution and practical judgment. On balance, the claim is deceptive.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The flattering claims promote the value of B being socially elevated and admired. The Fox explicitly says the Crow should be &#039;hail[ed] ... Queen of Birds&#039; (line 28), a value of high status and esteem that B evidently desires, as she &#039;wanted very much to be called Queen of Birds&#039; (lines 31-32). The claims demote the values of caution and practical judgment: B &#039;forgot all her suspicion&#039; (line 31) and dropped her breakfast, acting against her own interest. The Fox&#039;s words promote vanity over prudence.</td>
+            <td>One could argue the claims promote no values of B because they are empty flattery from an untrustworthy agent (the Fox &#039;thought sly Master Fox&#039;, line 11). B&#039;s values of self-preservation and resourcefulness (holding the cheese) are not genuinely promoted—only exploited. The demotion of suspicion is not a value demotion but a cognitive error. However, the document shows that B subjectively valued the social recognition the Fox offered, so promotion of the &#039;Queen of Birds&#039; value is textually supported.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 109.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">It promotes flattery while undermining honesty.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox’s explicit praise—&quot;Could she sing just one song… I know I should hail her Queen of Birds&quot;—is a clear act of flattery designed to flatter the Crow and coerce her into releasing the cheese. By offering a flattering compliment, the Fox promotes the value of flattery. The subsequent deception, where the Crow is tricked into offering the cheese, demonstrates that the Fox undermines the value of honesty, because he leverages false praise to obtain advantage.</td>
+            <td>One might argue that the Fox’s words could be interpreted as sincere admiration and therefore promoting the value of genuine respect or esteem; however, the context of the Fox’s intent to obtain cheese and the pattern of deception in his actions (e.g., the contrast between the Fox’s compliments and the crow’s trust in him) refute the claim of sincerity, making the criticism of honesty more convincing.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 69.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The claim promotes the values of prestige and vocal acclaim for the Crow, while demoting her prudence and wits.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s rhetoric explicitly promotes the values of status and vocal excellence for the Crow. By asserting that she should have a lovely voice to complete her perfection, the claim frames acclaim and royal title as supreme virtues worth pursuing. This promotes vanity and the desire for external validation, directly motivating the Crow to act on the claim.</td>
+            <td>The claim actively demotes the values of caution, skepticism, and rational judgment in the Crow. Rather than reflecting genuine admiration, the Fox instrumentalizes the Crow&#039;s appearance to exploit her vulnerability, thereby devaluing her prudence. The successful shedding of her skepticism and subsequent loss of her cheese demonstrates that the promoted values were illusory traps designed to undermine her wits.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 12.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The claim superficially promotes the Crow&#039;s desire for social status and recognition, but ultimately demotes her critical values of physical sustenance and intellectual dignity.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim targets the Crow&#039;s self-esteem and desire for high status, making her believe that singing will validate her beauty and crown her as the &#039;Queen of Birds&#039;.</td>
+            <td>Believing the claim causes the Crow to act against her own interests, resulting in the immediate loss of her breakfast and leaving her open to the Fox&#039;s mockery regarding her lack of wits.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ1</h2><div class="timing-badge">API: 20.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The claim promotes the Crow&#039;s vanity and desire for social status, but ultimately demotes her material well-being by causing her to lose her food.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim directly targets and promotes the Crow&#039;s pride and desire for elevated status. By suggesting she possesses a lovely voice and perfect form, the claim appeals to her ego, which is explicitly confirmed by her strong desire to achieve the royal title he dangles before her.</td>
+            <td>Conversely, the claim fundamentally demoted her values by stripping her of her tangible resources (the cheese) and her dignity. The promotion of her status was entirely illusory; the factual result of accepting the claim was the loss of her breakfast and being mocked for her lack of &#039;wits&#039;.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ2" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">How do B&#039;s actions or beliefs change based on accepting “c”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">How do the Crow&#039;s beliefs and actions change after she accepts Master Fox&#039;s claim that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, and that she should sing to prove it?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 7.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s beliefs shift from suspicion to vanity, and her actions change from keeping her beak closed to opening it to caw, which makes her drop the cheese; this shows accepting c directly alters both her mental state and behavior in a way that benefits the Fox.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document shows a clear before-and-after change in the Crow caused by accepting the Fox&#039;s praise. Before, &quot;The
+Crow,
+her
+head
+cocked
+on
+one
+side,
+watched
+the
+Fox
+suspiciously.
+But
+she
+kept
+her
+beak
+tightly
+closed
+on
+the
+cheese&quot;. After hearing and accepting the flattering claim, &quot;the
+Crow
+forgot
+all
+her
+suspicion&quot; and came to desire the status implied by c: &quot;She
+wanted
+very
+much
+to
+be
+called
+Queen
+of
+Birds.&quot; This belief change leads to action: &quot;she
+opened
+her
+beak
+wide
+to
+utter
+her
+loudest
+caw,&quot; which in turn causes &quot;down
+fell
+the
+cheese&quot; to the Fox. Thus B&#039;s acceptance of c changes both her beliefs and behavior in exactly the way the Fox needs. This reading would be falsified if the text showed she remained suspicious, kept her beak closed, or dropped the cheese for some unrelated reason rather than because she tried to sing.</td>
+            <td>A narrower reading is that the Crow does not fully accept the truth of the Fox&#039;s claim, but merely responds emotionally to flattery and the desire for recognition. The evidence is that the text says she was &quot;Listening
+to
+these
+flattering
+words&quot; and that she &quot;wanted
+very
+much
+to
+be
+called
+Queen
+of
+Birds,&quot; which could suggest aspiration rather than belief. One might argue her action changes because she wants to test or display herself, not because she truly believes the Fox&#039;s judgment. Also, the text does not explicitly state, in so many words, that she believed she really had a lovely voice. This counter-reading would be weakened or falsified by the strong causal sequence in the text: she &quot;forgot
+all
+her
+suspicion&quot; and immediately opened her beak after the Fox&#039;s praise, indicating practical acceptance of c sufficient to guide action.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 2.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow drops the cheese by opening her beak to sing, influenced by flattery.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Crow believes the Fox&#039;s flattery and changes her action by opening her beak to sing, which causes her to drop the cheese. This change directly benefits the Fox, who wanted the cheese.</td>
+            <td>If the Crow had maintained her suspicion and ignored the Fox&#039;s flattery, she would not have acted on the claim and the cheese would have remained with her, preventing the Fox from gaining his desired outcome.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 14.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s acceptance of the Fox&#039;s flattery causes her to abandon both her suspicion and her self-interest, leading her to open her beak to sing and thereby lose her breakfast—a dramatic behavioral change from cautious silence to manipulated action.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Crow undergoes a complete transformation in both belief and action upon accepting the Fox&#039;s claims. Initially, she is suspicious and protective—&#039;watched
+the
+Fox
+suspiciously&#039; and &#039;kept
+her
+beak
+tightly
+closed
+on
+the
+cheese
+and
+did
+not
+return
+his
+greeting.&#039; However, after hearing the flattery, the text explicitly states she &#039;forgot
+all
+her
+suspicion&#039; and developed a new desire to &#039;be
+called
+Queen
+of
+Birds.&#039; This shift in belief directly precipitates her action of opening her beak to sing, causing her to lose the cheese. The causal chain from accepting the flattery to changing behavior is unambiguous and complete.</td>
+            <td>One might argue the Crow&#039;s action was not truly caused by accepting the Fox&#039;s claims as true, but rather by vanity or curiosity independent of belief in the specific flattery. The text does not explicitly state that the Crow believed the Fox&#039;s assertions about her beauty were factually accurate—only that she &#039;wanted
+very
+much
+to
+be
+called
+Queen
+of
+Birds.&#039; This desire could reflect aspiration rather than acceptance of the Fox&#039;s claims. However, this reading is weakened by the text&#039;s statement that she &#039;forgot
+all
+her
+suspicion,&#039; suggesting she did accept the Fox&#039;s benevolent intent and credibility, which enabled the behavioral change.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 7.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s beliefs and actions change dramatically: she abandons her suspicion and protective behavior, opening her beak to sing in order to validate the Fox&#039;s claims, causing her to lose the cheese. The deception is successful because the flattery exploits her vanity.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattery constitutes successful deception because the Crow&#039;s behavior changes fundamentally upon accepting it. Initially, the Crow &#039;watched the Fox suspiciously&#039; and &#039;kept her beak tightly closed on the cheese.&#039; However, after hearing the Fox praise her feathers, form, wings, and potential voice, she &#039;forgot all her suspicion, and also her breakfast&#039; and acted to prove her worth by singing. This behavioral shift from protective wariness to eager self-display demonstrates that the Crow accepted the Fox&#039;s claims as true and valuable, causing her to abandon her own interests (keeping the cheese) in pursuit of the status the Fox offered (Queen of Birds).</td>
+            <td>One might argue this is not deception but rather honest persuasion, since the Fox&#039;s descriptive claims about the Crow&#039;s appearance are objectively reasonable—her feathers do shine and she does have wings. However, this interpretation fails because the Fox&#039;s statements are instrumentally designed false promises: he has no genuine interest in the Crow&#039;s voice or crowning her Queen, and the entire sequence is constructed to manipulate her into dropping the cheese. The deception lies not in the falsity of individual aesthetic claims but in the fabricated context and hidden intention to exploit her vanity.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 48.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow opens her beak wide to sing, dropping the cheese, whereas before she kept her beak tightly closed on the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>Accepting the flattering claim, the Crow forgot all her suspicion and wanted to be called Queen of Birds, so she acted by opening her beak to prove her voice. This change from keeping her beak &#039;tightly closed&#039; to opening it wide directly enabled the Fox to obtain the cheese.</td>
+            <td>The Crow might have sung regardless without fully believing the claim, merely wanting to show off. However, the text explicitly says she was suspicious and the flattery made her forget, indicating her action changed specifically because she accepted the Fox&#039;s words. Before acceptance, she did not return the greeting and kept her beak closed.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 13.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s belief changes from suspicion to desire for the title &#039;Queen of Birds&#039;, and her action changes from keeping her beak closed on the cheese to opening it wide to caw, dropping the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Crow initially watches the Fox suspiciously and keeps her beak tightly closed on the cheese (evidence: &#039;The Crow, her head cocked on one side, watched the Fox suspiciously. But she kept her beak tightly closed on the cheese&#039;). Accepting the Fox&#039;s flattery (that she is beautiful and should sing) changes her mental state: she &#039;forgot all her suspicion&#039; and &#039;wanted very much to be called Queen of Birds&#039;. This new belief directly causes her to open her beak wide to caw, dropping the cheese, which the Fox captures.</td>
+            <td>One might argue the Crow&#039;s action was simply a natural response to flattery, not a rational acceptance of the claim. However, the text states she &#039;forgot all her suspicion&#039; and acted specifically to earn the title &#039;Queen of Birds&#039;, showing her beliefs shifted after accepting the Fox&#039;s flattering statements. Counter-evidence would be if the Crow had instead ignored the Fox or kept silent despite wanting the title; but the text records she did open her beak and drop the cheese.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 99.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow gives the cheese, showing her belief in the Fox’s flattery has changed her behavior.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox’s praise leads the Crow to drop her suspicion and, as the text states, to open her beak and sing, causing the cheese to fall into the Fox’s mouth, evidence that the Crow’s action changed based on the claim.</td>
+            <td>One could argue that the Crow’s decision to give the cheese may have been motivated by hunger or by a test of trust, not strictly by accepting the fox’s compliment; however the narrative presents the giving as a direct consequence of her praising his voice, suggesting the change was indeed due to the claim.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 72.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s beliefs and actions shift decisively upon accepting the claim, primarily driven by vanity, leading her to abandon caution and physically open her beak to lose her cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>Accepting the Fox&#039;s claim directly alters the Crow&#039;s internal state and external behavior. Initially suspicious and cautious, she shifts to desiring the title promised by the claim and acts on it by physically opening her beak, resulting in the loss of her cheese. This demonstrates a clear causal chain where assent to the flattering proposition overrides prior caution, supported by the text explicitly linking her hearing the words to forgetting suspicion and opening her mouth.</td>
+            <td>The change may stem from impulsive vanity and cognitive failure rather than rational acceptance of the claim itself. The Fox&#039;s final remark about her lacking wits implies exploitation of foolishness, suggesting her action was a reflexive response to praise rather than a deliberative belief update. If she had scrutinized the claim&#039;s plausibility or maintained her initial suspicion despite the flattery, this would falsify the direct link, pointing instead to inherent gullibility as the primary driver rather than structured acceptance of the proposition.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 15.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow&#039;s belief shifts from suspicion to vanity, changing her action from keeping her beak tightly closed to opening it wide to sing, which costs her the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>Initially, the Crow is suspicious and keeps her beak tightly closed to protect her food. Accepting the Fox&#039;s flattery changes her beliefs (she forgets her suspicion) and goals (she now wants to be called Queen of Birds), leading her to open her beak to caw, which drops the cheese.</td>
+            <td>Alternatively, it could be argued that the Crow&#039;s core beliefs about the Fox&#039;s untrustworthiness did not undergo a reasoned change; rather, her cognitive defenses were temporarily bypassed by overwhelming vanity, meaning her action changed due to emotional manipulation rather than a stable change in belief.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ2</h2><div class="timing-badge">API: 29.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Upon accepting the flattery, the Crow discards her initial suspicion and opens her beak to sing, inadvertently dropping her food.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The narrative explicitly links the Fox&#039;s flattery to a change in the Crow&#039;s internal state, noting she &#039;forgot all her suspicion&#039;. This shift in belief from wary to trusting/vain directly causes her to change her behavior—she opens her beak to sing in order to claim the promised title, demonstrating that accepting the premise led her to act against her own self-interest.</td>
+            <td>A counterargument is that the Crow&#039;s underlying beliefs about the Fox&#039;s trustworthiness may not have fundamentally changed; rather, her emotional vanity and desire for a title temporarily overpowered her rational suspicion. Falsifying the primary argument would require evidence that she was fully aware of the deception but was simply too careless to hold onto the cheese, though the text&#039;s assertion that she &#039;forgot&#039; her suspicion strongly supports a genuine cognitive shift.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ3" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">Does A have a history of being a reliable source of information?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">Does Master Fox have a history of being a reliable source of information to the Crow when he claims she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, in order to get her to sing or open her beak?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 7.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The document provides no evidence of any prior reliable dealings between Master Fox and the Crow, and it instead presents him as sly and self-interested in getting her cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>An affirmative reading is weakly possible because the story says, &quot;This
+was
+by
+no
+means
+the
+first
+Crow
+the
+Fox
+had
+ever
+seen,&quot; which could suggest prior encounters with crows and thus possible familiarity as an informant about birds. Also, some parts of his praise have surface plausibility from direct observation: &quot;How
+her
+feathers
+shine!&quot; and &quot;What
+a
+beautiful
+form
+and
+what
+splendid
+wings!&quot; If those observations are accurate, one might argue he can sometimes provide true information. This argument would be falsified by explicit evidence that he had lied before, that the Crow knew him as deceptive, or that he had no prior basis at all for speaking about her qualities. The document, however, does not give such a history one way or the other.</td>
+            <td>The stronger reading is that Master Fox does not have a demonstrated history of reliability. The document gives no evidence of previous truthful exchanges with the Crow, and instead frames him as deceptive and motivated by gain: &quot;thought
+sly
+Master
+Fox.
+\&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.\&quot;&quot; His praise is strategically aimed at making her sing: &quot;Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her
+Queen
+of
+Birds.&quot; The outcome confirms manipulation rather than sincere reporting, since once she drops the cheese he says, &quot;Though
+it
+is
+cracked,
+you
+have
+a
+voice
+sure
+enough.
+But
+where
+are
+your
+wits?&quot; This counterargument would be falsified by evidence of prior occasions where the Fox gave accurate, disinterested information to the Crow or was known to be trustworthy. No such evidence appears in the document.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 2.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Given the Fox&#039;s manipulative intentions and behavior, he is not presented as a reliable source.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox makes flattering remarks to manipulate the Crow, exemplified by how he praises her voice to get the cheese. His behavior aligns with deception rather than reliability.</td>
+            <td>There is no explicit evidence in the document that the Fox has previously deceived others; the story focuses on a single instance.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 9.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The Fox is an unreliable source, as evidenced by his deliberate deception and admission that his praise was insincere manipulation.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox demonstrates himself to be an unreliable source through his own post-deception behavior. After obtaining the cheese, he immediately contradicts his earlier flattery by stating the Crow&#039;s voice is &#039;cracked&#039; and mocking her lack of judgment. His characterization as &#039;sly Master Fox&#039; and his calculated approach (&#039;No need to search any farther, thought sly Master Fox&#039;) further establish a pattern of deliberate deception rather than truthful information-sharing.</td>
+            <td>One could argue that the document provides no explicit prior history of the Fox&#039;s reliability or unreliability before this encounter. The narrative describes this as a single interaction without reference to previous behavior patterns. The Fox&#039;s statements about the Crow&#039;s physical appearance (feathers, form, wings) might have contained elements of truth mixed with the deceptive intent, and without corroborating information about past interactions, we cannot definitively establish a &#039;history&#039; of unreliability from this isolated incident alone.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 4.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The Fox demonstrates a clear pattern of deception and manipulation, with no evidence of reliable communication.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox is explicitly characterized as &#039;sly&#039; and demonstrates calculated deception. His flattering remarks about the Crow&#039;s beauty, feathers, form, wings, and voice are deliberately constructed fabrications designed to manipulate her into singing. The text shows he constructed these false claims strategically to achieve his goal of obtaining the cheese. His closing remark—&#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039;—reveals he never believed his own flattery, confirming his unreliability as a source of truthful information.</td>
+            <td>The document provides no prior history of interactions between the Fox and Crow that would establish a pattern. The critical question requires assessment of historical reliability, yet this fable presents only a single encounter. Without documented previous communications from the Fox to evaluate, one might argue insufficient evidence exists to judge his historical reliability. However, the explicit narrative characterization of him as &#039;sly&#039; and his immediately subsequent deceptive behavior provides strong indication of his general nature.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 43.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, because the Fox is characterized as sly and immediately plans to deceive, and the Crow’s initial suspicion suggests an awareness of his unreliability, though no explicit history is documented.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox is introduced as &#039;sly Master Fox&#039;, a characterization that implies a disposition toward cunning and deception, which would make him an unreliable informant in any matter. The fact that his very first thought upon seeing the cheese is to flatter the Crow into dropping it (&#039;No need to search any farther… Here is a dainty bite for my breakfast&#039;) suggests that such deceptive schemes are habitual. The Crow’s reaction—watching him &#039;suspiciously&#039; even before he speaks—indicates that the Fox’s reputation for being untrustworthy likely precedes this encounter. Together, these points support the inference that the Fox has a history of being an unreliable source.</td>
+            <td>The document provides no explicit account of any past interactions or a documented track record. The term &#039;sly&#039; is a narrative description of his current intention, not a historical fact. The Crow’s suspicion could stem from natural wariness or generic predator-prey instinct rather than from knowledge of the Fox’s specific reliability. Without any mention of prior deceptions or misstatements, one cannot conclude that there is a history; the story only demonstrates a single, present instance of deception.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 11.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the Fox is not a reliable source; his flattery is a known deceptive tactic, and the document shows the Crow had initial suspicion, indicating the Fox likely has no history of reliability with her.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattering claims about the Crow&#039;s beauty and voice are intended to manipulate her into dropping the cheese. The Crow&#039;s initial suspicion (&#039;watched the Fox suspiciously&#039;) suggests prior experience or instinct that the Fox is untrustworthy. Since the Fox is a predator in the fable tradition, he has no history of being a reliable source to prey like the Crow; instead, he uses deceit for personal gain. Thus, the Fox lacks credibility.</td>
+            <td>The document provides no explicit evidence of the Fox&#039;s past interactions with the Crow. The Crow&#039;s suspicion could be due to general caution rather than a specific history of the Fox&#039;s unreliability. The Fox might have been reliable in other contexts, but the text does not support or refute this. However, the Fox&#039;s cunning nature and the eventual deception (the cheese falls) reinforce the inference that he is not a reliable source, making the counterargument weak.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 10.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the evidence shows deceptive behavior by Master Fox.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The passage shows that Master Fox used flattery to persuade the Crow to open its beak, resulting in cheese falling into his mouth, which demonstrates deliberate deception. This indicates he cannot be considered reliable.</td>
+            <td>The document contains no explicit record of Master Fox&#039;s prior conduct, so absence of evidence does not prove that he has a history of unreliability. However, the demonstrated deception in this instance is sufficient to cast doubt on his trustworthiness for this claim.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 63.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, as the document explicitly frames him as a deceptive manipulator motivated by theft rather than truth-telling.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>An affirmative reading would require citing a track record of honesty, which the text omits. However, one could argue that his initial observational statements about the Crow&#039;s physical appearance are factually accurate, implying a baseline of descriptive reliability even if his strategic use of those facts is persuasive rather than purely informative.</td>
+            <td>The text immediately establishes the Fox&#039;s deceptive intent by labeling him &quot;sly Master Fox&quot; and revealing his internal monologue that the cheese is merely &quot;a dainty bite for my breakfast.&quot; His subsequent praise is a calculated ruse to exploit the Crow&#039;s vanity, and his final remark, &quot;But where are your wits?&quot;, confirms his statements were manipulative tools rather than reliable information, demonstrating no history of faithfulness to the truth.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 15.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the Fox lacks a history of reliability, as he is described as &#039;sly&#039; and immediately seeks to deceive the Crow for his own benefit.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The narrative identifies the character as &#039;sly Master Fox,&#039; implying a dishonest nature. This is reinforced by the Crow watching him &#039;suspiciously,&#039; indicating that he is not trusted as a reliable source.</td>
+            <td>The text does not explicitly document any of the Fox&#039;s past statements or interactions, meaning a literal history of his reliability is absent from the narrative.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ3</h2><div class="timing-badge">API: 30.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No relevant passage exists in the document that explicitly details the Fox&#039;s history of reliability, though context clues strongly suggest he is not trustworthy.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>An affirmative argument would note that the text only states the Fox had seen Crows before but mentions no prior deceptive statements or actions, meaning there is no documented history of unreliability. Falsifying this would require explicit text describing specific past deceptions.</td>
+            <td>A counterargument would highlight that the narrator calls the Fox &#039;sly&#039; and the Crow watches him &#039;suspiciously&#039;, implying a known reputation or implicit history of cunning behavior rather than reliability. Falsifying this would require the text to describe the Fox as historically honest.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ4" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">What potential benefit does A have from B accepting “c”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">What potential benefit does Master Fox have from the Crow accepting his claim that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds and opening her beak to sing?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 7.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Master Fox benefits by getting the Crow’s cheese to eat, because his flattery is followed by her opening her beak and the cheese falling into his mouth.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document supports that Fox’s potential benefit is food: he notices that &quot;the lucky Crow held a bit of cheese in her beak,&quot; immediately thinks, &quot;No need to search any farther,&quot; and calls it &quot;a dainty bite for my breakfast.&quot; He then flatters the Crow’s beauty and especially her voice: &quot;Could she sing just one song, I know I should hail her Queen of Birds.&quot; This implies the action he wants is for her to open her beak. The benefit materializes when &quot;down fell the cheese straight into the Fox&#039;s open mouth.&quot; Thus A benefits from B accepting c because belief in the praise induces singing, which causes the cheese to drop and lets Fox eat it. This reading would be falsified if the text showed Fox had no interest in the cheese, or if the cheese did not fall or did not reach him after the Crow accepted the claim.</td>
+            <td>A weaker opposing reading is that Fox’s praise could be interpreted as mere flattery or admiration rather than deception for gain, since he says, &quot;Good-morning, beautiful creature!&quot; and &quot;Such a wonderful Bird should have a very lovely voice.&quot; If taken alone, those lines might suggest he simply wants to hear her sing. This interpretation would be supported if the story lacked any evidence of hunger, of interest in the cheese, or of Fox profiting from her response. But the document undercuts that reading with his internal thought about breakfast and the outcome that the cheese falls &quot;straight into the Fox&#039;s open mouth,&quot; showing a concrete personal benefit.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 3.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox benefits by obtaining the cheese if the Crow accepts the claim and sings.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox benefits because his flattering remarks are designed to make the Crow drop the cheese by singing. Once the Crow opens her beak, the cheese falls, and the Fox gets what he desired without further effort.</td>
+            <td>The Crow might recognize the flattery as insincere and refuse to sing, thus keeping the cheese. If the Crow retains skepticism and does not drop the cheese, the Fox gains nothing.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 15.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox benefits by obtaining the cheese; his flattery was deliberately designed to make the Crow open her beak, causing her to drop the cheese directly into his mouth.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattery directly serves his material interest in acquiring the cheese. The text establishes his initial motivation: &quot;No
+need
+to
+search
+any
+farther,&quot;
+thought
+sly
+Master
+Fox.
+&quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot; His subsequent praise is instrumental—he compliments her feathers, form, and wings, then suggests she must have a lovely voice and should sing. The immediate result is that the Crow opens her beak to caw, the cheese falls, and the Fox catches it. The Fox&#039;s closing remark confirms his deceptive intent: &quot;Thank
+you,&quot;
+said
+Master
+Fox
+sweetly,
+as
+he
+walked
+off.
+&quot;Though
+it
+is
+cracked,
+you
+have
+a
+voice
+sure
+enough.
+But
+where
+are
+your
+wits?&quot; This demonstrates the Fox knew the voice would not be lovely and that his flattery was a calculated manipulation to secure food.</td>
+            <td>One might argue the Fox simply offered sincere compliments and the Crow&#039;s decision to sing was her own voluntary choice, making the cheese-dropping an unintended consequence. The text shows the Crow &quot;watched
+the
+Fox
+suspiciously&quot; and &quot;kept
+her
+beak
+tightly
+closed,&quot; suggesting she had agency and initial wariness. She ultimately chose to open her beak because &quot;She
+wanted
+very
+much
+to
+be
+called
+Queen
+of
+Birds,&quot; indicating her own vanity drove the action rather than the Fox&#039;s coercion. However, this reading is undermined by the narrator&#039;s characterization of the Fox as &quot;sly&quot; and his explicit internal thought that the cheese represented his breakfast, plus his mocking final comment about her lack of wits, all of which demonstrate premeditated deception rather than innocent praise.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 4.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox benefits materially by obtaining the cheese; his flattery is instrumentally designed to manipulate the Crow into singing, causing her to drop the food into his mouth.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s benefit is explicit and material: he seeks to obtain the cheese the Crow holds. The document shows the Fox deliberately constructs flattery about the Crow&#039;s &#039;beautiful form,&#039; &#039;splendid wings,&#039; and potential status as &#039;Queen of Birds&#039; specifically to manipulate her into singing. The causal chain is clear: flattery → Crow opens beak to sing → cheese falls → Fox benefits. The Fox&#039;s internal monologue (&#039;Here is a dainty bite for my breakfast&#039;) and his closing remark (&#039;Thank you...Though it is cracked, you have a voice sure enough&#039;) confirm he achieved his predatory goal through deception.</td>
+            <td>One might argue the Fox&#039;s compliments could be genuine expressions of admiration rather than instrumental manipulation. However, this reading is contradicted by the document&#039;s framing of the Fox as &#039;sly Master Fox,&#039; his explicit predatory motivation stated at the outset, and his self-satisfied departure immediately after obtaining the cheese. The counterargument lacks textual support and contradicts the narrative&#039;s clear characterization of intentional deception.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 41.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox obtains the cheese, securing a dainty bite for his breakfast.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox’s flattery is a deception designed to make the Crow open her beak and drop the cheese. He explicitly thinks that the cheese in her beak is a “dainty bite for my breakfast” and that he will obtain it if she sings. The moment the Crow accepts the claim and opens her beak, the cheese falls directly into the Fox’s waiting mouth, exactly as he intended. Therefore, the Fox’s potential benefit is the acquisition of the cheese.</td>
+            <td>The Crow initially shows suspicion, keeping her beak tightly closed and not returning the greeting. If she had maintained that suspicion and refused to accept the claim, the Fox would have gained nothing. The potential benefit is therefore contingent on the Crow’s gullibility, and the Fox could have walked away empty‑handed.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 13.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the Fox benefits directly: he obtains the cheese for his breakfast when the Crow drops it to sing.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox explicitly states his goal in the document: &quot;No need to search any farther,&quot; thought sly Master Fox. &quot;Here is a dainty bite for my breakfast.&quot; He then flatters the Crow, inducing her to open her beak to sing, which causes the cheese to fall &quot;straight into the Fox&#039;s open mouth.&quot; The document concludes with the Fox walking off having secured the cheese, confirming the benefit.</td>
+            <td>One might argue the Fox&#039;s benefit is intangible—merely testing the Crow&#039;s gullibility or amusing himself. However, the document&#039;s direct evidence of him catching and consuming the cheese (&quot;down fell the cheese straight into the Fox&#039;s open mouth&quot;) and his final remark about her missing &quot;wits&quot; shows the material goal was attained.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 4.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">He benefits by obtaining cheese, which serves as his food.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>Master Fox’s flattery persuades the Crow to reveal her cheese; the text shows the cheese falls into the Fox’s mouth and he says ‘Thank you,’ indicating he gains a snack. This shows a tangible benefit directly tied to the Crow accepting his claim about her voice.</td>
+            <td>If the Fox had no real incentive beyond food, his praise could be seen as mere nicety, and the Crow’s acceptance might not yield any advantage. However, the narrative explicitly ties the cheese to the Fox’s benefit, leaving no doubt that he gains food by manipulating the Crow’s trust.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 80.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox secures the cheese the Crow is holding, satisfying his immediate hunger.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document explicitly reveals the Fox&#039;s internal motive upon spotting the cheese: he thinks &#039;No need to search any farther... Here is a dainty bite for my breakfast.&#039; His subsequent praise is a calculated tactic to induce the Crow to open her beak, which directly causes the cheese to fall &#039;straight into the Fox&#039;s open mouth,&#039; confirming he acts to secure a meal.</td>
+            <td>One might claim the Fox&#039;s compliments were sincere admiration and the cheese dropping was a mere accident, implying no deceptive benefit. This is falsified by the text&#039;s explicit labeling of him as &#039;sly Master Fox,&#039; his deliberate &#039;second look&#039; at the cheese, and the Crow forgetting her suspicion only after hearing &#039;flattering words,&#039; all of which demonstrate intentional manipulation rather than accidental gain.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 15.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox benefits by obtaining the cheese for breakfast, which falls from the Crow&#039;s beak when she opens her mouth to sing.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s motive is explicitly to secure the cheese (&#039;Here is a dainty bite for my breakfast&#039;). By convincing the Crow that she has a beautiful voice and should sing, she opens her beak, causing the cheese to fall into his possession.</td>
+            <td>One could argue the Fox was offering genuine praise or wanted to hear her sing, but his internal monologue, immediate collection of the fallen cheese, and mocking parting words (&#039;where are your wits?&#039;) prove his sole benefit was the food.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ4</h2><div class="timing-badge">API: 20.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s benefit is acquiring the cheese, because if the Crow accepts the claim and attempts to sing, she must open her beak and drop her food.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s internal monologue at the beginning of the text explicitly reveals his true goal is to eat the cheese (&#039;Here is a dainty bite for my breakfast&#039;). By convincing the Crow to accept his flattery and sing, she is forced to open her beak, guaranteeing the cheese will fall directly into his mouth.</td>
+            <td>A naive reading might suggest the Fox genuinely appreciates the Crow&#039;s beauty and simply wants to hear her sing for aesthetic pleasure. However, this is falsified by his actions: once the cheese drops, he immediately eats it, mocks her lack of &#039;wits&#039;, and walks off without listening to her caw.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ5" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">What potential future loss does “A” risk from “B” accepting “c”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">What potential future loss does Master Fox risk if the Crow accepts his claim that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds and therefore opens her beak to sing?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 6.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">On balance, Master Fox risks little to no future loss from the Crow accepting his claim, because her acceptance helps him get the cheese rather than costing him anything.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>An affirmative reading is that Fox risks some future loss if Crow accepts c: he could lose the chance to keep deceiving her if she later realizes the praise was insincere, or face retaliation or distrust. Evidence for possible risk is that the Crow initially &quot;watched
+the
+Fox
+suspiciously,&quot; showing she might become wary again after the trick. This argument would be falsified by evidence that Fox depends on maintaining a long-term trusting relationship with Crow or that he suffers any penalty after the deception; the document provides no such evidence.</td>
+            <td>The stronger reading is that Fox risks no meaningful future loss from Crow accepting c. The text shows his goal is immediate gain: &quot;No
+need
+to
+search
+any
+farther&quot; and &quot;Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.&quot; Once Crow accepts the flattering claim and opens her beak, &quot;down
+fell
+the
+cheese
+straight
+into
+the
+Fox&#039;s
+open
+mouth,&quot; and he leaves with the benefit. This would be falsified by any passage showing that accepting c would expose Fox to danger, sacrifice, or later costs, but the document shows only successful payoff for Fox.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 2.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow risks losing her cheese by trying to prove her singing ability to the Fox.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Crow, eager to be seen as the Queen of Birds, opens her beak to sing, leading to the loss of her cheese. The Fox&#039;s remarks do not genuinely intend to honor the Crow; rather, they manipulate her desire for reverence, resulting in a tangible loss: &#039;down fell the cheese straight into the Fox&#039;s open mouth.&#039;</td>
+            <td>If the Crow had recognized the flattery without responding, she would not have experienced any loss. The loss is conditional upon her response and lack of skepticism, thus making the risk avoidable. The document suggests her susceptibility: &#039;Listening to these flattering words, the Crow forgot all her suspicion.&#039;</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 11.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">On balance, the Fox risks minimal to no future loss. His deception is a one-time opportunistic manipulation with no ongoing relationship or reputation concerns at stake.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox risks nothing from the Crow accepting his flattering claims. The text shows this is a transactional encounter where the Fox immediately departs after obtaining the cheese. The Fox explicitly mocks the Crow afterward, asking &quot;where are your wits,&quot; demonstrating he has no concern for the Crow&#039;s future opinion of him or any reputational damage. The phrase &quot;he walked off&quot; indicates no expectation of future interaction. The Fox&#039;s strategy is consequence-free deception with immediate reward and no accountability.</td>
+            <td>The Fox risks future reputational loss if word spreads among forest animals that he is a deceiver. The Crow now knows she was manipulated, as evidenced by the Fox&#039;s mocking final comment. In a community of animals where the Fox must continue to hunt and potentially use similar tactics, being known as untrustworthy could make future prey more suspicious. The text shows the Crow &quot;watched
+the
+Fox
+suspiciously&quot; initially, suggesting animals may already be wary of him. Each successful deception that becomes known could compound this wariness, making future hunts more difficult.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 4.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox risks minimal loss; the Crow bears the material and reputational loss. The Fox&#039;s deception succeeds without consequence to himself.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox risks no meaningful loss from his deception. He successfully obtains the cheese and walks away unharmed, even mocking the Crow&#039;s lack of wisdom. The text shows the Fox benefits materially (&quot;Here is a dainty bite for my breakfast&quot;) while suffering no penalty. The Crow, by contrast, loses her breakfast and is humiliated by being called witless. The deception is entirely one-sided in its consequences.</td>
+            <td>One might argue the Fox risks reputational damage if his deceptive scheme became known, potentially undermining future manipulation attempts with other birds. However, the document provides no evidence of such consequences or concern. The Fox departs confidently, suggesting no anticipated loss. The fable structure implies his deception succeeded without repercussion.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 37.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow risks losing the cheese (her breakfast) if she accepts the flattery and opens her beak to sing; the document shows that this loss actually happens.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim is designed to make the Crow open her beak by flattering her voice and promising a grand title. When the Crow accepts the claim that she must have a lovely voice and deserves to be Queen of Birds, she acts on it by attempting to sing. This action directly causes the cheese to fall from her beak, depriving her of the food she had secured for breakfast. The text explicitly states: &#039;So she opened her beak wide to utter her loudest caw, and down fell the cheese straight into the Fox&#039;s open mouth.&#039; Therefore, the loss—the cheese—results directly from her acceptance.</td>
+            <td>One could argue that the Crow risks no tangible loss because the claim is merely an expression of admiration, not a demand for the cheese. The Crow&#039;s decision to sing was voluntary; she could have acknowledged the praise without opening her beak. Moreover, if the Crow truly possessed a lovely voice, the social reward of being hailed &#039;Queen of Birds&#039; might have outweighed the value of a bit of cheese, so the net future outcome could be a gain rather than a loss. However, the document indicates she &#039;forgot all her suspicion, and also her breakfast,&#039; showing that the loss of the cheese was the immediate consequence of accepting the flattery, and the Fox&#039;s purpose was precisely to obtain that cheese.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 8.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox risks no future loss; the flattery is a deliberate deception with immediate benefit of cheese, and the Crow&#039;s acceptance causes no detriment to the Fox.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattering claims are a strategic deception to obtain the cheese, and accepting them causes the Crow to drop it, directly benefiting the Fox. The Fox risks no future loss because the Crow&#039;s acceptance results in immediate gain (the cheese) and the Fox walks away satisfied, as evidenced by &quot;Thank you,&quot; and his smug remark critiquing the Crow&#039;s wits. There is no evidence of any future loss to the Fox from the Crow&#039;s belief in the flattery.</td>
+            <td>One might argue the Fox risks reputational loss if the Crow later exposes his deception to other animals, undermining his future hunting. However, the document shows the Fox is unconcerned—he openly mocks the Crow post-deception, and the Crow is depicted as credulous and outwitted, with no ability or intent to retaliate. The fox&#039;s immediate escape and sarcastic remark indicate no perceived risk.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 115.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">He risks losing Crow&#039;s future trust if she discovers his deception, which could reduce his ability to obtain food later.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox benefits immediately by obtaining the cheese, as shown when the cheese falls into his mouth after the Crow sings. His claim about the Crow&#039;s voice was a lie used to manipulate her into revealing the cheese. If Crow later realizes the Fox deceived her, she may distrust him or refuse to cooperate in the future, thereby limiting Fox&#039;s future opportunities to get food or other resources from her or others. This potential loss of trust and cooperation is a plausible future risk for Fox.</td>
+            <td>The text gives no indication that Crow will retaliate or that Fox has future interactions with her. The Fox obtains the cheese with no immediate consequence, and no explicit statement suggests future loss. In the animal world, deception may not carry the long-term costs humans attribute; thus the risk may be negligible or nonexistent according to this account.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 106.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Crow risks the immediate loss of her breakfast (the cheese), which materializes the moment she opens her beak to act on the flattery.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox’s flattery is a deliberate manipulative strategy designed to make the Crow open her beak. By praising her appearance and proposing that a single song would crown her &#039;Queen of Birds,&#039; he exploits her desire for recognition. The document demonstrates the direct consequence of accepting this claim: &#039;So she opened her beak wide to utter her loudest caw, and down fell the cheese straight into the Fox&#039;s open mouth,&#039; confirming the loss of her breakfast.</td>
+            <td>The Fox’s statement is not entirely fabricated, as he subsequently acknowledges, &#039;Though it is cracked, you have a voice sure enough,&#039; confirming her vocal ability exists. Moreover, the loss is instantaneous rather than a prospective future risk, and the Crow freely chooses to open her beak. This suggests the loss originates from her own vanity and voluntary compliance rather than a coercive or wholly deceptive act by the Fox.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 15.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox risks no meaningful future loss because obtaining immediate food is his sole priority, and he has no need for future cooperation with the Crow.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox risks losing the Crow&#039;s trust and any future opportunities to exploit or cooperate with her, as his immediate mockery exposes his deception.</td>
+            <td>The Fox risks nothing because he satisfies his immediate hunger with the cheese, and as a wandering predator, he does not rely on a lasting relationship with the Crow.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ5</h2><div class="timing-badge">API: 26.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox risks no tangible future loss, as his sole objective was immediate nourishment; he achieves his goal and openly mocks her, showing he does not value her future trust.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>If the Crow accepts the claim and acts on it, the Fox drops his facade and reveals his deception, thereby risking the permanent loss of the Crow&#039;s trust and the inability to ever manipulate her again.</td>
+            <td>The Fox risks no meaningful loss because his goal is purely short-term and transactional—to get a &#039;dainty bite&#039; for breakfast. Once he secures the cheese, he walks away fully satisfied and requires nothing further from the Crow.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ6" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">Are there any inconsistencies or discrepancies in “c”, “v”, “α”, or “s”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">Are there any inconsistencies or discrepancies in Master Fox&#039;s claim that the Crow is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds (c), in the positive value he attributes to her beauty and voice (v), in the action he is trying to get her to perform by opening her beak and singing (α), or in the relevant state of affairs that he would benefit if she dropped the cheese and he could eat it (s)?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 11.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes. Fox&#039;s praise is inconsistent with his later remark about the Crow&#039;s voice and with the state that he was actually seeking the cheese; on balance, the discrepancy strongly indicates deceptive flattery aimed at making her open her beak.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>There is a clear discrepancy between c and s, and within c itself. Fox claims the Crow has a “very
+lovely
+voice” and is worthy to be “Queen
+of
+Birds,” but after she sings he says, “Though
+it
+is
+cracked,
+you
+have
+a
+voice
+sure
+enough,” which undercuts the earlier praise. The document also shows his real state and motive before speaking: he was “in
+search
+of
+a
+bite
+to
+eat,” saw that the Crow “held
+a
+bit
+of
+cheese
+in
+her
+beak,” and thought, “Here
+is
+a
+dainty
+bite
+for
+my
+breakfast.” That supports the discrepancy in s: his actual goal was obtaining cheese, not honoring the Crow. The action α is also implicated because his praise is framed to induce performance: “Could
+she
+sing
+just
+one
+song”; the result is that “She
+opened
+her
+beak
+wide” and dropped the cheese. If Fox had sincerely believed the full praise, contrary evidence that would weaken this reading would be some later confirmation that her voice really was lovely or that he truly intended to honor her as Queen of Birds, but the text instead gives the opposite.</td>
+            <td>A weaker opposing reading is that not all parts of c are strictly inconsistent. The Fox says the Crow is a “beautiful
+creature,” with shining feathers, “a
+beautiful
+form” and “splendid
+wings,” and the narrative does not directly deny these observations. His wording about the voice is partly conditional and inferential rather than flatly assertive: “Such
+a
+wonderful
+Bird
+should
+have
+a
+very
+lovely
+voice” and “Could
+she
+sing
+just
+one
+song,
+I
+know
+I
+should
+hail
+her”; this can be read as speculation or exaggeration rather than a factual contradiction. Afterward he even concedes, “you
+have
+a
+voice
+sure
+enough,” which is not a total retraction. On this reading, there may be discrepancy mainly in intention s rather than in every element of c, v, or α. Evidence that would falsify this counterargument would be any explicit statement from Fox that he knew her voice was not lovely when he praised it, or a direct contradiction of her beauty, but the text does not state that explicitly.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 2.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The Fox&#039;s insincere flattery creates a discrepancy between its claims and intentions.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattering remarks are inconsistent with its intention, as the Fox praises the Crow&#039;s voice to influence her actions (dropping the cheese), exploiting her vanity for its benefit.</td>
+            <td>There is no explicit discrepancy within the DOCUMENT regarding the Fox&#039;s description of the Crow&#039;s attributes, only that the Fox uses flattery. However, the passage implies this inconsistency through the outcome.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 14.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, there are significant inconsistencies. The Fox&#039;s lavish praise contradicts his later revelation that the Crow&#039;s voice is &quot;cracked,&quot; exposing his earlier claims as deliberate deception.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s statements contain a glaring inconsistency between his initial claims and his post-deception revelation. Initially, he claims the Crow should have &quot;a very lovely voice, since everything else about her is so perfect&quot; and promises to &quot;hail her Queen of Birds&quot; if she sings. However, after obtaining the cheese, he immediately contradicts this by stating &quot;Though it is cracked, you have a voice sure enough,&quot; admitting he knew her voice was not lovely at all. This inconsistency proves the Fox deliberately made false claims about the value he placed on her voice quality (v), misrepresented the state of her vocal abilities (s), and deceptively framed the action he requested (α - singing) as a path to genuine recognition rather than manipulation. The Fox&#039;s own words &quot;But where are your wits?&quot; further confirm he was consciously deceiving her throughout.</td>
+            <td>One might argue there is no true inconsistency because the Fox never explicitly stated the Crow&#039;s voice WAS lovely, only that such a beautiful bird SHOULD have a lovely voice. His flattery could be interpreted as conditional speculation rather than factual claims. The phrase &quot;Could she sing just one song&quot; frames it as a test rather than an assertion. Additionally, the Fox&#039;s comment about her &quot;cracked&quot; voice comes after hearing it, so technically he did not lie about a state he had verified beforehand. The inconsistency only appears retrospectively, and the Fox&#039;s manipulation operated through implication and suggestion rather than outright false factual claims about verified states.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 6.3s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No material inconsistencies detected. The Fox&#039;s deceptive argument is internally coherent: he consistently praises the Crow&#039;s appearance and voice, logically connects singing to proving her status as Queen of Birds, and achieves his intended material benefit, all while concealing his true motivation of obtaining the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s deceptive claims exhibit internal logical consistency. His values (c) - beauty, form, wings, and voice - are mutually reinforcing attributes he assigns to the Crow. His claims (v) that a perfect bird should have a perfect voice follows logically. His proposed action (α) - sing one song - is presented as the means to achieve the promised state (s) - being hailed Queen of Birds. The seamless integration of flattery with a specific behavioral request demonstrates a well-constructed deceptive argument with no contradictions that would expose the Fox.</td>
+            <td>One could argue that the Fox&#039;s claim that the Crow should have a &#039;very lovely voice, since everything else about her is so perfect&#039; contains a subtle inconsistency: he praises her appearance as already perfect, yet frames her voice as something to be proven. However, this is not a logical discrepancy but rather a rhetorical strategy - he doesn&#039;t claim her voice is imperfect, only that he hasn&#039;t heard it. The document shows &#039;the Crow forgot all her suspicion&#039; when listening to these words, indicating no apparent contradiction was evident to the intended victim, and the Fox successfully achieves his goal without the deception being detected through logical inconsistency.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 59.2s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the Fox&#039;s inner thought reveals a discrepancy in state s between his expressed admiration and his true intention to eat the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s internal monologue, &quot;No need to search any farther... Here is a dainty bite for my breakfast,&quot; shows his true state is focused on obtaining the cheese as food. This directly contradicts his outward flattery (&quot;What a charming creature... Could she sing just one song, I know I should hail her Queen of Birds&quot;), creating a discrepancy between his expressed admiration and his actual goal. Such a discrepancy in state s is a hallmark of deception.</td>
+            <td>The Fox&#039;s flattery is a strategic means to an end, and there is no logical inconsistency between his hidden intention and his words. The claim itself is conditional (&quot;if she sings, he would hail her queen&quot;), and the value of being Queen of Birds is a genuine desire for the Crow, so no discrepancy exists in c, v, or α. The Fox&#039;s state of hunger perfectly aligns with his action of coaxing the Crow to drop the cheese, so state s is consistent overall.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 14.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, there is an inconsistency: the Fox&#039;s claim that the Crow&#039;s voice must be lovely contradicts the known fact that crows have harsh voices, and his true intention (getting the cheese) is hidden behind flattery.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox claims the Crow has &#039;a very lovely voice&#039; (c), but this is inconsistent with the typical caw of a crow, which is harsh and unpleasant. The Fox&#039;s hidden state (s) is that he wants the cheese for breakfast, not that he genuinely admires the Crow. The action (α) of asking her to sing is a pretext to make her drop the cheese. The document shows Fox &#039;thought sly Master Fox. &quot;Here is a dainty bite for my breakfast&quot;&#039; and later &#039;down fell the cheese straight into the Fox&#039;s open mouth&#039;, confirming his deceptive intent.</td>
+            <td>One could argue no inconsistency exists because the Fox&#039;s claim is a subjective opinion of beauty, not a factual statement. The Crow might indeed have a voice that others find lovely, and the flattery is merely courteous. The document says the Fox &#039;looked up admiringly&#039; and called her &#039;beautiful creature&#039;, which could be genuine admiration. His later remark &#039;Though it is cracked, you have a voice sure enough&#039; acknowledges her actual voice, but this comes after the deception succeeded, not before.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 61.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the claim is consistent with the documented events.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox praises the Crow’s voice, saying she should have a very lovely voice. The subsequent narration then describes the Crow opening her beak wide and uttering her loudest caw, demonstrating that the Crow does possess a vocal ability. Thus the claim aligns with the observed behavior and there is no contradiction.</td>
+            <td>The Fox’s flattery may be intended to manipulate the Crow rather than be an honest assessment of her voice quality. However, the text provides no evidence that the Fox’s statement about her voice is false; the Crow literally sings, supporting the claim. Hence there is no justified inconsistency to reject.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 65.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the Fox&#039;s claim contains a clear discrepancy between unverified praise and observable reality, revealing deceptive intent.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox transitions from verified physical observations (&#039;How her feathers shine!&#039;, &#039;splendid wings&#039;) to an unfounded hypothetical about her voice (&#039;should have a very lovely voice&#039;), which he has never actually heard. This inconsistency between observed traits and claimed value, combined with his immediate readiness to exploit the resulting action (&#039;down fell the cheese straight into the Fox&#039;s open mouth&#039;), demonstrates that the claim is a calculated manipulative tool rather than a sincere assessment.</td>
+            <td>The Fox&#039;s statement is logically consistent and makes no false factual assertion; he conditionally offers the value of being &#039;Queen of Birds&#039; contingent upon the unperformed action of singing (&#039;Could she sing just one song, I know I should hail her Queen of Birds&#039;), acknowledging that physical perfection might imply vocal talent without falsely claiming prior auditory verification.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 18.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, there is a clear discrepancy between the Fox&#039;s flattering claims about the Crow&#039;s beautiful voice and his final mocking remarks revealing her voice is cracked.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s initial claim (c) praises the Crow&#039;s voice as potentially &#039;lovely&#039; to make her &#039;Queen of Birds&#039;. Yet, after getting the cheese, he explicitly states her voice is &#039;cracked&#039; and mocks her lack of &#039;wits&#039;. This represents a direct discrepancy between his flattering claim (c) and the actual state (s) of her voice.</td>
+            <td>The Crow does technically have a voice (&#039;you have a voice sure enough&#039;) and performs the physical action (alpha) of singing. Thus, there is no physical inconsistency in the execution of the caw itself, as she did possess and use a voice to produce sound.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ6</h2><div class="timing-badge">API: 26.5s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, there is a clear discrepancy; the Fox&#039;s claim to admire her voice contradicts his true goal of securing her cheese, a deception he admits to after she drops it.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim that the Crow possesses a &#039;very lovely voice&#039; is completely inconsistent with his actual knowledge and state (s). He is a hungry animal looking for a &#039;dainty bite&#039; for breakfast, not a connoisseur of bird songs. He uses the claim (c) and the appealing value of being &#039;Queen of Birds&#039; (v) purely to manipulate the Crow into the action (α) of opening her beak so the cheese will fall. He explicitly reveals this discrepancy at the end by mocking her &#039;cracked&#039; voice.</td>
+            <td>One could argue that prior to the cheese falling, there is no immediately verifiable inconsistency in the premises from the Crow&#039;s perspective. The Fox highlights her shiny feathers and splendid wings, which are true attributes. Because these physical descriptions are accurate, the Crow finds it logically consistent that her voice could also be valued highly enough to earn her the title &#039;Queen of Birds&#039;.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ7" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">Are there independent verifications or counterclaims to “c” with respect to “v”, “α”, or “s”?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">Are there any independent verifications or counterclaims in the document regarding Master Fox&#039;s claim that the Crow is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, regarding the value of her beauty and voice, the implied action of singing or opening her beak, or the state that she deserves that title?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 10.1s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. On balance, the document provides no independent verification of the Fox&#039;s praise; instead it supplies a counter-indication that his claim is deceptive because he benefits from inducing the Crow to open her beak and later mocks her lack of wits.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>There are no independent verifications of the Fox&#039;s central evaluative claim about the Crow&#039;s beauty and voice. The only source asserting that she is charming, splendid, and fit to be Queen of Birds is the Fox himself: &quot;What a charming creature she is!&quot; ... &quot;Could she sing just one song, I know I should hail her Queen of Birds.&quot; No third party, narrator endorsement, or prior evidence confirms the quality of her voice. Instead, the document presents reasons to suspect deception: the Fox already notices that &quot;the lucky Crow held a bit of cheese in her beak&quot; and thinks, &quot;Here is a dainty bite for my breakfast.&quot; After she sings, &quot;down fell the cheese straight into the Fox&#039;s open mouth,&quot; confirming his incentive. His final line, &quot;Though it is cracked, you have a voice sure enough. But where are your wits?&quot; undercuts the earlier extravagant praise and functions as a counterclaim to the stronger part of c, especially the implication that her voice is lovely and queenly. This affirmative reading would be falsified if the document included independent corroboration from another character or narrator that the Crow truly had an exceptionally lovely voice or deserved to be Queen of Birds, but it does not.</td>
+            <td>A limited counterargument is that the document does contain some partial support for parts of the Fox&#039;s claim, even if not independent. The narrator notes the Crow had features the Fox could directly observe, and his remarks about her appearance are not explicitly contradicted: &quot;How her feathers shine! What a beautiful form and what splendid wings!&quot; Also, after hearing her, the Fox concedes, &quot;you have a voice sure enough,&quot; which could be read as minimal confirmation that she does in fact have a voice and that his prompt to sing was not wholly fabricated. However, this is not independent verification, since it still comes from the Fox, the interested party, and the same line says, &quot;Though it is cracked,&quot; which weakens rather than supports the claim that her voice is lovely or queenly. This opposing view would gain force only if the text showed the narrator or another source affirming the Crow&#039;s vocal excellence or title-worthiness, but no such evidence appears.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 2.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No independent verifications; the argument relies solely on the Fox&#039;s flattery.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox flatters the Crow by claiming she should have a lovely voice because of her beauty, persuading her to sing. This relies entirely on the Fox&#039;s subjective judgment, as extracted from &quot;How her feathers shine! What a beautiful form... should have a very lovely voice.&quot;</td>
+            <td>There is no independent confirmation or evidence presented in the DOCUMENT that supports the Fox&#039;s claim about the Crow&#039;s voice. The argument is based entirely on the Fox&#039;s subjective and manipulative assessment, with no competing evidence to refute this assertion.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 10.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No independent verification exists in the document; the Crow&#039;s own suspicion serves as the only counterclaim, suggesting the Fox&#039;s flattery is unverified and likely deceptive.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Crow&#039;s initial suspicious behavior represents an implicit counterclaim to the Fox&#039;s flattery. Her refusal to respond and her guarded posture suggest she doubts the sincerity of his statements. The text shows she &#039;watched the Fox suspiciously&#039; and &#039;kept her beak tightly closed,&#039; indicating she initially recognized the claims as potentially false. Additionally, the Fox&#039;s final remark—&#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039;—retrospectively reveals his earlier claims were deceptive, as he acknowledges her voice is actually &#039;cracked&#039; rather than lovely, directly contradicting his prior flattery.</td>
+            <td>No independent third party or objective observer appears in the document to verify or challenge the Fox&#039;s claims about the Crow&#039;s appearance or voice. The narrative provides no external standard against which to measure whether the Crow is actually beautiful or has a potentially lovely voice. The Crow herself eventually accepts the flattery (&#039;Listening to these flattering words, the Crow forgot all her suspicion&#039;), suggesting there is no accessible counterclaim strong enough to resist the Fox&#039;s assertions. Without independent verification, the claims remain unchallenged within the immediate context until after the deception succeeds.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 4.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No independent verifications or counterclaims exist in the document; the Crow accepts the Fox&#039;s claims without skepticism after initial suspicion.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document provides no independent verification of the Fox&#039;s claims about the Crow&#039;s beauty or voice quality. No other characters dispute, confirm, or evaluate these claims. The Crow&#039;s initial suspicion (&quot;watched the Fox suspiciously&quot;) represents the only skeptical assessment present, but she abandons it entirely upon hearing flattery. The absence of corroborating or contradicting evidence about the Crow&#039;s actual appearance or vocal abilities leaves the Fox&#039;s claims unverified.</td>
+            <td>One could argue that the Crow&#039;s physical existence in the narrative and her ability to hold cheese and caw constitute minimal verification that some of the Fox&#039;s claims have basis in reality—she does possess feathers, form, wings, and a voice. However, this does not verify the Fox&#039;s specific evaluative claims about these features being &quot;beautiful,&quot; &quot;splendid,&quot; or worthy of &quot;Queen of Birds&quot; status, which remain purely subjective assertions without independent support.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 109.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">There is no independent verification; the Fox&#039;s flattery is contradicted by his own final mockery that her voice is &#039;cracked&#039; and by the Crow&#039;s known natural &#039;caw&#039;.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The text provides no independent verification that the Crow&#039;s voice is lovely or that being hailed Queen of Birds has value beyond the Fox&#039;s manipulative flattery. The Fox&#039;s final statement, &#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039;, serves as a direct counterclaim from the agent himself, explicitly describing the voice as &#039;cracked&#039; rather than lovely, thereby falsifying his prior praise. The Crow&#039;s instinctual suspicion, as she &#039;watched the Fox suspiciously&#039;, also suggests she initially had no reason to verify the claim favorably.</td>
+            <td>One could argue that the action of singing (α) itself, which the Crow performs by uttering her &#039;loudest caw&#039;, serves as a behavioral verification of the claim that she should sing, because the Fox did not explicitly demand a beautiful song but simply &#039;one song&#039;. Furthermore, the Fox&#039;s description of the Crow&#039;s &#039;splendid wings&#039; and &#039;beautiful form&#039; provides a factual basis for her being a &#039;wonderful Bird&#039;, which might be misinterpreted as partial verification of her overall excellence, including her potential to be the Queen of Birds.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 17.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the Crow&#039;s actual voice (a harsh caw) contradicts the Fox&#039;s flattering claim (v), and no independent verification supports his praise; thus deception is confirmed.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claim that the Crow has a &#039;very lovely voice&#039; is deceptively flattering because the Crow&#039;s actual voice is a harsh caw (as evidenced when she &#039;utter her loudest caw&#039;). The document provides no independent verification of the Fox&#039;s praise; instead, the Fox&#039;s true intent is revealed when he later says, &#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039; This directly contradicts his earlier flattery, showing the claims were fabricated to induce singing and drop the cheese.</td>
+            <td>One could argue that document provides no external counterclaim or verification because it is a fable—the Crow&#039;s voice is inherently unpleasant, but the Fox&#039;s flattery is not independently falsified within the text. However, the Crow&#039;s action of cawing (the &#039;loudest caw&#039;) implies a harsh sound, and the Fox&#039;s own admission (&#039;it is cracked&#039;) constitutes direct counterevidence within the document, falsifying his prior claim of a &#039;lovely voice&#039;.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 7.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes – the crow’s caw confirms the voice and singing action; no counterclaim appears.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The text records a direct behaviour from the crow – uttering a loud caw – which serves as an independent verification that she possesses a voice and performs the singing action the Fox claimed. This observable action confirms the claim about her vocal ability and her willingness to sing.</td>
+            <td>The only source reporting the croak is the same narrative that presents the Fox’s claim; there is no third‑party verification or contradictory evidence to challenge it. Thus the verification is not truly independent, and no counterclaim is present in the document.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 103.7s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No independent verification exists, but the Fox&#039;s immediate retraction and the narrative outcome serve as an embedded counterclaim exposing the deception.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>Affirmative: The document contains a direct counterclaim issued by the Fox immediately after achieving his goal. By stating the voice is merely a caw and questioning her wits, the Fox explicitly retracts his prior praise, confirming the initial claim was a manipulative ruse. Additionally, the factual outcome—the cheese falling and the sound being a &#039;loudest caw&#039;—provides narrative verification that the flattering claim regarding her &#039;wonderful voice&#039; was false.</td>
+            <td>Negative: There are no independent, third-party verifications or objective counterclaims within the text. The only assessment comes from the deceptive agent himself, who only concedes the truth after obtaining the cheese. The narrative leaves the verification to the reader&#039;s inference rather than presenting an explicit, unbiased counter-evaluation, meaning the claim is never formally challenged by an external witness or factual authority within the document itself.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 12.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the Fox himself provides a direct counterclaim immediately after obtaining the cheese, admitting her voice is actually &#039;cracked&#039;.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s initial flattery claiming the Crow has a &#039;very lovely voice&#039; is directly refuted by his own counterclaim at the end of the text, where he reveals his true assessment of her voice as being &#039;cracked&#039; once he no longer needs to deceive her.</td>
+            <td>One could argue there is no truly independent, objective third-party verification or counterclaim in the narrative, as the text contains only the conflicting statements of the biased Fox and the mention of the Crow&#039;s &#039;loudest caw&#039;, leaving the actual aesthetic quality of her voice unverified by an impartial observer.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ7</h2><div class="timing-badge">API: 34.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes, the narrator independently verifies the Fox&#039;s deceptive intent, and the Fox himself later counterclaims his own flattery by calling her voice &#039;cracked&#039;.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The text confirms the presence of counterclaims and verifications. The omniscient narrator independently verifies the Fox&#039;s true goal (securing the cheese for breakfast). Furthermore, the Fox provides a direct counterclaim to his earlier flattery: once he obtains the cheese, he retracts his claim about her &#039;lovely voice&#039; and admits it is actually &#039;cracked&#039;. This argument would be falsified if the Fox genuinely praised her singing after she dropped the cheese.</td>
+            <td>A negative argument could assert that there is no &#039;independent&#039; verification from a third-party character within the story&#039;s universe. The Fox&#039;s later insult is an admission of deceit rather than an independent counterclaim, and the narrator is not an active participant. This would be falsified if another animal appeared in the scene to explicitly warn the Crow or dispute the Fox&#039;s flattery.</td>
+          </tr>
+        </table></div></div>
+      <div class="criterion-card critical-question" data-criterion="CQ8" data-doc="b7b61684245b2aea097b02e393681837">
+      <div class="section-content description">
+        <h3>Original Question</h3>
+        <div class="content">Is “c”, with respect to “v”, “α”, or “s”, consistent with A&#039;s knowledge, experience, and personality?</div>
+      </div>
+      <div class="section-content description">
+        <h3>Adapted Question</h3>
+        <div class="content">Is Master Fox&#039;s claim to the Crow that she is a beautiful, wonderful bird with a lovely voice worthy of being hailed Queen of Birds, made to get her to sing or open her beak, consistent with the Fox&#039;s knowledge, experience, and personality?</div>
+      </div><div class="llm-panel" data-llm="gpt-5.4" data-idx="0"><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 7.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">Yes. On balance, the claim is inconsistent with what the Fox likely knows and sincerely believes, because his sly, opportunistic behavior and immediate goal of getting the cheese indicate strategic flattery rather than an honest evaluation.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document portrays the Fox as calculating, experienced, and manipulative. Before speaking, he identifies the cheese as his goal: &quot;No need to search any farther,&quot; thought sly Master Fox. &quot;Here is a dainty bite for my breakfast.&quot; He then delivers exaggerated praise—&quot;Good-morning, beautiful creature!&quot; and &quot;Such a wonderful Bird should have a very lovely voice&quot;—designed to induce the Crow to open her beak. The closing taunt, &quot;But where are your wits?&quot;, further shows he regarded her as gullible, not as a bird he truly admired. This supports the reading that claim c was not consistent with his real knowledge or sincere judgment, but with a deceptive personality using praise instrumentally. This argument would be weakened if the text showed the Fox independently believed the Crow beautiful or musically gifted, or if he praised her without trying to obtain the cheese.</td>
+            <td>Some parts of the claim could still be consistent with the Fox&#039;s knowledge in a limited sense. The narration says the Crow held the cheese and the Fox looked up &quot;admiringly,&quot; and he comments on observable features such as &quot;How her feathers shine!&quot; and &quot;what splendid wings!&quot; Those remarks about her appearance might match what he genuinely sees. Also, he says she &quot;should have a very lovely voice,&quot; which could be interpreted as speculation rather than a statement he knows to be false. So the claim may be partly consistent with his knowledge of her appearance, even if opportunistically used. This counterargument would be falsified by clearer evidence that he privately mocked her appearance or knew her voice was unpleasant before speaking.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gpt-4o" data-idx="1" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 3.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">The flattery aligns with the Fox&#039;s known cunning personality, suggesting consistency with his traits.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s behavior aligns with his sly and cunning nature, as evidenced by the DOCUMENT describing him as &quot;sly Master Fox.&quot; His flattery is a calculated move to manipulate the Crow into dropping the cheese.</td>
+            <td>One could argue that without prior knowledge of the Crow&#039;s personality, the Fox&#039;s flattery might not necessarily work, as it depends on the Crow&#039;s susceptibility to praise, which could be inconsistent with deception.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-sonnet-4-5" data-idx="2" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 12.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The Fox&#039;s flattery is inconsistent with his true knowledge and personality as a deceptive manipulator seeking only the cheese.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claims are entirely inconsistent with his actual knowledge and character. The text explicitly identifies him as &#039;sly Master Fox&#039; and reveals his internal thought process: he stops not because he admires the Crow, but because she holds cheese he wants for breakfast. His flattering statements about her beauty, feathers, form, wings, and voice are calculated deceptions designed solely to manipulate her into opening her beak. The Fox&#039;s closing remark after obtaining the cheese confirms his insincerity: &#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039; This reveals he never believed his own flattery and was consciously deceiving the Crow throughout the exchange.</td>
+            <td>One might argue the Fox&#039;s statements could reflect genuine aesthetic appreciation alongside his hunger—that he could simultaneously find the Crow beautiful and want her cheese. The text shows the Fox &#039;looking up admiringly,&#039; which could suggest some authentic admiration. However, this interpretation is undermined by the Fox&#039;s internal monologue showing pure instrumentality (&#039;Here is a dainty bite for my breakfast&#039;), his designation as &#039;sly,&#039; and his mocking final words that reveal he never intended his praise sincerely. The &#039;admiring&#039; look is itself part of the performance of deception.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="claude-haiku-4-5" data-idx="3" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 5.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The Fox&#039;s flattering claims are deliberately inconsistent with his true intentions and knowledge; he cynically manipulates the Crow by praising attributes he does not genuinely value, using deception as a calculated strategy aligned with his self-interested nature.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s claims about the Crow&#039;s beauty and voice are fundamentally deceptive and inconsistent with his actual knowledge and intentions. The text explicitly reveals the Fox&#039;s true motivation: he sees the cheese and immediately devises a manipulative strategy. His internal monologue (&#039;sly Master Fox&#039;) and the phrase &#039;dainty bite for my breakfast&#039; demonstrate he views the cheese—not the Crow herself—as his objective. The flattery follows only as a calculated means to this end. His personality as &#039;sly&#039; indicates a habitual pattern of cunning deception. The extended flattery (&#039;charming creature,&#039; &#039;beautiful form,&#039; &#039;splendid wings,&#039; &#039;lovely voice&#039;) stands in sharp contrast to his utilitarian assessment moments earlier, proving the praise is performance rather than genuine evaluation.</td>
+            <td>One might argue the Fox&#039;s flattery could reflect honest aesthetic appreciation developed through his experience in the woods. However, this interpretation is contradicted by the text&#039;s explicit narrative of his mental state and the precise timing of the praise—it emerges only after observing the cheese, not before. The counterargument would require assuming the Fox&#039;s sudden aesthetic admiration coincidentally aligns with his manipulation strategy, rather than being caused by it, which strains credibility given the clear causal sequence presented in the narrative.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-pro" data-idx="4" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 59.0s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The claim is inconsistent with the Fox&#039;s knowledge, as he later reveals he knew the Crow&#039;s voice was cracked, which confirms deception.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox’s flattering claim (“What a charming creature she is! … Could she sing just one song, I know I should hail her Queen of Birds”) is inconsistent with his knowledge and experience of crows. The document shows the Fox is sly and experienced: he has seen many crows before (“this was by no means the first Crow the Fox had ever seen”), and his immediate thought is to obtain the cheese by whatever means. After the cheese drops, he drops the pretense and mockingly says, “Though it is cracked, you have a voice sure enough. But where are your wits?” That remark proves he knew all along that a crow’s voice is harsh and unlovely; the claim was therefore a deliberate falsehood, perfectly consistent with his deceptive personality but directly contradicting his actual knowledge. Thus, with respect to the action of singing and the state of the Crow’s voice, the claim is inconsistent with his knowledge and experience, indicating deception.</td>
+            <td>One could argue that the Fox’s knowledge of this particular Crow’s voice was uncertain at the time of the claim. The text only says he saw the Crow with cheese and decided to flatter her; it never states he had heard her sing before that moment. The flattery might have been a generic, opportunistic bluff that just happened to be disproved by the caw. Even if his personality is cunning, he might not have known the voice was cracked—only after the Crow sang did he realize it. In that case, the claim would be based on a guess rather than on knowledge, so it would not necessarily be inconsistent with his knowledge (since he lacked a firm belief). Moreover, his post-caw taunt could be a spontaneous insult rather than a reflection of prior knowledge. If the claim was made without knowledge of the voice, it cannot be judged as inconsistent with knowledge, only as risk-taking.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="deepseek-v4-flash" data-idx="5" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 21.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the claim is inconsistent. The Fox knows the Crow likely has a harsh caw, not a lovely voice, and his flattery is calculated deception for personal gain. His sly character contradicts sincerity.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The document establishes the Fox as &#039;sly Master Fox&#039; who immediately sees the Crow&#039;s cheese as &#039;a dainty bite for my breakfast.&#039; His flattering claims about the Crow&#039;s voice (&#039;Such a wonderful Bird should have a very lovely voice&#039;) are knowingly false, as he expects her to caw, not sing sweetly. His true character—opportunistic and deceptive—is evident from his premeditated approach. The cheese is his only goal, making his praise inconsistent with his knowledge that her voice is likely harsh. Supporting evidence: &#039;No need to search any farther,&#039; thought sly Master Fox. &#039;Here is a dainty bite for my breakfast.&#039;</td>
+            <td>One could argue the Fox&#039;s flattery is merely persuasive rhetoric, not necessarily false. The document does not state the Fox has prior knowledge of the Crow&#039;s voice; he may genuinely find her admirable. The Crow&#039;s beauty could imply a pleasant voice in his reasoning. However, the explicit outcome—&#039;down fell the cheese&#039; after she caws—and the Fox&#039;s final taunt (&#039;you have a voice sure enough. But where are your wits?&#039;) reveal he knew she lacked wit, not that he believed in her voice. This negates any consistency claim. Counter-evidence: &#039;Thank you,&#039; said Master Fox sweetly, as he walked off. &#039;Though it is cracked, you have a voice sure enough. But where are your wits?&#039;</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="openai/gpt-oss-20b" data-idx="6" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 94.6s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the Fox’s claim is inconsistent with his known motives and prior behavior, indicating deception.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox explicitly praises the Crow’s voice and urges her to sing, stating, &quot;Such a wonderful Bird should have a very lovely voice, since everything else about her is so perfect.&quot; This aligns with the minor premise of the argument that he is using flattery to influence the Crow. His motive is clear: he needs cheese and believes that flattering the Crow will coax it into giving up the cheese. The narrative shows no prior evidence that the Fox actually knows the Crow’s vocal talent; instead, his actions are merely manipulative to obtain a reward. Thus, his claim seems aimed at exploitation rather than genuine belief, contradicting consistency with his knowledge and experience.</td>
+            <td>One could argue that Master Fox might genuinely believe in the Crow’s pleasant vocal qualities based on previous encounters (though not explicit in the text). However, the document provides no evidence of such prior experience. Instead, the Fox’s behavior—praising, asking the Crow to sing, and immediately taking the cheese after the Crow complies—demonstrates a pattern of deception rather than honest admiration.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="qwen/qwen3.6-27b" data-idx="7" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 87.9s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the claim is inconsistent with his genuine knowledge and true intentions, as it is a calculated ruse motivated by hunger rather than sincere admiration.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox immediately reveals his true motive upon sighting the Crow, noting only that he wants a &#039;dainty bite for my breakfast.&#039; His subsequent praise of her voice and promise to hail her Queen of Birds directly contradicts his actual knowledge and immediate goal. He knowingly fabricates the claim to trigger a specific physical reaction (opening her beak) that serves his hunger, proving the statement is inconsistent with his honest beliefs and genuine assessment of her singing ability.</td>
+            <td>One could argue the claim aligns with the Fox&#039;s established character as a cunning opportunist. His survival experience in the woodland likely equipped him with the knowledge that exploiting vanity is a reliable strategy. Therefore, deploying insincere flattery is entirely consistent with his personality as a calculated manipulator, reflecting a strategic behavioral pattern rather than a deviation from his nature.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.5-flash" data-idx="8" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 16.4s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No. The Fox&#039;s claim is inconsistent with his sly, deceptive nature and his actual, mocking assessment of her voice as &#039;cracked&#039;.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s praise is entirely inconsistent with his deceptive personality and intentions. His sole motive from the start was to steal her food (&#039;Here is a dainty bite for my breakfast&#039;). Once his trick succeeds, his true thoughts are laid bare as he mocks her voice and intelligence, showing that his flattery was completely insincere and contrary to his actual evaluation.</td>
+            <td>Alternatively, it could be argued that the Fox had no prior knowledge of this specific Crow&#039;s singing ability since he had never heard her sing before, and his initial compliments about her physical beauty (&#039;How her feathers shine! What a beautiful form&#039;) were consistent with his direct observations.</td>
+          </tr>
+        </table></div><div class="llm-panel" data-llm="gemini-3.1-pro-preview" data-idx="9" hidden><h2 class="criterion-title">CQ8</h2><div class="timing-badge">API: 30.8s</div>
+      <div class="section-content analysis">
+        <h3>Analysis</h3>
+        <div class="content">No, the factual content of the claim contradicts his true knowledge that her voice is &#039;cracked&#039;, although the act of deception perfectly fits his sly personality.</div>
+      </div>
+        <table class="arguments-table">
+          <tr><th>Argument</th><th>Counterargument</th></tr>
+          <tr>
+            <td>The Fox&#039;s flattering claim directly contradicts his actual knowledge of the Crow. Once he secures the cheese, he explicitly mocks her &#039;cracked&#039; voice, proving he knew all along that she did not have a beautiful voice and that his claim was entirely fabricated to trick her.</td>
+            <td>Conversely, one could argue that the act of making a manipulative, false claim is entirely consistent with his described personality. He is explicitly identified as &#039;sly Master Fox,&#039; indicating a cunning nature that naturally employs deceit and flattery to secure a meal.</td>
+          </tr>
+        </table></div></div></div></div>
+</body>
+<script>
+(function() {
+  // ---- 1. Build doc-models map from rendered cards ----
+  var docFilter = document.getElementById('docFilter');
+  var modelFilter = document.getElementById('modelFilter');
+  var DOC_LABELS = {"b7b61684245b2aea097b02e393681837":"fox and crow"};
+
+  var docModels = {};
+  document.querySelectorAll('.criterion-card[data-doc]').forEach(function(card) {
+    var doc = card.dataset.doc;
+    if (!doc) return;
+    if (!docModels[doc]) docModels[doc] = new Set();
+    card.querySelectorAll('.llm-panel[data-llm]').forEach(function(el) {
+      if (el.dataset.llm) docModels[doc].add(el.dataset.llm);
+    });
+  });
+
+  // ---- 2. Populate doc dropdown ----
+  var docIds = Object.keys(docModels);
+  docIds.forEach(function(d) {
+    var opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = DOC_LABELS[d] || d;
+    docFilter.appendChild(opt);
+  });
+
+  // ---- 3. Populate model dropdown for selected doc ----
+  function populateModelFilter(docId) {
+    var sel = modelFilter.value;
+    modelFilter.innerHTML = '';
+    var models = docModels[docId] || new Set();
+    if (models.size === 0) {
+      Object.values(docModels).forEach(function(s) { s.forEach(function(m) { models.add(m); }); });
+    }
+    models.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      if (m === sel) opt.selected = true;
+      modelFilter.appendChild(opt);
+    });
+  }
+  if (docIds.length > 0) populateModelFilter(docIds[0]);
+  else {
+    var allM = new Set();
+    document.querySelectorAll('.llm-panel[data-llm]').forEach(function(el) {
+      if (el.dataset.llm) allM.add(el.dataset.llm);
+    });
+    allM.forEach(function(m) {
+      var opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      modelFilter.appendChild(opt);
+    });
+  }
+
+  // Apply initial filter (first doc, first model only)
+  applyFilters();
+
+  // ---- 4. Filtering ----
+  function applyFilters() {
+    var selDoc = docFilter.value;
+    var selModel = modelFilter.value;
+
+    document.querySelectorAll('.criterion-card[data-doc]').forEach(function(card) {
+      var showDoc = !selDoc || card.dataset.doc === selDoc;
+      var hasVisible = false;
+      card.querySelectorAll('.llm-panel[data-llm]').forEach(function(panel) {
+        var show = !selModel || panel.dataset.llm === selModel;
+        panel.hidden = !show;
+        if (show) hasVisible = true;
+      });
+      var hasPanels = card.querySelectorAll('.llm-panel[data-llm]').length > 0;
+      card.style.display = hasPanels ? (showDoc && hasVisible ? '' : 'none') : (showDoc ? '' : 'none');
+    });
+
+    document.querySelectorAll('.group-section').forEach(function(group) {
+      var vis = group.querySelectorAll('.criterion-card:not([style*="display: none"])');
+      group.style.display = vis.length > 0 ? '' : 'none';
+    });
+
+    // Filter timing summary groups by model
+    document.querySelectorAll('.ts-group[data-ts-model]').forEach(function(ts) {
+      var show = !selModel || ts.dataset.tsModel === selModel;
+      ts.style.display = show ? '' : 'none';
+    });
+    // Show/hide wall-clock row: visible when any model is selected or no filter
+    var wallRow = document.querySelector('.ts-group.ts-wall');
+    if (wallRow) {
+      var anyVisible = !selModel || document.querySelector('.ts-group[data-ts-model]:not([style*="display: none"])');
+      wallRow.style.display = anyVisible ? '' : 'none';
+    }
+    // Hide entire timing summary if all rows are hidden
+    var summary = document.querySelector('.timing-summary');
+    if (summary) {
+      var vis = summary.querySelectorAll('.ts-group:not([style*="display: none"])');
+      summary.style.display = vis.length > 0 ? '' : 'none';
+    }
+  }
+
+  docFilter.addEventListener('change', function() {
+    populateModelFilter(this.value);
+    applyFilters();
+  });
+  modelFilter.addEventListener('change', applyFilters);
+
+  // ---- 5. Accordions (groups) ----
+  document.querySelectorAll('.group-accordion-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var parent = this.closest('.group-section');
+      var content = parent.querySelector('.group-content');
+      var arrow = this.querySelector('.accordion-arrow');
+      var isCollapsed = parent.classList.contains('collapsed');
+      if (isCollapsed) {
+        parent.classList.remove('collapsed');
+        if (content) content.hidden = false;
+        if (arrow) arrow.textContent = '\u25BE';
+      } else {
+        parent.classList.add('collapsed');
+        if (content) content.hidden = true;
+        if (arrow) arrow.textContent = '\u25B8';
+      }
+    });
+  });
+
+  // Print button
+  document.getElementById('btnPrint').addEventListener('click', function() { window.print(); });
+})();
+</script>
+</html>

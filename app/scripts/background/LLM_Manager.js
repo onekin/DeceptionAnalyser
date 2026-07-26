@@ -97,9 +97,9 @@ class LLMManager {
             err => sendResponse({ err: err })
           )// Return the error inside the message handler
           return true // Return true inside the message handler
-        } else if (request.cmd === 'deepseek') {
+        } else if (request.cmd === 'openrouter') {
           const t0 = performance.now()
-          this.askDeepSeek(request).then(
+          this.askOpenRouter(request).then(
             res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
             err => sendResponse({ err: err })
           )
@@ -144,7 +144,7 @@ class LLMManager {
     const modelName = request.data.llm.model
     const model = new ChatOpenAI({
       model: modelName,
-      apiKey, // use this (works in modern @langchain/openai)
+      apiKey, // use this (works in modern @langchain/openai),
       useResponsesApi: true
     })
 
@@ -222,17 +222,20 @@ class LLMManager {
     })
   }
 
-  async askDeepSeek (request) {
+  async askOpenRouter (request) {
     const apiKey = request.data.apiKey
     const query = request.data.query
     const documents = request.data.documents || ''
     const modelName = request.data.llm.model
-    // DeepSeek uses an OpenAI-compatible API
+    // Use OpenRouter's OpenAI-compatible API
     const model = new ChatOpenAI({
       model: modelName,
       apiKey,
       configuration: {
-        baseURL: 'https://api.deepseek.com'
+        baseURL: 'https://openrouter.ai/api/v1',
+        defaultHeaders: {
+          'X-Title': 'DeceptionAnalyser'
+        }
       }
     })
 

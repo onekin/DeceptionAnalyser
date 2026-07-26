@@ -12,7 +12,7 @@ class Options {
       const anthropicModels = Config.llmModels.anthropic
       const groqModels = Config.llmModels.groq
       const geminiModels = Config.llmModels.gemini
-      const deepseekModels = Config.llmModels.deepseek
+      const openrouterModels = Config.llmModels.openrouter
 
       const LLMDropdown = document.getElementById('LLMDropdown')
       const modelSelectionContainer = document.getElementById('modelSelectionContainer')
@@ -22,27 +22,27 @@ class Options {
       const anthropicApiContainer = document.getElementById('anthropic-ApiKeyContainer')
       const groqApiContainer = document.getElementById('groq-ApiKeyContainer')
       const geminiApiContainer = document.getElementById('gemini-ApiKeyContainer')
-      const deepseekApiContainer = document.getElementById('deepseek-ApiKeyContainer')
+      const openrouterApiContainer = document.getElementById('openrouter-ApiKeyContainer')
 
       const openAIModelInfoContainer = document.getElementById('openAI-models')
       const anthropicModelInfoContainer = document.getElementById('anthropic-models')
       const groqModelInfoContainer = document.getElementById('groq-models')
       const geminiModelInfoContainer = document.getElementById('gemini-models')
-      const deepseekModelInfoContainer = document.getElementById('deepseek-models')
+      const openrouterModelInfoContainer = document.getElementById('openrouter-models')
 
       // Hide models info
       openAIModelInfoContainer.style.display = 'none'
       anthropicModelInfoContainer.style.display = 'none'
       groqModelInfoContainer.style.display = 'none'
       geminiModelInfoContainer.style.display = 'none'
-      deepseekModelInfoContainer.style.display = 'none'
+      openrouterModelInfoContainer.style.display = 'none'
 
       // Hide API key inputs initially
       openAIApiContainer.style.display = 'none'
       anthropicApiContainer.style.display = 'none'
       groqApiContainer.style.display = 'none'
       geminiApiContainer.style.display = 'none'
-      deepseekApiContainer.style.display = 'none'
+      openrouterApiContainer.style.display = 'none'
 
       // Handle LLM dropdown change
       document.querySelector('#LLMDropdown').addEventListener('change', (event) => {
@@ -57,8 +57,8 @@ class Options {
           populateModelDropdown(groqModels) // Populate the Groq models
         } else if (selectedLLM === 'gemini') {
           populateModelDropdown(geminiModels) // Populate the Gemini models
-        } else if (selectedLLM === 'deepseek') {
-          populateModelDropdown(deepseekModels) // Populate the DeepSeek models
+        } else if (selectedLLM === 'openrouter') {
+          populateModelDropdown(openrouterModels) // Populate the OpenRouter models
         }
 
         // Ensure the selectedModel is correctly set
@@ -164,20 +164,20 @@ class Options {
           groqModelInfoContainer.style.display = 'none'
           geminiModelInfoContainer.style.display = 'block'
           populateModelDropdown(geminiModels)
-        } else if (selectedLLM === 'deepseek') {
+        } else if (selectedLLM === 'openrouter') {
           modelSelectionContainer.style.display = 'block'
           openAIApiContainer.style.display = 'none'
           anthropicApiContainer.style.display = 'none'
           groqApiContainer.style.display = 'none'
           geminiApiContainer.style.display = 'none'
-          deepseekApiContainer.style.display = 'block'
+          openrouterApiContainer.style.display = 'block'
           // Hide models info
           openAIModelInfoContainer.style.display = 'none'
           anthropicModelInfoContainer.style.display = 'none'
           groqModelInfoContainer.style.display = 'none'
           geminiModelInfoContainer.style.display = 'none'
-          deepseekModelInfoContainer.style.display = 'block'
-          populateModelDropdown(deepseekModels)
+          openrouterModelInfoContainer.style.display = 'block'
+          populateModelDropdown(openrouterModels)
         } else {
           modelSelectionContainer.style.display = 'none'
           openAIApiContainer.style.display = 'none'
