@@ -66,9 +66,7 @@ class ReviewGenerator {
       this.llmIndicator = this.container.querySelector('#llmIndicator')
       this.llmModelName = this.container.querySelector('#llmModelName')
       this.llmApiKeyDot = this.container.querySelector('#llmApiKeyDot')
-      this.llmDropdownArrow = this.container.querySelector('#llmDropdownArrow')
       this.llmConfigBtn = this.container.querySelector('#llmConfigBtn')
-      this.llmModelDropdown = this.container.querySelector('#llmModelDropdown')
       this.updateLLMIndicator()
       // Refresh LLM indicator when user returns to this tab (e.g. after changing LLM in options)
       document.addEventListener('visibilitychange', () => {
@@ -95,16 +93,11 @@ class ReviewGenerator {
           if (apiKey && apiKey !== '') {
             this.llmApiKeyDot.style.backgroundColor = '#4caf50' // green
             this.llmApiKeyDot.title = 'API key configured'
-            this.llmConfigBtn.style.display = 'none'
           } else {
             this.llmApiKeyDot.style.backgroundColor = '#f44336' // red
-            this.llmApiKeyDot.title = 'No API key configured — click ⚙ to set one'
-            this.llmConfigBtn.style.display = 'inline-block'
+            this.llmApiKeyDot.title = 'No API key configured'
           }
         })
-        // Attach click handlers for model selector
-        this.llmModelName.onclick = () => this.toggleModelDropdown()
-        this.llmDropdownArrow.onclick = () => this.toggleModelDropdown()
         this.llmConfigBtn.onclick = () => {
           window.open(chrome.runtime.getURL('pages/options.html'))
         }
@@ -117,61 +110,6 @@ class ReviewGenerator {
       if (previousModel !== newModel && window.abwa.criteriaManager) {
         window.abwa.criteriaManager.reloadCriteria()
       }
-    })
-  }
-
-  buildModelDropdown () {
-    const models = Config.llmModels
-    const labels = Config.llmProviderLabels
-    const currentLLM = window.abwa._selectedLLM
-    let html = ''
-    for (const [provider, providerModels] of Object.entries(models)) {
-      html += `<div class="llm-dropdown-provider">${labels[provider] || provider}</div>`
-      for (const m of providerModels) {
-        const isSelected = currentLLM && currentLLM.modelType === provider && currentLLM.model === m.value
-        html += `<div class="llm-dropdown-item${isSelected ? ' selected' : ''}"
-          data-provider="${provider}"
-          data-model="${m.value}"
-          data-label="${m.label}">${m.label}${isSelected ? ' ✓' : ''}</div>`
-      }
-    }
-    this.llmModelDropdown.innerHTML = html
-    // Attach click handlers to items
-    this.llmModelDropdown.querySelectorAll('.llm-dropdown-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const provider = item.dataset.provider
-        const model = item.dataset.model
-        this.selectModel(provider, model)
-        this.llmModelDropdown.style.display = 'none'
-      })
-    })
-  }
-
-  toggleModelDropdown () {
-    if (this.llmModelDropdown.style.display === 'block') {
-      this.llmModelDropdown.style.display = 'none'
-      return
-    }
-    this.buildModelDropdown()
-    this.llmModelDropdown.style.display = 'block'
-    // Close dropdown when clicking outside
-    const closeHandler = (e) => {
-      if (!this.llmIndicator.contains(e.target)) {
-        this.llmModelDropdown.style.display = 'none'
-        document.removeEventListener('click', closeHandler)
-      }
-    }
-    setTimeout(() => document.addEventListener('click', closeHandler), 0)
-  }
-
-  selectModel (provider, model) {
-    chrome.runtime.sendMessage({
-      scope: 'llm',
-      cmd: 'setSelectedLLM',
-      data: { llm: { modelType: provider, model: model } }
-    }, () => {
-      this.updateLLMIndicator()
     })
   }
 

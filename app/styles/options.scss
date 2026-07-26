@@ -45,3 +45,106 @@ input:invalid {
 .promptTextArea {
   width: 100%;
 }
+
+// LLM provider wizard
+.llm-step {
+  margin-bottom: 24px;
+}
+
+.llm-step-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.llm-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #343a40;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.llm-step-title {
+  font-weight: bold;
+}
+
+.llm-help-link {
+  margin-left: auto;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.provider-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.provider-card {
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  background-color: #fff;
+
+  &:hover {
+    border-color: #6c757d;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  }
+
+  &.selected {
+    border-color: #343a40;
+    box-shadow: 0 0 0 2px rgba(52, 58, 64, 0.25);
+  }
+}
+
+.provider-name {
+  font-size: 0.78rem;
+  font-weight: bold;
+}
+
+.provider-desc {
+  font-size: 0.7rem;
+  color: #6c757d;
+}
+
+.llm-api-row {
+  display: flex;
+  gap: 8px;
+
+  input {
+    flex: 1 1 auto;
+  }
+
+  button {
+    flex: 0 0 auto;
+  }
+}
+
+.llm-loading {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+.llm-summary {
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-left: 4px solid #28a745;
+  background-color: #f8f9fa;
+  font-size: 0.9rem;
+
+  &.llm-summary-warning {
+    border-left-color: #ffc107;
+  }
+}

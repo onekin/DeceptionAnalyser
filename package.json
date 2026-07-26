@@ -20,7 +20,8 @@
   },
   "standard": {
     "globals": [
-      "chrome"
+      "chrome",
+      "fetch"
     ]
   },
   "dependencies": {
