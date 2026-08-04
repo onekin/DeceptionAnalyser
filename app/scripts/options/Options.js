@@ -17,6 +17,14 @@ class Options {
         keyUrl: 'https://platform.openai.com/api-keys'
       },
       {
+        id: 'preset_anthropic',
+        name: 'Anthropic',
+        desc: 'Claude Sonnet, Haiku...',
+        url: 'https://api.anthropic.com/v1',
+        needsKey: true,
+        keyUrl: 'https://console.anthropic.com/settings/keys'
+      },
+      {
         id: 'preset_gemini',
         name: 'Google Gemini',
         desc: 'Gemini 2.5, 2.0...',

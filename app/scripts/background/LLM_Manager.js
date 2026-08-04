@@ -111,7 +111,7 @@ class LLMManager {
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.scope === 'askLLM') {
-        if (request.cmd === 'anthropic') {
+        if (request.cmd === 'anthropic' || request.cmd === 'preset_anthropic') {
           const t0 = performance.now()
           this.askAnthropic(request).then(
             res => sendResponse({ res: res, apiTiming: (performance.now() - t0) / 1000 }),
@@ -219,7 +219,12 @@ class LLMManager {
     }
     const headers = { 'Content-Type': 'application/json' }
     if (endpoint.needsKey !== false && endpoint.apiKey) {
-      headers.Authorization = 'Bearer ' + endpoint.apiKey
+      if (baseURL.includes('api.anthropic.com')) {
+        headers['x-api-key'] = endpoint.apiKey
+        headers['anthropic-version'] = '2023-06-01'
+      } else {
+        headers.Authorization = 'Bearer ' + endpoint.apiKey
+      }
     }
     let response
     try {
